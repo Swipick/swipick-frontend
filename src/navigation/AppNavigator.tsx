@@ -5,25 +5,33 @@ import { auth } from '../config/firebase';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { useAuthStore } from '../store/stores/useAuthStore';
 
 /**
  * Root navigator - switches between Auth and Main based on authentication
+ * Syncs Firebase auth state with Zustand store
  */
 export default function AppNavigator() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
+  const { user, setUser } = useAuthStore();
 
   useEffect(() => {
-    // Listen to Firebase auth state changes
+    // Listen to Firebase auth state changes and sync with Zustand store
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log(
+        '[AppNavigator] Auth state changed:',
+        firebaseUser ? firebaseUser.uid : 'No user'
+      );
       setUser(firebaseUser);
-      setLoading(false);
+      if (initializing) {
+        setInitializing(false);
+      }
     });
 
     return unsubscribe;
   }, []);
 
-  if (loading) {
+  if (initializing) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6366f1" />

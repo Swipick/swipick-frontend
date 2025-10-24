@@ -10,7 +10,7 @@ const extra = Constants.expoConfig?.extra || {};
 export const ENV = {
   // API Configuration
   BFF_URL: extra.bffUrl || 'http://localhost:9000',
-  GAMING_API_URL: extra.gamingApiUrl || 'http://localhost:3002',
+  BFF_API_URL: extra.bffApiUrl || 'http://localhost:9000/api',
 
   // Firebase Configuration
   FIREBASE_API_KEY: extra.firebaseApiKey || '',

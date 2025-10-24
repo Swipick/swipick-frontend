@@ -26,15 +26,16 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "bffUrl": "http://localhost:9000",
-      "gamingApiUrl": "http://localhost:3002",
-      "firebaseApiKey": "YOUR_FIREBASE_API_KEY",
-      "firebaseAuthDomain": "YOUR_PROJECT.firebaseapp.com",
-      "firebaseProjectId": "YOUR_PROJECT_ID",
-      "firebaseStorageBucket": "YOUR_PROJECT.appspot.com",
-      "firebaseMessagingSenderId": "YOUR_SENDER_ID",
-      "firebaseAppId": "YOUR_APP_ID",
-      "appEnv": "development"
+      "bffUrl": "https://swipick-backend-production.up.railway.app",
+      "bffApiUrl": "https://swipick-backend-production.up.railway.app/api",
+      "firebaseApiKey": "AIzaSyBuGtxb0-a04wUqUHxCOKRIbZEfLNJAwY4",
+      "firebaseAuthDomain": "swipick-ab224.firebaseapp.com",
+      "firebaseProjectId": "swipick-ab224",
+      "firebaseStorageBucket": "swipick-ab224.firebasestorage.app",
+      "firebaseMessagingSenderId": "519582989697",
+      "firebaseAppId": "1:519582989697:web:53f6a71176d9de4db9fc80",
+      "firebaseMeasurementId": "G-RGZGLGNK3Q",
+      "appEnv": "production"
     }
   }
 }
