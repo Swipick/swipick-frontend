@@ -1,20 +1,40 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import { MatchCard as MatchCardType } from '../../types/game.types';
-import { colors, spacing } from '../../theme';
-import {
-  formatKickoffTime,
-  formatWinRate,
-  getTeamLogoFallback,
-  formatLastResult,
-} from '../../utils/formatters';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { MatchCard as MatchCardType, PredictionChoice } from '../../types/game.types';
+import { MatchDetails } from './MatchDetails';
+import { TeamInfo } from './TeamInfo';
 import { getTeamLogo } from '../../utils/logoMapper';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SWIPE_THRESHOLD = 150;
+const VELOCITY_THRESHOLD = 500;
 
 interface MatchCardProps {
   matchCard: MatchCardType;
+  onSwipe?: (choice: PredictionChoice) => void;
+  enabled?: boolean;
+  isPreview?: boolean;
 }
 
-export default function MatchCard({ matchCard }: MatchCardProps) {
+export default function MatchCard({
+  matchCard,
+  onSwipe,
+  enabled = true,
+  isPreview = false,
+}: MatchCardProps) {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+
   const { home, away, kickoff, stadium } = matchCard;
 
   // Get local logo assets
@@ -24,270 +44,202 @@ export default function MatchCard({ matchCard }: MatchCardProps) {
   const homeTeam = {
     name: home.name,
     logo: homeTeamLogo,
-    position: home.standingsPosition,
-    winRate: home.winRateHome,
-    last5: home.last5,
   };
+
   const awayTeam = {
     name: away.name,
     logo: awayTeamLogo,
-    position: away.standingsPosition,
-    winRate: away.winRateAway,
-    last5: away.last5,
   };
-  const kickoffTime = kickoff.iso;
+
+  const handleSwipeComplete = (choice: PredictionChoice) => {
+    if (onSwipe) {
+      onSwipe(choice);
+    }
+  };
+
+  const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      startX.value = translateX.value;
+      startY.value = translateY.value;
+    })
+    .onUpdate((event) => {
+      if (!enabled) return;
+      translateX.value = startX.value + event.translationX;
+      translateY.value = startY.value + event.translationY;
+    })
+    .onEnd((event) => {
+      if (!enabled) {
+        translateX.value = withSpring(0, {
+          stiffness: 300,
+          damping: 30,
+        });
+        translateY.value = withSpring(0, {
+          stiffness: 300,
+          damping: 30,
+        });
+        return;
+      }
+
+      const dx = translateX.value;
+      const dy = translateY.value;
+      const ax = Math.abs(dx);
+      const ay = Math.abs(dy);
+      const vx = Math.abs(event.velocityX);
+      const vy = event.velocityY;
+
+      // Determine swipe direction
+      if (ax >= ay) {
+        // Horizontal swipe dominates
+        if (ax > SWIPE_THRESHOLD || vx > VELOCITY_THRESHOLD) {
+          const choice: PredictionChoice = dx < 0 ? '1' : '2';
+
+          // Animate off screen
+          translateX.value = withTiming(
+            dx < 0 ? -SCREEN_WIDTH : SCREEN_WIDTH,
+            { duration: 220 },
+            () => {
+              // Reset position after animation
+              translateX.value = 0;
+              translateY.value = 0;
+            }
+          );
+
+          handleSwipeComplete(choice);
+        } else {
+          // Snap back
+          translateX.value = withSpring(0, {
+            stiffness: 300,
+            damping: 30,
+          });
+          translateY.value = withSpring(0, {
+            stiffness: 300,
+            damping: 30,
+          });
+        }
+      } else {
+        // Vertical swipe dominates
+        if (dy < -SWIPE_THRESHOLD || vy < -VELOCITY_THRESHOLD) {
+          // Swipe up - Draw
+          translateY.value = withTiming(
+            -SCREEN_WIDTH,
+            { duration: 220 },
+            () => {
+              translateX.value = 0;
+              translateY.value = 0;
+            }
+          );
+          handleSwipeComplete('X');
+        } else if (dy > SWIPE_THRESHOLD || vy > VELOCITY_THRESHOLD) {
+          // Swipe down - Skip (with complex animation)
+          translateY.value = withTiming(
+            SCREEN_WIDTH,
+            { duration: 600 },
+            () => {
+              translateX.value = 0;
+              translateY.value = 0;
+            }
+          );
+          handleSwipeComplete('SKIP');
+        } else {
+          // Snap back
+          translateX.value = withSpring(0, {
+            stiffness: 300,
+            damping: 30,
+          });
+          translateY.value = withSpring(0, {
+            stiffness: 300,
+            damping: 30,
+          });
+        }
+      }
+    })
+    .enabled(enabled && !isPreview);
+
+  const animatedCardStyle = useAnimatedStyle(() => {
+    // Rotation based on horizontal movement
+    const rotation = interpolate(
+      translateX.value,
+      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      [-10, 0, 10]
+    );
+
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotateZ: `${rotation}deg` },
+      ],
+    };
+  });
+
+  const CardContent = (
+    <Animated.View
+      style={[
+        styles.card,
+        animatedCardStyle,
+        isPreview && styles.previewCard,
+      ]}
+    >
+      {/* Match Details */}
+      <MatchDetails kickoff={kickoff} stadium={stadium} />
+
+      {/* Teams Container */}
+      <View style={styles.teamsContainer}>
+        <TeamInfo
+          team={homeTeam}
+          standingsPosition={home.standingsPosition}
+          winRate={home.winRateHome}
+          winRateLabel="Vittorie in casa"
+          last5={home.last5 || []}
+          isHomeTeam={true}
+        />
+
+        <TeamInfo
+          team={awayTeam}
+          standingsPosition={away.standingsPosition}
+          winRate={away.winRateAway}
+          winRateLabel="Vittorie in trasferta"
+          last5={away.last5 || []}
+          isHomeTeam={false}
+        />
+      </View>
+    </Animated.View>
+  );
+
+  // If it's a preview card or gestures are disabled, just return the card without gesture handler
+  if (isPreview || !enabled) {
+    return CardContent;
+  }
 
   return (
-    <View style={styles.container}>
-      {/* Header - Match Details */}
-      <View style={styles.header}>
-        <Text style={styles.kickoffTime}>{formatKickoffTime(kickoffTime)}</Text>
-        {stadium && <Text style={styles.stadium}>{stadium}</Text>}
-      </View>
-
-      {/* Teams Section */}
-      <View style={styles.teamsContainer}>
-        {/* Home Team */}
-        <View style={styles.teamSection}>
-          <View style={styles.teamHeader}>
-            {homeTeam.logo ? (
-              <Image source={homeTeam.logo} style={styles.teamLogo} />
-            ) : (
-              <View style={[styles.teamLogo, styles.logoFallback]}>
-                <Text style={styles.logoFallbackText}>
-                  {getTeamLogoFallback(homeTeam.name)}
-                </Text>
-              </View>
-            )}
-            <View style={styles.teamInfo}>
-              <Text style={styles.teamName} numberOfLines={2}>
-                {homeTeam.name}
-              </Text>
-              {homeTeam.position && (
-                <Text style={styles.position}>#{homeTeam.position}</Text>
-              )}
-            </View>
-          </View>
-
-          {/* Home Stats */}
-          <View style={styles.stats}>
-            {homeTeam.winRate !== undefined && (
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Casa:</Text>
-                <Text style={styles.statValue}>
-                  {formatWinRate(homeTeam.winRate)}
-                </Text>
-              </View>
-            )}
-
-            {/* Last 5 Home Results */}
-            {homeTeam.last5 && homeTeam.last5.length > 0 && (
-              <View style={styles.last5Container}>
-                {homeTeam.last5.slice(0, 5).map((result, index) => {
-                  const formatted = formatLastResult(result);
-                  return (
-                    <View
-                      key={index}
-                      style={[
-                        styles.resultBadge,
-                        { backgroundColor: formatted.color },
-                      ]}
-                    >
-                      <Text style={styles.resultText}>{formatted.text}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* VS Divider */}
-        <View style={styles.divider}>
-          <Text style={styles.vsText}>VS</Text>
-        </View>
-
-        {/* Away Team */}
-        <View style={styles.teamSection}>
-          <View style={styles.teamHeader}>
-            {awayTeam.logo ? (
-              <Image source={awayTeam.logo} style={styles.teamLogo} />
-            ) : (
-              <View style={[styles.teamLogo, styles.logoFallback]}>
-                <Text style={styles.logoFallbackText}>
-                  {getTeamLogoFallback(awayTeam.name)}
-                </Text>
-              </View>
-            )}
-            <View style={styles.teamInfo}>
-              <Text style={styles.teamName} numberOfLines={2}>
-                {awayTeam.name}
-              </Text>
-              {awayTeam.position && (
-                <Text style={styles.position}>#{awayTeam.position}</Text>
-              )}
-            </View>
-          </View>
-
-          {/* Away Stats */}
-          <View style={styles.stats}>
-            {awayTeam.winRate !== undefined && (
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Trasferta:</Text>
-                <Text style={styles.statValue}>
-                  {formatWinRate(awayTeam.winRate)}
-                </Text>
-              </View>
-            )}
-
-            {/* Last 5 Away Results */}
-            {awayTeam.last5 && awayTeam.last5.length > 0 && (
-              <View style={styles.last5Container}>
-                {awayTeam.last5.slice(0, 5).map((result, index) => {
-                  const formatted = formatLastResult(result);
-                  return (
-                    <View
-                      key={index}
-                      style={[
-                        styles.resultBadge,
-                        { backgroundColor: formatted.color },
-                      ]}
-                    >
-                      <Text style={styles.resultText}>{formatted.text}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-    </View>
+    <GestureDetector gesture={panGesture}>
+      {CardContent}
+    </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  card: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: spacing.lg,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 15,
     elevation: 5,
+    maxWidth: 384,
+    width: '100%',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  kickoffTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    marginBottom: 4,
-  },
-  stadium: {
-    fontSize: 14,
-    color: colors.text,
-    marginBottom: 2,
-  },
-  venue: {
-    fontSize: 12,
-    color: colors.textSecondary,
+  previewCard: {
+    opacity: 0.6,
   },
   teamsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
-  },
-  teamSection: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  teamHeader: {
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  teamLogo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: spacing.sm,
-  },
-  logoFallback: {
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoFallbackText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  teamInfo: {
-    alignItems: 'center',
-  },
-  teamName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  position: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  stats: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginRight: 4,
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  last5Container: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  resultBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  resultText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  divider: {
-    width: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vsText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.textSecondary,
+    marginBottom: 24,
   },
 });

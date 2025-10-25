@@ -137,6 +137,7 @@ export default function GiocaScreen() {
         totalFixtures={totalFixtures}
         completedPredictions={completedPredictions}
         mode={mode}
+        fixtures={fixtures}
         onReset={handleReset}
         loading={loading}
       />
@@ -156,14 +157,28 @@ export default function GiocaScreen() {
               </View>
             )}
 
-            {/* Swipeable Card with Match Info */}
-            <SwipeableCard
-              onSwipe={handlePrediction}
-              enabled={canSwipe}
-              index={currentIndex}
-            >
-              <MatchCard matchCard={currentFixture} />
-            </SwipeableCard>
+            {/* Card Stack Container */}
+            <View style={styles.cardStack}>
+              {/* Preview Card (Next Card) - Behind */}
+              {fixtures[currentIndex + 1] && (
+                <View style={styles.previewCard}>
+                  <View style={styles.previewCardInner}>
+                    <MatchCard matchCard={fixtures[currentIndex + 1]} />
+                  </View>
+                </View>
+              )}
+
+              {/* Current Card - On Top */}
+              <View style={styles.currentCard}>
+                <SwipeableCard
+                  onSwipe={handlePrediction}
+                  enabled={canSwipe}
+                  index={currentIndex}
+                >
+                  <MatchCard matchCard={currentFixture} />
+                </SwipeableCard>
+              </View>
+            </View>
 
             {/* Navigation Buttons */}
             <View style={styles.navigationRow}>
@@ -229,8 +244,42 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: spacing.md,
+    position: 'relative',
+  },
+  cardStack: {
+    position: 'relative',
+    width: '100%',
+    height: '70%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewCard: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  previewCardInner: {
+    width: '100%',
+    maxWidth: 384,
+    transform: [{ scale: 0.95 }],
+    opacity: 0.6,
+  },
+  currentCard: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 30,
   },
   loadingText: {
     marginTop: spacing.md,

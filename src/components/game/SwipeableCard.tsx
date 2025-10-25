@@ -46,20 +46,15 @@ export default function SwipeableCard({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
   card: {
-    width: SCREEN_WIDTH * 0.9,
-    maxWidth: 400,
-    height: SCREEN_HEIGHT * 0.6,
+    width: '100%',
+    maxWidth: 384,
+    minHeight: 400,
     borderRadius: 16,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    backgroundColor: 'transparent',
   },
 });
