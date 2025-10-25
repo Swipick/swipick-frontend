@@ -13,7 +13,7 @@ class ApiClient {
   constructor() {
     this.instance = axios.create({
       baseURL: ENV.BFF_API_URL,
-      timeout: 30000,
+      timeout: 180000, // 3 minutes (Railway backend can be slow to wake up)
       headers: {
         'Content-Type': 'application/json',
       },

@@ -54,23 +54,24 @@ export enum FirebaseAuthError {
   TOO_MANY_REQUESTS = 'auth/too-many-requests',
 }
 
-// User-friendly error messages
+// User-friendly error messages (Italian)
 export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   [FirebaseAuthError.EMAIL_ALREADY_IN_USE]:
-    'This email is already registered. Please login instead.',
+    'Questa email è già registrata. Effettua il login.',
   [FirebaseAuthError.INVALID_EMAIL]:
-    'Invalid email address. Please check and try again.',
+    'Formato email non valido.',
   [FirebaseAuthError.USER_DISABLED]:
-    'This account has been disabled. Please contact support.',
+    'Questo account è stato disabilitato.',
   [FirebaseAuthError.USER_NOT_FOUND]:
-    'No account found with this email. Please register first.',
+    'Utente non trovato. Verifica l\'indirizzo email.',
   [FirebaseAuthError.WRONG_PASSWORD]:
-    'Incorrect password. Please try again.',
+    'Password errata. Riprova.',
   [FirebaseAuthError.WEAK_PASSWORD]:
-    'Password is too weak. Please use at least 6 characters.',
+    'Password troppo debole. Usa almeno 6 caratteri.',
   [FirebaseAuthError.NETWORK_REQUEST_FAILED]:
-    'Network error. Please check your internet connection.',
+    'Errore di rete. Controlla la connessione.',
   [FirebaseAuthError.TOO_MANY_REQUESTS]:
-    'Too many attempts. Please try again later.',
-  default: 'An error occurred. Please try again.',
+    'Troppi tentativi falliti. Riprova più tardi.',
+  'auth/invalid-credential': 'Credenziali non valide. Verifica email e password.',
+  default: 'Errore durante l\'accesso. Riprova.',
 };

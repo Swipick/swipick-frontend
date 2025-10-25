@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Alert,
-  Share,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { spacing } from '../../theme';
@@ -32,8 +28,6 @@ export default function GameHeader({
   completedPredictions,
   mode,
   fixtures,
-  onReset,
-  loading = false,
   sticky = false,
   onHeightChange,
 }: GameHeaderProps) {
@@ -52,11 +46,11 @@ export default function GameHeader({
 
     const formatDate = (date: Date) => {
       const day = date.getDate();
-      const month = date.toLocaleDateString('it-IT', { month: 'short' });
-      return `${day} ${month}`;
+      const month = date.getMonth() + 1; // Get month as number
+      return `${day}/${month}`;
     };
 
-    return `${formatDate(firstDate)} - ${formatDate(lastDate)}`;
+    return `dal ${formatDate(firstDate)} al ${formatDate(lastDate)}`;
   };
 
   // Find next match kickoff time
@@ -70,46 +64,6 @@ export default function GameHeader({
       .sort((a, b) => a.getTime() - b.getTime());
 
     return futureDates.length > 0 ? futureDates[0] : null;
-  };
-
-  const handleReset = () => {
-    Alert.alert(
-      'Ricomincia',
-      'Vuoi eliminare tutte le previsioni e ricominciare?',
-      [
-        {
-          text: 'Annulla',
-          style: 'cancel',
-        },
-        {
-          text: 'Ricomincia',
-          style: 'destructive',
-          onPress: onReset,
-        },
-      ]
-    );
-  };
-
-  const handleShare = async () => {
-    try {
-      const message = `Sto giocando a Swipick! 🏆\n\nSettimana ${currentWeek}: ${completedPredictions}/${totalFixtures} previsioni completate\n\nScarica l'app e sfidami!`;
-
-      const result = await Share.share(
-        {
-          message,
-          title: 'Swipick - Previsioni Serie A',
-        },
-        {
-          dialogTitle: 'Condividi le tue previsioni',
-        }
-      );
-
-      if (result.action === Share.sharedAction) {
-        console.log('[GameHeader] Predictions shared successfully');
-      }
-    } catch (error) {
-      console.error('[GameHeader] Error sharing:', error);
-    }
   };
 
   const nextMatchDate = getNextMatchDate();
@@ -138,25 +92,14 @@ export default function GameHeader({
 
       {/* Week Header */}
       <View style={styles.weekHeader}>
-        <View style={styles.weekInfo}>
-          <Text style={styles.weekTitle}>Settimana {currentWeek}</Text>
-          {weekDateRange && (
-            <Text style={styles.weekDateRange}>{weekDateRange}</Text>
-          )}
-        </View>
-        <TouchableOpacity
-          onPress={handleShare}
-          style={styles.shareButton}
-          disabled={loading}
-        >
-          <Text style={styles.shareIcon}>↗</Text>
-        </TouchableOpacity>
+        <Text style={styles.weekTitle}>
+          Giornata {currentWeek}  {weekDateRange}
+        </Text>
       </View>
 
       {/* Countdown Timer */}
       {nextMatchDate && (
         <View style={styles.countdownContainer}>
-          <Text style={styles.countdownLabel}>Tempo rimanente:</Text>
           <CountdownTimer targetDate={nextMatchDate} />
         </View>
       )}
@@ -169,11 +112,6 @@ export default function GameHeader({
           height={24}
         />
       </View>
-
-      {/* Progress Text */}
-      <Text style={styles.progressLabel}>
-        {completedPredictions} di {totalFixtures} previsioni completate
-      </Text>
     </LinearGradient>
   );
 }
@@ -183,6 +121,8 @@ const styles = StyleSheet.create({
     paddingTop: 60, // Account for status bar
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   sticky: {
     position: 'absolute',
@@ -212,32 +152,26 @@ const styles = StyleSheet.create({
   },
   weekHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: spacing.md,
-  },
-  weekInfo: {
-    flex: 1,
+    position: 'relative',
   },
   weekTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '400',
     color: '#fff',
-    marginBottom: 4,
-  },
-  weekDateRange: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
+    textAlign: 'center',
   },
   shareButton: {
+    position: 'absolute',
+    right: 0,
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: spacing.md,
   },
   shareIcon: {
     fontSize: 20,
@@ -247,21 +181,8 @@ const styles = StyleSheet.create({
   countdownContainer: {
     alignItems: 'center',
     marginBottom: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  countdownLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 8,
-    fontWeight: '500',
   },
   progressContainer: {
-    marginBottom: spacing.sm,
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-    fontWeight: '500',
+    marginBottom: 0,
   },
 });

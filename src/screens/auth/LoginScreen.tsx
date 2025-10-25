@@ -1,273 +1,359 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, LoginFormData } from '../../utils/validation';
-import { useAuthStore } from '../../store/stores/useAuthStore';
-import { colors } from '../../theme';
+  Image,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { authService } from "../../services/auth/authService";
+import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
 
 type LoginScreenProps = {
-  onNavigate: (screen: 'Welcome' | 'Login' | 'Register') => void;
+  onNavigate: (
+    screen: "Landing" | "Welcome" | "Login" | "Register" | "EmailVerification" | "ModeSelection",
+    params?: any
+  ) => void;
 };
 
 export default function LoginScreen({ onNavigate }: LoginScreenProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, loading, error, clearError } = useAuthStore();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
+  const handleLogin = async () => {
+    // Validate inputs
+    if (!email || !password) {
+      Alert.alert("Errore", "Inserisci email e password");
+      return;
+    }
 
-  const onSubmit = async (data: LoginFormData) => {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Errore", "Formato email non valido");
+      return;
+    }
+
     try {
-      clearError();
-      await signIn(data);
-      // Navigation to main app happens automatically via AppNavigator
+      setLoading(true);
+      console.log("[LoginScreen] Attempting login:", { email });
+
+      // Sign in with Firebase
+      const user = await authService.signIn({
+        email: email.trim().toLowerCase(),
+        password: password,
+      });
+
+      console.log("[LoginScreen] Login successful:", {
+        uid: user.uid,
+        emailVerified: user.emailVerified,
+      });
+
+      // Check email verification status
+      if (!user.emailVerified) {
+        console.log("[LoginScreen] Email not verified, showing verification prompt");
+
+        Alert.alert(
+          "Email Non Verificata",
+          "Devi verificare la tua email prima di accedere. Controlla la tua casella di posta.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Navigate to email verification screen
+                onNavigate("EmailVerification", { email: email.trim().toLowerCase() });
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // User is verified, navigate to mode selection
+      console.log("[LoginScreen] Email verified, navigating to mode selection");
+      onNavigate("ModeSelection");
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      console.error("[LoginScreen] Login error:", error);
+
+      // Get user-friendly error message
+      const errorMessage = AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default;
+
+      Alert.alert("Errore di Accesso", errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      // TODO: Implement Google login
+      console.log("[LoginScreen] Google login initiated");
+      Alert.alert("Info", "Google Sign-In non ancora implementato");
+    } catch (error: any) {
+      Alert.alert("Errore", "Accesso con Google non riuscito");
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    // Prompt user for email
+    Alert.prompt(
+      "Recupera Password",
+      "Inserisci il tuo indirizzo email per ricevere il link di reset password",
+      [
+        {
+          text: "Annulla",
+          style: "cancel",
+        },
+        {
+          text: "Invia",
+          onPress: async (emailInput?: string) => {
+            if (!emailInput || !emailInput.trim()) {
+              Alert.alert("Errore", "Inserisci un indirizzo email valido");
+              return;
+            }
+
+            try {
+              setLoading(true);
+              await authService.resetPassword(emailInput.trim().toLowerCase());
+
+              Alert.alert(
+                "Email Inviata",
+                "Ti abbiamo inviato un'email con le istruzioni per reimpostare la password. Controlla anche la cartella spam.",
+                [{ text: "OK" }]
+              );
+            } catch (error: any) {
+              Alert.alert(
+                "Errore",
+                error.message || "Impossibile inviare l'email. Riprova più tardi."
+              );
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+      "plain-text",
+      email || ""
+    );
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => onNavigate('Welcome')}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+        {/* Swipick Logo/Title */}
+        <Text style={styles.title}>swipick</Text>
+
+        {/* Email Input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#9ca3af"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+          />
         </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="your.email@example.com"
-                  placeholderTextColor="#9ca3af"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              )}
+        {/* Password Input */}
+        <View style={styles.inputContainer}>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#9ca3af"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
             />
-            {errors.email && (
-              <Text style={styles.errorText}>{errors.email.message}</Text>
-            )}
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <Controller
-              control={control}
-              name="password"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <View>
-                  <TextInput
-                    style={[styles.input, errors.password && styles.inputError]}
-                    placeholder="Enter your password"
-                    placeholderTextColor="#9ca3af"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    editable={!loading}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Text style={styles.eyeText}>
-                      {showPassword ? '👁️' : '👁️‍🗨️'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-            {errors.password && (
-              <Text style={styles.errorText}>{errors.password.message}</Text>
-            )}
-          </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSubmit(onSubmit)}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-
-          {/* Register Link */}
-          <View style={styles.registerLink}>
-            <Text style={styles.registerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => onNavigate('Register')}>
-              <Text style={styles.registerTextBold}>Register</Text>
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Text style={styles.eyeText}>{showPassword ? "👁️" : "👁️‍🗨️"}</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Login Button */}
+        <TouchableOpacity
+          style={[styles.loginButton, loading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.loginButtonText}>Accedi</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <Text style={styles.divider}>oppure</Text>
+
+        {/* Google Button */}
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={handleGoogleLogin}
+          disabled={loading}
+        >
+          <Image
+            source={require("../../assets/images/icons/google-logo-icon.png")}
+            style={styles.googleLogoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.googleButtonText}>Accedi con Google</Text>
+        </TouchableOpacity>
+
+        {/* Forgot Password */}
+        <View style={styles.forgotPasswordContainer}>
+          <Text style={styles.forgotPasswordText}>
+            Hai dimenticato la password?
+          </Text>
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={handleForgotPassword}
+            disabled={loading}
+          >
+            <Text style={styles.forgotPasswordButtonText}>
+              Recupera password
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#FFFFFF",
   },
-  scrollContent: {
+  scrollContainer: {
     flexGrow: 1,
     padding: 24,
-  },
-  header: {
-    marginTop: 40,
-    marginBottom: 32,
-  },
-  backButton: {
-    marginBottom: 16,
-  },
-  backText: {
-    fontSize: 16,
-    color: colors.primary,
-    fontWeight: '600',
+    paddingTop: 60,
+    alignItems: "center",
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  form: {
-    flex: 1,
+    fontSize: 38,
+    fontWeight: "bold",
+    color: "#5742a4",
+    marginBottom: 60,
+    letterSpacing: -1,
   },
   inputContainer: {
-    marginBottom: 20,
+    width: "100%",
+    marginBottom: 16,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+  passwordContainer: {
+    position: "relative",
+    width: "100%",
   },
   input: {
+    width: "100%",
+    height: 56,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#E5E7EB",
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
     fontSize: 16,
-    color: colors.text,
-    backgroundColor: '#fff',
-  },
-  inputError: {
-    borderColor: colors.error,
-  },
-  errorText: {
-    color: colors.error,
-    fontSize: 12,
-    marginTop: 4,
+    color: "#111827",
+    backgroundColor: "#FFFFFF",
   },
   eyeIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: 12,
-    top: 12,
+    top: 16,
+    padding: 4,
   },
   eyeText: {
     fontSize: 20,
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
+  loginButton: {
+    width: "100%",
+    height: 56,
+    backgroundColor: "#6f49f7",
     borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
-  buttonText: {
-    color: '#fff',
+  loginButtonText: {
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-  registerLink: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  registerText: {
-    color: colors.textSecondary,
+  divider: {
     fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginVertical: 20,
   },
-  registerTextBold: {
-    color: colors.primary,
+  googleButton: {
+    width: "100%",
+    height: 56,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+  },
+  googleLogoImage: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
+  googleButtonText: {
+    color: "#374151",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  forgotPasswordContainer: {
+    alignItems: "center",
+    marginTop: 186,
+    width: "100%",
+  },
+  forgotPasswordText: {
     fontSize: 14,
-    fontWeight: '600',
+    color: "#6B7280",
+    marginBottom: 12,
+  },
+  forgotPasswordButton: {
+    width: "100%",
+    height: 56,
+    backgroundColor: "rgba(111, 73, 247, 0.1)",
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  forgotPasswordButtonText: {
+    fontSize: 14,
+    color: "#6f49f7",
+    fontWeight: "600",
   },
 });

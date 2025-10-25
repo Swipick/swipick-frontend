@@ -50,20 +50,17 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
         <Text style={styles.timeValue}>{formatUnit(timeLeft.days)}</Text>
         <Text style={styles.timeLabel}>giorni</Text>
       </View>
-      <Text style={styles.separator}>:</Text>
       <View style={styles.timeUnit}>
         <Text style={styles.timeValue}>{formatUnit(timeLeft.hours)}</Text>
         <Text style={styles.timeLabel}>ore</Text>
       </View>
-      <Text style={styles.separator}>:</Text>
       <View style={styles.timeUnit}>
         <Text style={styles.timeValue}>{formatUnit(timeLeft.minutes)}</Text>
-        <Text style={styles.timeLabel}>min</Text>
+        <Text style={styles.timeLabel}>minuti</Text>
       </View>
-      <Text style={styles.separator}>:</Text>
       <View style={styles.timeUnit}>
         <Text style={styles.timeValue}>{formatUnit(timeLeft.seconds)}</Text>
-        <Text style={styles.timeLabel}>sec</Text>
+        <Text style={styles.timeLabel}>secondi</Text>
       </View>
     </View>
   );
@@ -77,23 +74,18 @@ const styles = StyleSheet.create({
   },
   timeUnit: {
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: 8,
   },
   timeValue: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    letterSpacing: 1,
+    letterSpacing: 0,
   },
   timeLabel: {
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 2,
-  },
-  separator: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginHorizontal: 2,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 4,
+    fontWeight: '400',
   },
 });

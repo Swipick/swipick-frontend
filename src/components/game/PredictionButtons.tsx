@@ -1,157 +1,196 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { PredictionChoice } from '../../types/game.types';
-import { colors } from '../../theme';
+import React from "react";
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Platform,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { PredictionChoice } from "../../types/game.types";
 
 interface PredictionButtonsProps {
-  onPredict: (choice: PredictionChoice) => void;
+  currentPrediction?: "1" | "X" | "2";
   disabled?: boolean;
+  isSkipAnimating?: boolean;
+  onAnimateAndCommit: (direction: "up" | "down" | "left" | "right") => void;
 }
 
 /**
- * Diamond-shaped prediction buttons
- * Layout: 1 (left), X (top), 2 (right), Skip (bottom)
+ * Diamond-layout prediction buttons matching PWA design
+ *
+ * Layout:
+ *       [X]       ← Top (Draw)
+ *  [1]     [2]    ← Middle (Home | Away)
+ *     [skip]      ← Bottom (Skip)
  */
 export default function PredictionButtons({
-  onPredict,
+  currentPrediction,
   disabled = false,
+  isSkipAnimating = false,
+  onAnimateAndCommit,
 }: PredictionButtonsProps) {
+  const isPredictionDisabled = disabled || isSkipAnimating;
+  const isSkipDisabled = disabled;
+
   return (
     <View style={styles.container}>
-      {/* Left Button - Home Win (1) */}
-      <TouchableOpacity
-        style={[styles.button, styles.buttonLeft, disabled && styles.buttonDisabled]}
-        onPress={() => onPredict('1')}
-        disabled={disabled}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.buttonText}>1</Text>
-        <Text style={styles.buttonLabel}>Casa</Text>
-      </TouchableOpacity>
+      {/* X Button - Top Center */}
+      <View style={styles.topRow}>
+        <TouchableOpacity
+          onPress={() => onAnimateAndCommit("up")}
+          disabled={isPredictionDisabled}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={["#7956f3", "#5742a4"]}
+            start={{ x: 1, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.predictionButton,
+              currentPrediction === "X" && styles.selectedButton,
+              isPredictionDisabled && styles.disabledButton,
+            ]}
+          >
+            <Text style={styles.predictionButtonText}>X</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
 
-      {/* Top Button - Draw (X) */}
-      <TouchableOpacity
-        style={[styles.button, styles.buttonTop, disabled && styles.buttonDisabled]}
-        onPress={() => onPredict('X')}
-        disabled={disabled}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.buttonText}>X</Text>
-        <Text style={styles.buttonLabel}>Pareggio</Text>
-      </TouchableOpacity>
+      {/* 1 and 2 Buttons - Middle Row */}
+      <View style={styles.middleRow}>
+        <TouchableOpacity
+          onPress={() => onAnimateAndCommit("left")}
+          disabled={isPredictionDisabled}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={["#7956f3", "#5742a4"]}
+            start={{ x: 1, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.predictionButton,
+              currentPrediction === "1" && styles.selectedButton,
+              isPredictionDisabled && styles.disabledButton,
+            ]}
+          >
+            <Text style={styles.predictionButtonText}>1</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-      {/* Right Button - Away Win (2) */}
-      <TouchableOpacity
-        style={[styles.button, styles.buttonRight, disabled && styles.buttonDisabled]}
-        onPress={() => onPredict('2')}
-        disabled={disabled}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.buttonText}>2</Text>
-        <Text style={styles.buttonLabel}>Trasferta</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onAnimateAndCommit("right")}
+          disabled={isPredictionDisabled}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={["#7956f3", "#5742a4"]}
+            start={{ x: 1, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.predictionButton,
+              currentPrediction === "2" && styles.selectedButton,
+              isPredictionDisabled && styles.disabledButton,
+            ]}
+          >
+            <Text style={styles.predictionButtonText}>2</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
 
-      {/* Bottom Button - Skip */}
-      <TouchableOpacity
-        style={[
-          styles.button,
-          styles.buttonBottom,
-          styles.buttonSkip,
-          disabled && styles.buttonDisabled,
-        ]}
-        onPress={() => onPredict('SKIP')}
-        disabled={disabled}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.buttonText, styles.skipText]}>↓</Text>
-        <Text style={[styles.buttonLabel, styles.skipLabel]}>Salta</Text>
-      </TouchableOpacity>
-
-      {/* Center Circle - Visual only */}
-      <View style={styles.centerCircle} />
+      {/* Skip Button - Bottom Center */}
+      <View style={styles.bottomRow}>
+        <TouchableOpacity
+          onPress={() => onAnimateAndCommit("down")}
+          disabled={isSkipDisabled}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[styles.skipButton, isSkipDisabled && styles.disabledButton]}
+          >
+            <Text style={styles.skipButtonText}>skip</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
-const BUTTON_SIZE = 70;
-const CENTER_OFFSET = 45;
-
 const styles = StyleSheet.create({
   container: {
-    width: 200,
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+    alignItems: "center",
   },
-  button: {
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-    borderRadius: BUTTON_SIZE / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+  topRow: {
+    alignItems: "center",
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  middleRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 155,
   },
-  buttonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+  bottomRow: {
+    alignItems: "center",
+    marginTop: -12, // Pull up slightl
   },
-  buttonLabel: {
-    fontSize: 10,
-    color: '#fff',
-    marginTop: 2,
-    fontWeight: '600',
+  predictionButton: {
+    width: 80,
+    height: 45,
+    borderRadius: 15, // Pill shape (half of height)
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
-  // Positions - Diamond layout
-  buttonLeft: {
-    left: 0,
-    top: '50%',
-    marginTop: -(BUTTON_SIZE / 2),
-    backgroundColor: colors.home, // Green
+  selectedButton: {
+    transform: [{ scale: 1.05 }],
   },
-  buttonTop: {
-    top: 0,
-    left: '50%',
-    marginLeft: -(BUTTON_SIZE / 2),
-    backgroundColor: colors.draw, // Gray
+  disabledButton: {
+    opacity: 0.6,
   },
-  buttonRight: {
-    right: 0,
-    top: '50%',
-    marginTop: -(BUTTON_SIZE / 2),
-    backgroundColor: colors.away, // Red
+  predictionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
   },
-  buttonBottom: {
-    bottom: 0,
-    left: '50%',
-    marginLeft: -(BUTTON_SIZE / 2),
+  skipButton: {
+    width: 80,
+    height: 45,
+    borderRadius: 15, // Pill shape (half of height)
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  buttonSkip: {
-    backgroundColor: colors.skip, // Yellow
-  },
-  skipText: {
-    fontSize: 28,
-    color: '#000',
-  },
-  skipLabel: {
-    color: '#000',
-  },
-  centerCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 2,
-    borderColor: colors.border,
-    position: 'absolute',
+  skipButtonText: {
+    color: "#3d2d73",
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
   },
 });

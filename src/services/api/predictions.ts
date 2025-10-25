@@ -27,6 +27,8 @@ export const predictionsApi = {
       return response.prediction;
     } catch (error: any) {
       console.error('[PredictionsAPI] Error creating prediction:', error);
+      console.error('[PredictionsAPI] Error response:', error.response?.data);
+      console.error('[PredictionsAPI] Error status:', error.response?.status);
       throw new Error('Failed to save prediction. Please try again.');
     }
   },

@@ -135,6 +135,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         mode,
       };
 
+      console.log('[GameStore] Sending prediction data:', JSON.stringify(predictionData, null, 2));
       await predictionsApi.createPrediction(predictionData);
 
       // Update local state

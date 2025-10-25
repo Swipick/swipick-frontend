@@ -37,14 +37,14 @@ export default function ProgressBar({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(122, 87, 246, 0.3)',
     position: 'absolute',
     left: 0,
     top: 0,
@@ -62,9 +62,6 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: '#52418d',
   },
 });
