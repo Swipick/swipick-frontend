@@ -1,32 +1,525 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Share,
+  Animated,
+  Image,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import ConfettiCannon from 'react-native-confetti-cannon';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../store/stores/useAuthStore';
+import { predictionsApi } from '../../services/api/predictions';
+import { fixturesApi } from '../../services/api/fixtures';
 import { colors, spacing } from '../../theme';
+import { PredictionChoice, WeeklyStats, FixtureWithResult } from '../../types/game.types';
+import { getTeamLogo } from '../../utils/logoMapper';
 
 type RisultatiScreenProps = {
   mode?: 'live' | 'test';
-  week?: number;
 };
 
-export default function RisultatiScreen({ mode = 'live', week }: RisultatiScreenProps) {
+interface MatchResult {
+  fixtureId: string;
+  home: { name: string; logo: any; score: number | null };
+  away: { name: string; logo: any; score: number | null };
+  userPrediction: PredictionChoice | null;
+  actualResult: '1' | 'X' | '2' | null;
+  isCorrect: boolean | null;
+  kickoff: string;
+  status: string;
+}
+
+export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps) {
+  const { user } = useAuthStore();
+  const [selectedWeek, setSelectedWeek] = useState<number>(7);
+  const [fixturesWithResults, setFixturesWithResults] = useState<FixtureWithResult[]>([]);
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyStats | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(false);
+  const confettiRef = useRef<ConfettiCannon>(null);
+
+  // Load fixtures and predictions for selected week
+  useEffect(() => {
+    loadWeekData();
+  }, [selectedWeek, user]);
+
+  const loadWeekData = async () => {
+    if (!user) return;
+
+    // Only show full loading on initial load
+    if (fixturesWithResults.length === 0) {
+      setLoading(true);
+    } else {
+      setContentLoading(true);
+    }
+
+    try {
+      console.log('[RisultatiScreen] Loading data for week', selectedWeek);
+
+      // Load fixtures with results for the week
+      const fixturesData = await fixturesApi.getFixturesWithResults(selectedWeek);
+      console.log('[RisultatiScreen] Fixtures with results loaded:', fixturesData.length);
+      setFixturesWithResults(fixturesData);
+
+      // Load user's predictions for the week
+      const stats = await predictionsApi.getWeeklyPredictions(
+        user.uid,
+        selectedWeek,
+        mode
+      );
+      console.log('[RisultatiScreen] Predictions loaded:', stats.predictions.length);
+      setWeeklyStats(stats);
+    } catch (error) {
+      console.error('[RisultatiScreen] Error loading data:', error);
+      Alert.alert('Errore', 'Impossibile caricare i risultati');
+    } finally {
+      setLoading(false);
+      setContentLoading(false);
+    }
+  };
+
+  // Calculate match results with predictions
+  const matchResults = useMemo((): MatchResult[] => {
+    if (!fixturesWithResults.length || !weeklyStats) return [];
+
+    return fixturesWithResults.map((fixture) => {
+      const prediction = weeklyStats.predictions.find(
+        (p) => p.fixtureId === fixture.id
+      );
+
+      // Use actual scores from backend
+      const homeScore = fixture.home_score;
+      const awayScore = fixture.away_score;
+      const actualResult = fixture.result;
+
+      // Check if prediction is correct
+      const isCorrect =
+        prediction && actualResult
+          ? prediction.choice === actualResult
+          : null;
+
+      return {
+        fixtureId: fixture.id,
+        home: {
+          name: fixture.home_team,
+          logo: getTeamLogo(null, fixture.home_team),
+          score: homeScore,
+        },
+        away: {
+          name: fixture.away_team,
+          logo: getTeamLogo(null, fixture.away_team),
+          score: awayScore,
+        },
+        userPrediction: prediction?.choice || null,
+        actualResult,
+        isCorrect,
+        kickoff: fixture.match_date,
+        status: fixture.status,
+      };
+    });
+  }, [fixturesWithResults, weeklyStats]);
+
+  // Calculate success percentage (only from revealed matches)
+  const meter = useMemo(() => {
+    if (matchResults.length === 0) return { revealed: 0, correct: 0, percent: 0 };
+
+    let revealedCount = 0;
+    let correctCount = 0;
+
+    for (const m of matchResults) {
+      if (!revealed[m.fixtureId]) continue;
+      revealedCount += 1;
+
+      if (m.isCorrect === true) correctCount += 1;
+    }
+
+    const percent = revealedCount > 0
+      ? Math.round((correctCount / revealedCount) * 100)
+      : 0;
+
+    return { revealed: revealedCount, correct: correctCount, percent };
+  }, [matchResults, revealed]);
+
+  // Calculate date range for week
+  const dateRange = useMemo(() => {
+    if (fixturesWithResults.length === 0) return 'dal 05/10 al 12/10';
+
+    const times = fixturesWithResults.map((m) => new Date(m.match_date).getTime());
+    const min = new Date(Math.min(...times));
+    const max = new Date(Math.max(...times));
+
+    const toIt = (d: Date) =>
+      d.toLocaleDateString('it-IT', { day: '2-digit', month: 'numeric' });
+
+    return `dal ${toIt(min)} al ${toIt(max)}`;
+  }, [fixturesWithResults]);
+
+  // Handle share
+  const handleShare = async () => {
+    try {
+      let message = `Ho indovinato il ${meter.percent}% delle partite della ${selectedWeek}ª giornata.`;
+
+      // TODO: Add percentile data from API
+      // if (percentileData?.totalPlayers > 0 && percentileData.percentile > 0) {
+      //   message += ` Sono nel ${percentileData.percentile}% dei migliori.`;
+      // }
+
+      message += `\nE tu?`;
+      message += `\n\nhttps://swipick-frontend-production.up.railway.app/risultati?mode=live`;
+
+      await Share.share({
+        title: `Giornata ${selectedWeek} — Swipick`,
+        message,
+      });
+    } catch (error) {
+      console.error('[RisultatiScreen] Share error:', error);
+    }
+  };
+
+  // Handle reveal with confetti
+  const handleReveal = (fixtureId: string) => {
+    const match = matchResults.find((m) => m.fixtureId === fixtureId);
+
+    // Check if match has finished
+    if (!match?.actualResult) {
+      Alert.alert(
+        'Il risultato non è ancora disponibile',
+        'La partita non è ancora terminata.'
+      );
+      return;
+    }
+
+    setRevealed((prev) => ({ ...prev, [fixtureId]: true }));
+
+    // Fire confetti if correct
+    setTimeout(() => {
+      if (match.isCorrect === true) {
+        confettiRef.current?.start();
+      }
+    }, 100);
+  };
+
+  const handlePreviousWeek = () => {
+    setSelectedWeek((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextWeek = () => {
+    setSelectedWeek((prev) => Math.min(38, prev + 1));
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Caricamento risultati...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Risultati</Text>
-          <Text style={styles.subtitle}>
-            {mode === 'live' ? 'Modalità Live' : 'Modalità Test'}
-            {week && ` • Giornata ${week}`}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        stickyHeaderIndices={[0]}
+      >
+        {/* Sticky Header with Frosted Glass */}
+        <View style={styles.stickyHeaderContainer}>
+          {/* Week Selector Header with Gradient */}
+          <LinearGradient
+            colors={['#554099', '#3d2d73']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.headerGradient}
+          >
+            {/* Week Navigation */}
+            <View style={styles.weekSelector}>
+              <TouchableOpacity
+                onPress={handlePreviousWeek}
+                disabled={selectedWeek === 1 || contentLoading}
+                style={styles.sideWeek}
+              >
+                <Text
+                  style={[
+                    styles.sideWeekText,
+                    { opacity: selectedWeek === 1 || contentLoading ? 0.1 : 0.3 },
+                  ]}
+                >
+                  Giornata {selectedWeek - 1}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.centerWeek}>
+                <Text style={styles.currentWeekTitle}>Giornata {selectedWeek}</Text>
+                <Text style={styles.dateRangeText}>{dateRange}</Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleNextWeek}
+                disabled={selectedWeek === 38 || contentLoading}
+                style={styles.sideWeek}
+              >
+                <Text
+                  style={[
+                    styles.sideWeekText,
+                    { opacity: selectedWeek === 38 || contentLoading ? 0.1 : 0.6 },
+                  ]}
+                >
+                  Giornata {selectedWeek + 1}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+
+          {/* Meter Container - Frosted Glass Background */}
+          <BlurView intensity={40} tint="light" style={styles.meterContainerWrapper}>
+            <View style={styles.meterContainer}>
+              <CircularMeter percent={meter.percent} />
+
+              {/* Share Button */}
+              <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+                <Ionicons name="share-outline" size={18} color="#fff" />
+                <Text style={styles.shareText}>Condividi risultato</Text>
+              </TouchableOpacity>
+            </View>
+          </BlurView>
+        </View>
+
+        {/* Match Results List */}
+        {contentLoading ? (
+          <View style={styles.contentLoadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <View style={styles.matchList}>
+            {matchResults.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  Nessuna predizione per questa settimana
+                </Text>
+              </View>
+            ) : (
+              matchResults.map((match) => (
+                <MatchCard
+                  key={match.fixtureId}
+                  match={match}
+                  isRevealed={revealed[match.fixtureId]}
+                  onReveal={() => handleReveal(match.fixtureId)}
+                />
+              ))
+            )}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Confetti Cannon */}
+      <ConfettiCannon
+        ref={confettiRef}
+        count={90}
+        origin={{ x: 0, y: 0 }}
+        colors={['#6366f1', '#ffffff']}
+        fadeOut
+        autoStart={false}
+      />
+    </View>
+  );
+}
+
+// Circular Meter Component with SVG
+function CircularMeter({ percent }: { percent: number }) {
+  const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+
+  // Calculate path for semi-circle arc
+  const radius = 84;
+  const strokeWidth = 16;
+  const centerX = 100;
+  const centerY = 102;
+
+  // Arc length: 164 units (semi-circle circumference)
+  const arcLength = 164;
+  const dashLength = (clamped / 100) * arcLength;
+  const gapLength = arcLength - dashLength;
+
+  return (
+    <View style={styles.meter}>
+      <Svg width={200} height={110} viewBox="0 0 200 110">
+        <Defs>
+          <SvgLinearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#c4b5fd" />
+            <Stop offset="100%" stopColor="#7c3aed" />
+          </SvgLinearGradient>
+        </Defs>
+
+        {/* Background arc - NO rounded caps */}
+        <Path
+          d="M 18 102 A 84 84 0 0 1 182 102"
+          stroke="#ece9f7"
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeLinecap="butt"
+        />
+
+        {/* Progress arc - only shown if > 0%, NO rounded caps */}
+        {clamped > 0 && (
+          <Path
+            d="M 18 102 A 84 84 0 0 1 182 102"
+            stroke="url(#meterGradient)"
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="butt"
+            strokeDasharray={`${dashLength} ${gapLength}`}
+          />
+        )}
+      </Svg>
+
+      {/* Percentage label */}
+      <Text style={styles.percentText}>{clamped}%</Text>
+    </View>
+  );
+}
+
+// Match Card Component
+function MatchCard({
+  match,
+  isRevealed,
+  onReveal,
+}: {
+  match: MatchResult;
+  isRevealed: boolean;
+  onReveal: () => void;
+}) {
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  const handleRevealPress = () => {
+    // If match not finished, shake the button
+    if (!match.actualResult || match.status !== 'FINISHED') {
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      ]).start();
+
+      Alert.alert('Partita non terminata', 'Il risultato non è ancora disponibile');
+      return;
+    }
+
+    onReveal();
+  };
+
+  return (
+    <View style={styles.matchCard}>
+      {/* Teams Section */}
+      <View style={styles.teamsColumn}>
+        {/* Home Team */}
+        <View style={styles.teamRow}>
+          {match.home.logo ? (
+            <Image source={match.home.logo} style={styles.teamLogoImage} resizeMode="contain" />
+          ) : (
+            <View style={styles.teamLogoFallback}>
+              <Text style={styles.teamLogoText}>
+                {match.home.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.teamName} numberOfLines={1}>
+            {match.home.name}
           </Text>
         </View>
 
-        <View style={styles.placeholderContainer}>
-          <Text style={styles.placeholderIcon}>🏆</Text>
-          <Text style={styles.placeholderTitle}>Risultati in arrivo</Text>
-          <Text style={styles.placeholderText}>
-            Qui vedrai i risultati delle partite e le classifiche
+        {/* Away Team */}
+        <View style={styles.teamRow}>
+          {match.away.logo ? (
+            <Image source={match.away.logo} style={styles.teamLogoImage} resizeMode="contain" />
+          ) : (
+            <View style={styles.teamLogoFallback}>
+              <Text style={styles.teamLogoText}>
+                {match.away.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.teamName} numberOfLines={1}>
+            {match.away.name}
           </Text>
         </View>
-      </ScrollView>
+      </View>
+
+      {/* Scores Section */}
+      <View style={styles.scoresColumn}>
+        <Text style={styles.score}>
+          {isRevealed
+            ? match.home.score !== null
+              ? match.home.score
+              : 'ND'
+            : '–'}
+        </Text>
+        <Text style={styles.score}>
+          {isRevealed
+            ? match.away.score !== null
+              ? match.away.score
+              : 'ND'
+            : '–'}
+        </Text>
+      </View>
+
+      {/* Reveal Button Section */}
+      <Animated.View
+        style={[styles.buttonColumn, { transform: [{ translateX: shakeAnim }] }]}
+      >
+        {!isRevealed ? (
+          <TouchableOpacity style={styles.revealButton} onPress={handleRevealPress}>
+            <Text style={styles.revealButtonText}>MOSTRA</Text>
+            <Text style={styles.revealButtonText}>RISULTATO</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.finishedButton}>
+            <Text style={styles.finishedButtonText}>FINE</Text>
+            <Text style={styles.finishedButtonText}>PARTITA</Text>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Prediction Badges Section */}
+      <View style={styles.badgesColumn}>
+        {(['1', 'X', '2'] as const).map((choice) => {
+          const isUserChoice = match.userPrediction === choice;
+          const isCorrectChoice = isRevealed && isUserChoice && match.isCorrect === true;
+          const isWrongChoice = isRevealed && isUserChoice && match.isCorrect === false;
+
+          return (
+            <View
+              key={choice}
+              style={[
+                styles.badge,
+                !isUserChoice && styles.badgeDefault,
+                isUserChoice && !isRevealed && styles.badgeSelected,
+                isCorrectChoice && styles.badgeCorrect,
+                isWrongChoice && styles.badgeWrong,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.badgeText,
+                  !isUserChoice && styles.badgeTextDefault,
+                  isUserChoice && !isRevealed && styles.badgeTextSelected,
+                  (isCorrectChoice || isWrongChoice) && styles.badgeTextResult,
+                ]}
+              >
+                {choice}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -34,47 +527,278 @@ export default function RisultatiScreen({ mode = 'live', week }: RisultatiScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: '#F9FAFB',
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: spacing.lg,
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
-  header: {
-    marginBottom: spacing.xl,
-    paddingTop: 60,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  placeholderContainer: {
+  centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
   },
-  placeholderIcon: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    color: colors.textSecondary,
   },
-  placeholderTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
+  contentLoadingContainer: {
+    padding: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 300,
   },
-  placeholderText: {
+
+  // Sticky Header - Frosted Glass Container
+  stickyHeaderContainer: {
+    backgroundColor: 'transparent', // Allow blur to show through
+    zIndex: 30, // Above scrollable content
+    paddingBottom: 8, // pb-2
+  },
+  headerGradient: {
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 20, // Extend to overlap with blur
+    shadowColor: '#554099',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 1, // Layer above blur
+  },
+  meterContainerWrapper: {
+    paddingHorizontal: 16, // px-4
+    paddingTop: 0, // No top padding
+    paddingBottom: 8, // pb-2
+    marginTop: -20, // Move up by 20px to overlap header
+    overflow: 'hidden', // Required for BlurView
+  },
+  weekSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    minHeight: 60,
+  },
+  sideWeek: {
+    flex: 1,
+  },
+  sideWeekText: {
     fontSize: 14,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  centerWeek: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  currentWeekTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  dateRangeText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 8,
+  },
+
+  // Success Meter
+  meterContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  meter: {
+    width: 200,
+    height: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  percentText: {
+    position: 'absolute',
+    top: '58%',
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+
+  // Share Button
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#312e81',
+    paddingHorizontal: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    width: 200,
+    justifyContent: 'center',
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  shareText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Match List
+  matchList: {
+    padding: 16,
+    gap: 12,
+  },
+  emptyContainer: {
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: spacing.xl,
+  },
+
+  // Match Card
+  matchCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    gap: 12,
+  },
+
+  // Teams Column
+  teamsColumn: {
+    flex: 1,
+    gap: 12,
+  },
+  teamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    height: 56,
+  },
+  teamLogoImage: {
+    width: 48,
+    height: 48,
+  },
+  teamLogoFallback: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#f9fafb',
+    borderRadius: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamLogoText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#6366f1',
+  },
+  teamName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+  },
+
+  // Scores Column
+  scoresColumn: {
+    gap: 12,
+    minWidth: 30,
+    alignItems: 'center',
+  },
+  score: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000',
+    height: 56,
+    lineHeight: 56,
+    textAlign: 'center',
+    minWidth: 16,
+  },
+
+  // Button Column
+  buttonColumn: {
+    minWidth: 72,
+  },
+  revealButton: {
+    backgroundColor: 'rgba(99, 102, 241, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  revealButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#fff',
+    lineHeight: 14,
+  },
+  finishedButton: {
+    backgroundColor: '#e5e7eb',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  finishedButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#374151',
+    lineHeight: 14,
+  },
+
+  // Prediction Badges
+  badgesColumn: {
+    gap: 8,
+  },
+  badge: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeDefault: {
+    backgroundColor: '#f3f4f6',
+  },
+  badgeSelected: {
+    backgroundColor: '#e0e7ff',
+    borderWidth: 2,
+    borderColor: '#818cf8',
+  },
+  badgeCorrect: {
+    backgroundColor: '#ccffb3',
+  },
+  badgeWrong: {
+    backgroundColor: '#ffb3b3',
+  },
+  badgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  badgeTextDefault: {
+    color: '#374151',
+  },
+  badgeTextSelected: {
+    color: '#4338ca',
+  },
+  badgeTextResult: {
+    color: '#000',
   },
 });

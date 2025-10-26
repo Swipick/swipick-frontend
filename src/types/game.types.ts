@@ -52,6 +52,24 @@ export interface MatchCard {
   };
 }
 
+export interface FixtureWithResult {
+  id: string;
+  home_team: string;
+  away_team: string;
+  match_date: string; // ISO date
+  stadium: string;
+  week: number;
+  result: '1' | 'X' | '2' | null;
+  home_score: number | null;
+  away_score: number | null;
+  status: 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED' | 'CANCELLED';
+  external_api_id: string;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Prediction {
   id?: string;
   userId: string;

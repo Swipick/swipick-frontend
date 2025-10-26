@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { FixturesResponse, MatchCard } from "../../types/game.types";
+import { FixturesResponse, MatchCard, FixtureWithResult } from "../../types/game.types";
 import { ENDPOINTS } from "../../config/api";
 
 /**
@@ -56,6 +56,23 @@ export const fixturesApi = {
     } catch (error: any) {
       console.error("[FixturesAPI] Error fetching fixture:", error);
       return null;
+    }
+  },
+
+  /**
+   * Get fixtures with results for a specific week
+   * This endpoint includes match scores and status
+   */
+  getFixturesWithResults: async (week: number): Promise<FixtureWithResult[]> => {
+    try {
+      const response = await apiClient.get<FixtureWithResult[]>(
+        ENDPOINTS.FIXTURES.BY_WEEK(week)
+      );
+      console.log(`[FixturesAPI] Loaded ${response.length} fixtures with results for week ${week}`);
+      return response;
+    } catch (error: any) {
+      console.error("[FixturesAPI] Error fetching fixtures with results:", error);
+      throw new Error("Failed to load fixtures with results. Please try again.");
     }
   },
 };
