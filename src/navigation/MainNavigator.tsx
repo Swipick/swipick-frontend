@@ -1,42 +1,55 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from './types';
-
-// Placeholder screens - to be implemented
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import BottomNav from '../components/navigation/BottomNav';
 import GiocaScreen from '../screens/game/GiocaScreen';
 import RisultatiScreen from '../screens/results/RisultatiScreen';
 import ProfiloScreen from '../screens/profile/ProfiloScreen';
-
-const Tab = createBottomTabNavigator<MainTabParamList>();
+import { useGameStore } from '../store/stores/useGameStore';
 
 export default function MainNavigator() {
+  const [activeTab, setActiveTab] = useState<'gioca' | 'risultati' | 'profilo'>('gioca');
+  const { currentWeek, mode } = useGameStore();
+
+  const renderScreen = () => {
+    switch (activeTab) {
+      case 'risultati':
+        return <RisultatiScreen mode={mode} week={currentWeek} />;
+      case 'gioca':
+        return <GiocaScreen />;
+      case 'profilo':
+        return <ProfiloScreen onLogout={() => {
+          // Logout handled by ProfiloScreen
+        }} />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: '#9ca3af',
-        tabBarStyle: {
-          borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 60,
-        },
-      }}
-    >
-      <Tab.Screen
-        name="Gioca"
-        component={GiocaScreen}
+    <View style={styles.container}>
+      {/* Screen Content */}
+      <View style={styles.screenContainer}>
+        {renderScreen()}
+      </View>
+
+      {/* Bottom Navigation */}
+      <BottomNav
+        currentMode={mode}
+        selectedWeek={currentWeek}
+        onNavigateToResults={() => setActiveTab('risultati')}
+        onNavigateToGioca={() => setActiveTab('gioca')}
+        onNavigateToProfile={() => setActiveTab('profilo')}
+        activeTab={activeTab}
       />
-      <Tab.Screen
-        name="Risultati"
-        component={RisultatiScreen}
-      />
-      <Tab.Screen
-        name="Profilo"
-        component={ProfiloScreen}
-      />
-    </Tab.Navigator>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  screenContainer: {
+    flex: 1,
+  },
+});

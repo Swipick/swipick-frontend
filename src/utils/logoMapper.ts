@@ -35,16 +35,51 @@ const teamLogos: Record<string, any> = {
   '/teams/UsCremoneselogo.png': require('../assets/teams/UsCremoneselogo.png'),
 };
 
+// Team name to logo path mapping (fallback for when API returns null)
+const teamNameToLogo: Record<string, string> = {
+  'AC Milan': '/teams/AcMilanLogo.png',
+  'AS Roma': '/teams/AsRomaLogo.png',
+  'Roma': '/teams/AsRomaLogo.png',
+  'Inter': '/teams/FcInternazionaleMilano.png',
+  'Juventus': '/teams/JuventusFcLogo.png',
+  'Napoli': '/teams/NapolLogo.png',
+  'Lazio': '/teams/StemmaLazioCentenarioLogo.png',
+  'Atalanta': '/teams/AtalantaBcLogo.png',
+  'Fiorentina': '/teams/AcfFiorentinaLogo.png',
+  'Bologna': '/teams/LogobolognaLogo.png',
+  'Torino': '/teams/TorinoFcLogo.png',
+  'Udinese': '/teams/UdineseLogo.png',
+  'Sassuolo': '/teams/SassuoloLogo.png',
+  'Verona': '/teams/HellasVeronaFcLogo.png',
+  'Genoa': '/teams/GenoaCfcLogo.png',
+  'Cagliari': '/teams/CagliariCalcioLogo.png',
+  'Lecce': '/teams/LecceLogo.png',
+  'Monza': '/teams/AcMonzaLogo.png',
+  'Empoli': '/teams/EmpolFcLogo.png',
+  'Como': '/teams/ComoCalcioLogo.png',
+  'Parma': '/teams/ParmaLogo.png',
+  'Pisa': '/teams/PisaCalcioLogo.png',
+};
+
 /**
- * Get local team logo from backend path
+ * Get local team logo from backend path or team name
  * @param logoPath - Backend logo path (e.g., "/teams/PisaLogo.png")
+ * @param teamName - Team name as fallback (e.g., "AC Milan")
  * @returns Local require() result or null if not found
  */
-export const getTeamLogo = (logoPath: string | null): any => {
-  if (!logoPath) return null;
+export const getTeamLogo = (logoPath: string | null, teamName?: string): any => {
+  // If we have a logo path, try to use it
+  if (logoPath && teamLogos[logoPath]) {
+    return teamLogos[logoPath];
+  }
 
-  // Return the local asset if we have it
-  return teamLogos[logoPath] || null;
+  // Fallback: try to find logo by team name
+  if (teamName && teamNameToLogo[teamName]) {
+    const fallbackPath = teamNameToLogo[teamName];
+    return teamLogos[fallbackPath] || null;
+  }
+
+  return null;
 };
 
 /**

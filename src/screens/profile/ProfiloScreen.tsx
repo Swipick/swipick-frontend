@@ -1,77 +1,54 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { colors, spacing } from '../../theme';
 import { useAuthStore } from '../../store/stores/useAuthStore';
-import { colors } from '../../theme';
+import { authService } from '../../services/auth/authService';
 
-export default function ProfiloScreen() {
-  const { user, signOut, loading } = useAuthStore();
+type ProfiloScreenProps = {
+  onLogout?: () => void;
+};
 
-  const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-            } catch (error: any) {
-              Alert.alert('Error', error.message);
-            }
-          },
-        },
-      ]
-    );
+export default function ProfiloScreen({ onLogout }: ProfiloScreenProps) {
+  const { user } = useAuthStore();
+
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      if (onLogout) {
+        onLogout();
+      }
+    } catch (error) {
+      console.error('[ProfiloScreen] Logout error:', error);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-      </View>
-
-      <View style={styles.content}>
-        {/* User Info */}
-        <View style={styles.userInfo}>
-          <Text style={styles.label}>Display Name</Text>
-          <Text style={styles.value}>{user?.displayName || 'Not set'}</Text>
-
-          <Text style={[styles.label, styles.labelMargin]}>Email</Text>
-          <Text style={styles.value}>{user?.email}</Text>
-
-          <Text style={[styles.label, styles.labelMargin]}>User ID</Text>
-          <Text style={styles.valueSmall}>{user?.uid}</Text>
-
-          <View style={[styles.statusContainer, styles.labelMargin]}>
-            <Text style={styles.label}>Email Verified</Text>
-            <View
-              style={[
-                styles.badge,
-                user?.emailVerified ? styles.badgeSuccess : styles.badgeWarning,
-              ]}
-            >
-              <Text style={styles.badgeText}>
-                {user?.emailVerified ? 'Verified' : 'Not Verified'}
-              </Text>
-            </View>
-          </View>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Profilo</Text>
+          {user && (
+            <Text style={styles.email}>{user.email}</Text>
+          )}
         </View>
 
-        {/* Sign Out Button */}
-        <TouchableOpacity
-          style={styles.signOutButton}
-          onPress={handleSignOut}
-          disabled={loading}
-        >
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.placeholderContainer}>
+          <Text style={styles.placeholderIcon}>👤</Text>
+          <Text style={styles.placeholderTitle}>Profilo Utente</Text>
+          <Text style={styles.placeholderText}>
+            Qui vedrai le tue statistiche, impostazioni e profilo
+          </Text>
+        </View>
+
+        {user && (
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -79,81 +56,59 @@ export default function ProfiloScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundSecondary,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: spacing.lg,
+    paddingBottom: 80,
   },
   header: {
+    marginBottom: spacing.xl,
     paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: colors.text,
+    marginBottom: spacing.xs,
   },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  userInfo: {
-    backgroundColor: colors.backgroundSecondary,
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
+  email: {
+    fontSize: 14,
     color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
-  labelMargin: {
-    marginTop: 16,
-  },
-  value: {
-    fontSize: 16,
-    color: colors.text,
-    marginTop: 4,
-  },
-  valueSmall: {
-    fontSize: 12,
-    color: colors.text,
-    marginTop: 4,
-    fontFamily: 'Courier',
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 60,
   },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+  placeholderIcon: {
+    fontSize: 64,
+    marginBottom: spacing.lg,
   },
-  badgeSuccess: {
-    backgroundColor: colors.success,
-  },
-  badgeWarning: {
-    backgroundColor: colors.warning,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
+  placeholderTitle: {
+    fontSize: 20,
     fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
-  signOutButton: {
-    backgroundColor: colors.error,
-    paddingVertical: 16,
+  placeholderText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  logoutButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 'auto',
+    marginTop: spacing.xl,
   },
-  signOutText: {
-    color: '#fff',
+  logoutButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

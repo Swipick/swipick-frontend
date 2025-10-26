@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Dimensions, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -8,6 +8,8 @@ import Animated, {
   interpolate,
   runOnJS,
   useDerivedValue,
+  withSequence,
+  withRepeat,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { MatchCard as MatchCardType, PredictionChoice } from '../../types/game.types';
@@ -24,6 +26,8 @@ interface MatchCardProps {
   onSwipe?: (choice: PredictionChoice) => void;
   enabled?: boolean;
   isPreview?: boolean;
+  shouldShake?: boolean;
+  onShakeComplete?: () => void;
 }
 
 export default function MatchCard({
@@ -31,11 +35,38 @@ export default function MatchCard({
   onSwipe,
   enabled = true,
   isPreview = false,
+  shouldShake = false,
+  onShakeComplete,
 }: MatchCardProps) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
+  const shakeX = useSharedValue(0);
+
+  // Trigger shake animation when shouldShake prop changes
+  useEffect(() => {
+    if (shouldShake) {
+      // Shake animation: rapid left-right movement
+      shakeX.value = withSequence(
+        withTiming(10, { duration: 50 }),
+        withRepeat(
+          withSequence(
+            withTiming(-10, { duration: 50 }),
+            withTiming(10, { duration: 50 })
+          ),
+          3, // Repeat 3 times
+          false
+        ),
+        withTiming(0, { duration: 50 }, () => {
+          // Call onShakeComplete when animation finishes
+          if (onShakeComplete) {
+            runOnJS(onShakeComplete)();
+          }
+        })
+      );
+    }
+  }, [shouldShake]);
 
   const { home, away, kickoff, stadium } = matchCard;
 
@@ -172,7 +203,7 @@ export default function MatchCard({
 
     return {
       transform: [
-        { translateX: translateX.value },
+        { translateX: translateX.value + shakeX.value },
         { translateY: translateY.value },
         { rotateZ: `${rotation}deg` },
       ],

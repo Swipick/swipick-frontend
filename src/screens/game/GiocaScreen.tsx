@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Text,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { useAuthStore } from "../../store/stores/useAuthStore";
 import { useGameStore } from "../../store/stores/useGameStore";
@@ -15,6 +14,7 @@ import GameHeader from "../../components/game/GameHeader";
 import MatchCard from "../../components/game/MatchCard";
 import PredictionButtons from "../../components/game/PredictionButtons";
 import GameSummaryScreen from "../../components/game/GameSummaryScreen";
+import Toast from "../../components/common/Toast";
 
 export default function GiocaScreen() {
   const { user } = useAuthStore();
@@ -34,6 +34,10 @@ export default function GiocaScreen() {
   } = useGameStore();
 
   const [showSummary, setShowSummary] = useState(false);
+  const [shouldShake, setShouldShake] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [headerHeight, setHeaderHeight] = useState(160);
 
   // Load fixtures on mount
   useEffect(() => {
@@ -50,35 +54,54 @@ export default function GiocaScreen() {
   }, [isComplete]);
 
   const handlePrediction = async (choice: PredictionChoice) => {
-    console.log('[GiocaScreen] handlePrediction called with choice:', choice);
-    console.log('[GiocaScreen] User exists:', !!user);
-    console.log('[GiocaScreen] Current fixture ID:', currentFixture?.fixtureId);
+    console.log("[GiocaScreen] handlePrediction called with choice:", choice);
+    console.log("[GiocaScreen] User exists:", !!user);
+    console.log("[GiocaScreen] Current fixture ID:", currentFixture?.fixtureId);
 
     if (!user) return;
 
-    // Check if fixture has already started
+    // Allow SKIP even for started fixtures
+    if (choice === "SKIP") {
+      console.log("[GiocaScreen] Skipping current card");
+      skipCurrent();
+      return;
+    }
+
+    // Check if fixture has already started (only block predictions, not skip)
     if (currentFixture) {
       const kickoffTime = new Date(currentFixture.kickoff.iso);
       const now = new Date();
 
       if (kickoffTime <= now) {
-        console.log('[GiocaScreen] Fixture has already started, auto-skipping');
-        Alert.alert(
-          'Match Started',
-          'This match has already started. You cannot predict on matches that have kicked off.',
-          [{ text: 'OK', onPress: () => skipCurrent() }]
+        console.log(
+          "[GiocaScreen] Fixture has already started, showing shake and toast"
         );
+
+        // Trigger shake animation
+        setShouldShake(true);
+
+        // Show toast notification in Italian
+        const message = "Partita iniziata. Per favore, salta questa partita.";
+        console.log("[GiocaScreen] Setting toast message:", message);
+        setToastMessage(message);
+        setShowToast(true);
+        console.log("[GiocaScreen] Toast visibility set to true");
+
         return;
       }
     }
 
-    if (choice === "SKIP") {
-      console.log('[GiocaScreen] Skipping current card');
-      skipCurrent();
-    } else {
-      console.log('[GiocaScreen] Making prediction:', choice);
-      await makePrediction(choice, user.uid);
-    }
+    // Make prediction for valid fixture
+    console.log("[GiocaScreen] Making prediction:", choice);
+    await makePrediction(choice, user.uid);
+  };
+
+  const handleShakeComplete = () => {
+    setShouldShake(false);
+  };
+
+  const handleToastHide = () => {
+    setShowToast(false);
   };
 
   const handleReset = async () => {
@@ -92,10 +115,28 @@ export default function GiocaScreen() {
   };
 
   // Calculate completion stats
+  const now = new Date();
+
+  // Total is ALWAYS the full number of fixtures (e.g., 10)
   const totalFixtures = fixtures.length;
-  const completedPredictions = Array.from(predictions.values()).filter(
+
+  // Count how many games have already passed (missed predictions)
+  const missedFixtures = fixtures.filter(
+    (fixture) => new Date(fixture.kickoff.iso) <= now
+  ).length;
+
+  // Count only actual predictions made (1, X, 2) - not SKIP
+  const actualPredictions = Array.from(predictions.values()).filter(
     (choice) => choice !== "SKIP"
   ).length;
+
+  // Progress = actual predictions + missed games
+  // If 5 games passed and user made 2 predictions, progress = 2 + 5 = 7/10
+  // Cap at totalFixtures to prevent showing 11/10
+  const completedPredictions = Math.min(
+    actualPredictions + missedFixtures,
+    totalFixtures
+  );
 
   // Get current fixture
   const currentFixture = fixtures[currentIndex];
@@ -107,7 +148,8 @@ export default function GiocaScreen() {
   const isFixtureStarted = currentFixture
     ? new Date(currentFixture.kickoff.iso) <= new Date()
     : false;
-  const canSwipe = !loading && !!currentFixture && !currentPrediction && !isFixtureStarted;
+  const canSwipe =
+    !loading && !!currentFixture && !currentPrediction && !isFixtureStarted;
 
   // Loading state
   if (loading && fixtures.length === 0) {
@@ -148,79 +190,96 @@ export default function GiocaScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header with progress */}
-      <GameHeader
-        currentWeek={currentWeek}
-        totalFixtures={totalFixtures}
-        completedPredictions={completedPredictions}
-        mode={mode}
-        fixtures={fixtures}
-        onReset={handleReset}
-        loading={loading}
-      />
+    <>
+      <View style={styles.container}>
+        {/* Header with progress - becomes sticky when summary shows */}
+        <GameHeader
+          currentWeek={currentWeek}
+          totalFixtures={totalFixtures}
+          completedPredictions={completedPredictions}
+          mode={mode}
+          fixtures={fixtures}
+          onReset={handleReset}
+          loading={loading}
+          sticky={showSummary}
+          onHeightChange={setHeaderHeight}
+        />
 
-      {/* Main Card Area */}
-      <View style={styles.cardContainer}>
-        {currentFixture ? (
+        {/* Conditionally render Summary or Normal Game View */}
+        {showSummary ? (
+          <GameSummaryScreen
+            fixtures={fixtures}
+            predictions={predictions}
+            headerHeight={headerHeight}
+          />
+        ) : (
           <>
-            {/* Card Stack Container */}
-            <View style={styles.cardStack}>
-              {/* Preview Card (Next Card) - Behind */}
-              {fixtures[currentIndex + 1] && (
-                <View style={styles.previewCard}>
-                  <View style={styles.previewCardInner}>
-                    <MatchCard matchCard={fixtures[currentIndex + 1]} />
+            {/* Main Card Area */}
+            <View style={styles.cardContainer}>
+              {currentFixture ? (
+                <>
+                  {/* Card Stack Container */}
+                  <View style={styles.cardStack}>
+                    {/* Preview Card (Next Card) - Behind */}
+                    {fixtures[currentIndex + 1] && (
+                      <View style={styles.previewCard}>
+                        <View style={styles.previewCardInner}>
+                          <MatchCard matchCard={fixtures[currentIndex + 1]} />
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Current Card - On Top */}
+                    <View style={styles.currentCard}>
+                      <MatchCard
+                        matchCard={currentFixture}
+                        onSwipe={handlePrediction}
+                        enabled={canSwipe}
+                        shouldShake={shouldShake}
+                        onShakeComplete={handleShakeComplete}
+                      />
+                    </View>
                   </View>
+                </>
+              ) : (
+                <View style={styles.centerContainer}>
+                  <Text style={styles.emptyText}>Nessuna partita selezionata</Text>
                 </View>
               )}
+            </View>
 
-              {/* Current Card - On Top */}
-              <View style={styles.currentCard}>
-                <MatchCard
-                  matchCard={currentFixture}
-                  onSwipe={handlePrediction}
-                  enabled={canSwipe}
+            {/* Prediction Buttons */}
+            {currentFixture && !currentPrediction && (
+              <View style={styles.buttonsContainer}>
+                <PredictionButtons
+                  currentPrediction={currentPrediction as "1" | "X" | "2" | undefined}
+                  disabled={loading}
+                  isSkipAnimating={false}
+                  onAnimateAndCommit={(direction) => {
+                    // Map direction to choice
+                    const choiceMap = {
+                      up: "X" as const,
+                      left: "1" as const,
+                      right: "2" as const,
+                      down: "SKIP" as const,
+                    };
+                    handlePrediction(choiceMap[direction]);
+                  }}
                 />
               </View>
-            </View>
+            )}
           </>
-        ) : (
-          <View style={styles.centerContainer}>
-            <Text style={styles.emptyText}>Nessuna partita selezionata</Text>
-          </View>
         )}
       </View>
 
-      {/* Prediction Buttons */}
-      {currentFixture && !currentPrediction && (
-        <View style={styles.buttonsContainer}>
-          <PredictionButtons
-            currentPrediction={currentPrediction as "1" | "X" | "2" | undefined}
-            disabled={loading}
-            isSkipAnimating={false}
-            onAnimateAndCommit={(direction) => {
-              // Map direction to choice
-              const choiceMap = {
-                up: "X" as const,
-                left: "1" as const,
-                right: "2" as const,
-                down: "SKIP" as const,
-              };
-              handlePrediction(choiceMap[direction]);
-            }}
-          />
-        </View>
-      )}
-
-      {/* Summary Modal */}
-      <GameSummaryScreen
-        visible={showSummary}
-        fixtures={fixtures}
-        predictions={predictions}
-        onClose={handleCloseSummary}
-      />
-    </View>
+    {/* Toast Notification - Outside main container for proper visibility */}
+    <Toast
+      message={toastMessage}
+      visible={showToast}
+      duration={3000}
+      onHide={handleToastHide}
+    />
+  </>
   );
 }
 
@@ -346,7 +405,7 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     alignItems: "center",
     paddingVertical: 8,
-    paddingBottom: 16,
+    paddingBottom: 96,
   },
   instructionText: {
     marginTop: spacing.md,

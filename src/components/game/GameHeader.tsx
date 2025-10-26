@@ -3,8 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
+  TouchableOpacity,
+  Share,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { spacing } from '../../theme';
 import CountdownTimer from './CountdownTimer';
 import ProgressBar from './ProgressBar';
@@ -32,6 +36,29 @@ export default function GameHeader({
   onHeightChange,
 }: GameHeaderProps) {
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [shareLoading, setShareLoading] = useState(false);
+
+  // Share functionality
+  const handleShare = async () => {
+    setShareLoading(true);
+    try {
+      const result = await Share.share({
+        title: 'Swipick - Previsioni Calcio',
+        message: 'Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? https://swipick-frontend-production.up.railway.app/registro',
+      });
+
+      if (result.action === Share.sharedAction) {
+        console.log('[GameHeader] Successfully shared!');
+      } else if (result.action === Share.dismissedAction) {
+        console.log('[GameHeader] Share dismissed');
+      }
+    } catch (error) {
+      Alert.alert('Errore', 'Impossibile condividere in questo momento.');
+      console.error('[GameHeader] Share error:', error);
+    } finally {
+      setShareLoading(false);
+    }
+  };
 
   // Calculate week date range
   const getWeekDateRange = (): string => {
@@ -112,6 +139,24 @@ export default function GameHeader({
           height={24}
         />
       </View>
+
+      {/* Share Button - Only visible when sticky (summary screen) */}
+      {sticky && (
+        <View style={styles.shareContainer}>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={[
+              styles.shareButton,
+              shareLoading && styles.shareButtonDisabled,
+            ]}
+            onPress={handleShare}
+            disabled={shareLoading}
+          >
+            <Ionicons name="share-social-outline" size={16} color="#7a57f6" />
+            <Text style={styles.shareButtonText}>Sfida i tuoi amici</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </LinearGradient>
   );
 }
@@ -184,5 +229,38 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginBottom: 0,
+  },
+  shareContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 12,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  shareButtonDisabled: {
+    backgroundColor: '#E5E5E5',
+  },
+  shareButtonText: {
+    color: '#7a57f6',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

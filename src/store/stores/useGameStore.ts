@@ -176,7 +176,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Check if we're at the end of all fixtures
     if (currentIndex >= fixtures.length - 1) {
-      // Check if there are skipped fixtures to show
+      // First, check if game is complete
+      const now = new Date();
+
+      // Count actual predictions (1, X, 2) - not SKIP
+      const actualPredictions = Array.from(predictions.values()).filter(
+        (p) => p !== 'SKIP'
+      ).length;
+
+      // Count missed games (already started)
+      const missedGames = fixtures.filter(
+        (fixture) => new Date(fixture.kickoff.iso) <= now
+      ).length;
+
+      // Complete when actual predictions + missed games = total fixtures
+      // Example: 3 predictions + 7 missed games = 10/10
+      const isGameComplete = actualPredictions + missedGames >= fixtures.length;
+
+      if (isGameComplete) {
+        console.log('[GameStore] Game complete:', {
+          actualPredictions,
+          missedGames,
+          total: fixtures.length,
+        });
+        set({ isComplete: true, showSummary: true });
+        return;
+      }
+
+      // Only loop back to skipped fixtures if game is NOT complete
       if (skippedFixtures.length > 0) {
         // Find first skipped fixture
         const nextSkippedIndex = fixtures.findIndex((f) =>
@@ -189,14 +216,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
       }
 
-      // All done - check if all predictions made
-      const totalPredictions = Array.from(predictions.values()).filter(
-        (p) => p !== 'SKIP'
-      ).length;
-
-      if (totalPredictions === fixtures.length) {
-        set({ isComplete: true, showSummary: true });
-      }
+      // If we get here, no skipped fixtures and not complete - stay at current
       return;
     }
 

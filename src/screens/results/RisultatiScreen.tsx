@@ -1,11 +1,32 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { colors, spacing } from '../../theme';
 
-export default function RisultatiScreen() {
+type RisultatiScreenProps = {
+  mode?: 'live' | 'test';
+  week?: number;
+};
+
+export default function RisultatiScreen({ mode = 'live', week }: RisultatiScreenProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Risultati Screen</Text>
-      <Text style={styles.subtitle}>Results will go here</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Risultati</Text>
+          <Text style={styles.subtitle}>
+            {mode === 'live' ? 'Modalità Live' : 'Modalità Test'}
+            {week && ` • Giornata ${week}`}
+          </Text>
+        </View>
+
+        <View style={styles.placeholderContainer}>
+          <Text style={styles.placeholderIcon}>🏆</Text>
+          <Text style={styles.placeholderTitle}>Risultati in arrivo</Text>
+          <Text style={styles.placeholderText}>
+            Qui vedrai i risultati delle partite e le classifiche
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -13,18 +34,47 @@ export default function RisultatiScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundSecondary,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: spacing.lg,
+    paddingBottom: 80,
+  },
+  header: {
+    marginBottom: spacing.xl,
+    paddingTop: 60,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  placeholderIcon: {
+    fontSize: 64,
+    marginBottom: spacing.lg,
+  },
+  placeholderTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
 });

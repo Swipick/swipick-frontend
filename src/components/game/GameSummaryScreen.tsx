@@ -5,303 +5,272 @@ import {
   ScrollView,
   StyleSheet,
   Image,
-  TouchableOpacity,
-  Modal,
 } from 'react-native';
 import { MatchCard, PredictionChoice } from '../../types/game.types';
-import { colors, spacing } from '../../theme';
-import { formatKickoffTime, getTeamLogoFallback } from '../../utils/formatters';
 import { getTeamLogo } from '../../utils/logoMapper';
 
 interface GameSummaryScreenProps {
-  visible: boolean;
   fixtures: MatchCard[];
   predictions: Map<string, PredictionChoice>;
-  onClose: () => void;
+  headerHeight?: number;
 }
 
-export default function GameSummaryScreen({
-  visible,
-  fixtures,
-  predictions,
-  onClose,
-}: GameSummaryScreenProps) {
-  const renderChoiceBadge = (
-    choice: PredictionChoice,
-    isSelected: boolean
-  ) => {
-    let label = '';
-    switch (choice) {
-      case '1':
-        label = '1';
-        break;
-      case 'X':
-        label = 'X';
-        break;
-      case '2':
-        label = '2';
-        break;
-      case 'SKIP':
-        label = 'Skip';
-        break;
-    }
+// Team Logo Component with Fallback
+function TeamLogo({ logoPath, teamName }: { logoPath?: string | null; teamName: string }) {
+  // Get local asset from logoMapper (with team name fallback)
+  const localLogo = getTeamLogo(logoPath, teamName);
 
+  // Debug: Log when logo is not found
+  if (!localLogo) {
+    console.log(`[TeamLogo] Logo not found for ${teamName}, path: "${logoPath}"`);
+  }
+
+  if (!localLogo) {
     return (
-      <View
-        key={choice}
-        style={[
-          styles.choiceBadge,
-          isSelected && styles.choiceBadgeSelected,
-        ]}
-      >
-        <Text
-          style={[
-            styles.choiceText,
-            isSelected && styles.choiceTextSelected,
-          ]}
-        >
-          {label}
+      <View style={styles.logoFallback}>
+        <Text style={styles.logoFallbackText}>
+          {teamName.charAt(0).toUpperCase()}
         </Text>
       </View>
     );
+  }
+
+  return (
+    <Image
+      source={localLogo}
+      style={styles.teamLogo}
+      resizeMode="contain"
+    />
+  );
+}
+
+// Choice Badge Component
+function ChoiceBadge({
+  label,
+  isSelected,
+}: {
+  label: '1' | 'X' | '2';
+  isSelected: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.badge,
+        isSelected ? styles.badgeSelected : styles.badgeUnselected,
+      ]}
+    >
+      <Text
+        style={[
+          styles.badgeText,
+          isSelected ? styles.badgeTextSelected : styles.badgeTextUnselected,
+        ]}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+export default function GameSummaryScreen({
+  fixtures,
+  predictions,
+  headerHeight = 160,
+}: GameSummaryScreenProps) {
+  const formatKickoff = (isoDate: string) => {
+    const date = new Date(isoDate);
+
+    // Format: "gio, 24/10, 20:45"
+    const weekday = date.toLocaleDateString('it-IT', { weekday: 'short' });
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${weekday}, ${day}/${month}, ${hours}:${minutes}`;
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Riepilogo Previsioni</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>✕</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={styles.container}>
+      {/* Header Spacer - prevents content from hiding under sticky header */}
+      <View style={{ height: headerHeight + 24 }} />
 
-        {/* Fixtures List */}
-        <ScrollView style={styles.scrollView}>
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {fixtures.map((fixture) => {
-            const userPrediction = predictions.get(fixture.fixtureId);
-            const choices: PredictionChoice[] = ['1', 'X', '2'];
-
-            // Get local logos
-            const homeTeamLogo = getTeamLogo(fixture.home.logo);
-            const awayTeamLogo = getTeamLogo(fixture.away.logo);
+            const prediction = predictions.get(fixture.fixtureId);
+            const kickoff = formatKickoff(fixture.kickoff.iso);
 
             return (
-              <View key={fixture.fixtureId} style={styles.fixtureCard}>
-                {/* Kickoff Time */}
-                <View style={styles.timePill}>
-                  <Text style={styles.timeText}>
-                    {formatKickoffTime(fixture.kickoff.iso)}
-                  </Text>
-                </View>
-
-                {/* Teams */}
-                <View style={styles.teamsRow}>
+              <View key={fixture.fixtureId} style={styles.card}>
+                {/* Teams Section */}
+                <View style={styles.teamsSection}>
                   {/* Home Team */}
-                  <View style={styles.team}>
-                    {homeTeamLogo ? (
-                      <Image
-                        source={homeTeamLogo}
-                        style={styles.teamLogo}
-                      />
-                    ) : (
-                      <View style={[styles.teamLogo, styles.logoFallback]}>
-                        <Text style={styles.logoFallbackText}>
-                          {getTeamLogoFallback(fixture.home.name)}
-                        </Text>
-                      </View>
-                    )}
+                  <View style={styles.teamRow}>
+                    <TeamLogo
+                      logoPath={fixture.home.logo}
+                      teamName={fixture.home.name}
+                    />
                     <Text style={styles.teamName} numberOfLines={1}>
                       {fixture.home.name}
                     </Text>
                   </View>
 
-                  <Text style={styles.vsText}>vs</Text>
-
                   {/* Away Team */}
-                  <View style={styles.team}>
-                    {awayTeamLogo ? (
-                      <Image
-                        source={awayTeamLogo}
-                        style={styles.teamLogo}
-                      />
-                    ) : (
-                      <View style={[styles.teamLogo, styles.logoFallback]}>
-                        <Text style={styles.logoFallbackText}>
-                          {getTeamLogoFallback(fixture.away.name)}
-                        </Text>
-                      </View>
-                    )}
+                  <View style={styles.teamRow}>
+                    <TeamLogo
+                      logoPath={fixture.away.logo}
+                      teamName={fixture.away.name}
+                    />
                     <Text style={styles.teamName} numberOfLines={1}>
                       {fixture.away.name}
                     </Text>
                   </View>
                 </View>
 
-                {/* Choice Badges */}
-                <View style={styles.choicesRow}>
-                  {choices.map((choice) =>
-                    renderChoiceBadge(choice, userPrediction === choice)
-                  )}
+                {/* Kickoff Time Pill */}
+                <View style={styles.kickoffPill}>
+                  <Text style={styles.kickoffText}>{kickoff}</Text>
                 </View>
 
-                {/* Skip Badge */}
-                {userPrediction === 'SKIP' && (
-                  <View style={styles.skipBadge}>
-                    <Text style={styles.skipText}>Saltato</Text>
-                  </View>
-                )}
+                {/* Choice Badges Column */}
+                <View style={styles.badgesColumn}>
+                  <ChoiceBadge label="1" isSelected={prediction === '1'} />
+                  <ChoiceBadge label="X" isSelected={prediction === 'X'} />
+                  <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                </View>
               </View>
             );
           })}
         </ScrollView>
       </View>
-    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  // Screen Container
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeText: {
-    fontSize: 20,
-    color: colors.textSecondary,
+    backgroundColor: '#F9FAFB', // gray-50
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
   },
-  fixtureCard: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 80, // Space for bottom nav
+    alignItems: 'center',
+  },
+
+  // Card Styles
+  card: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB', // gray-200
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 1,
+    width: '100%',
+    maxWidth: 448,
+    alignItems: 'center',
   },
-  timePill: {
-    alignSelf: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
+
+  // Teams Section
+  teamsSection: {
+    flex: 1,
   },
-  timeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  teamsRow: {
+  teamRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  team: {
-    flex: 1,
-    alignItems: 'center',
+    marginBottom: 8,
   },
   teamLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 4,
+    width: 48,
+    height: 48,
+    marginRight: 12,
+    borderRadius: 24,
   },
   logoFallback: {
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EDE9FE', // purple-100
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   logoFallbackText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#6B21A8', // purple-800
   },
   teamName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  vsText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.textSecondary,
-    marginHorizontal: spacing.sm,
-  },
-  choicesRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  choiceBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  choiceBadgeSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  choiceText: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: '#000000',
   },
-  choiceTextSelected: {
-    color: '#fff',
-  },
-  skipBadge: {
-    marginTop: spacing.sm,
-    alignSelf: 'center',
-    backgroundColor: colors.warning,
+
+  // Kickoff Time Pill
+  kickoffPill: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB', // gray-200
+    marginHorizontal: 12,
+    justifyContent: 'center',
   },
-  skipText: {
+  kickoffText: {
+    fontSize: 11,
+    color: '#374151', // gray-700
+    textAlign: 'center',
+  },
+
+  // Choice Badges
+  badgesColumn: {
+    gap: 8,
+    alignItems: 'center',
+  },
+  badge: {
+    minWidth: 36,
+    height: 28,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeSelected: {
+    backgroundColor: '#4F46E5', // indigo-600
+    borderColor: '#4F46E5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  badgeUnselected: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB', // gray-300
+  },
+  badgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
+  },
+  badgeTextSelected: {
+    color: '#FFFFFF',
+  },
+  badgeTextUnselected: {
+    color: '#374151', // gray-700
   },
 });
