@@ -39,9 +39,10 @@ export default function GiocaScreen() {
   const [toastMessage, setToastMessage] = useState("");
   const [headerHeight, setHeaderHeight] = useState(160);
 
-  // Load fixtures on mount
+  // Load fixtures on mount (only if not already loaded)
   useEffect(() => {
-    if (user) {
+    if (user && fixtures.length === 0) {
+      console.log('[GiocaScreen] Initial load - loading live week');
       loadLiveWeek(user.uid);
     }
   }, [user]);

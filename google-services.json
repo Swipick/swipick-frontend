@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "519582989697",
+    "project_id": "swipick-ab224",
+    "storage_bucket": "swipick-ab224.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519582989697:android:9e0736bcdebcb43fb9fc80",
+        "android_client_info": {
+          "package_name": "com.swipick.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "519582989697-b7tnbp6tv2ri11pev7fgep194hnjifto.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeVddL4aquxHQhs8FKm3-uZk9dZxRb5jk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "519582989697-b7tnbp6tv2ri11pev7fgep194hnjifto.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "519582989697-5bdjhl5n88npeboflcid3oqq3k73pkt6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.swipick.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

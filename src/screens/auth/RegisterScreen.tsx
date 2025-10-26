@@ -16,6 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import CheckBox from 'expo-checkbox';
 import { usersApi } from '../../services/api/users';
+import { authService } from '../../services/auth/authService';
 
 type RegisterScreenProps = {
   onNavigate: (screen: 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerification', params?: any) => void;
@@ -171,16 +172,33 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
 
     try {
       setGoogleLoading(true);
+      console.log('[RegisterScreen] Google sign-in initiated');
 
-      // TODO: Implement Google Sign-In with expo-auth-session
-      // Store intent flags
-      // await AsyncStorage.setItem('swipick:google:register:intent', '1');
-      // await AsyncStorage.setItem('swipick:google:register:terms', '1');
+      // Sign in with Google
+      const user = await authService.signInWithGoogle();
 
-      console.log('Google sign-in initiated');
-      Alert.alert('Info', 'Google Sign-In non ancora implementato');
+      console.log('[RegisterScreen] Google sign-in successful:', {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+      });
+
+      // Google users are automatically verified
+      // Navigate to email verification screen (which handles the mode selection flow)
+      onNavigate('EmailVerification', {
+        email: user.email,
+        isGoogleSignIn: true
+      });
     } catch (error: any) {
-      Alert.alert('Errore', 'Accesso con Google non riuscito');
+      console.error('[RegisterScreen] Google sign-in error:', error);
+
+      // Check if user cancelled
+      if (error.message === 'Google sign-in was cancelled') {
+        // Don't show error for cancellation
+        return;
+      }
+
+      Alert.alert('Errore', error.message || 'Accesso con Google non riuscito');
     } finally {
       setGoogleLoading(false);
     }

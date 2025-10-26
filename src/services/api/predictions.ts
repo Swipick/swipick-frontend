@@ -42,10 +42,28 @@ export const predictionsApi = {
     mode: 'live' | 'test' = 'live'
   ): Promise<WeeklyStats> => {
     try {
-      const response = await apiClient.get<WeeklyStats>(
+      const response = await apiClient.get<any>(
         ENDPOINTS.PREDICTIONS.BY_WEEK(userId, week, mode)
       );
-      return response;
+
+      // Transform snake_case to camelCase
+      const transformed: WeeklyStats = {
+        week: response.week,
+        totalPredictions: response.totalPredictions || response.total_predictions,
+        correctPredictions: response.correctPredictions || response.correct_predictions,
+        successRate: response.successRate || response.success_rate,
+        predictions: (response.predictions || []).map((p: any) => ({
+          id: p.id,
+          userId: p.user_id || p.userId,
+          fixtureId: p.fixture_id || p.fixtureId,
+          choice: p.choice,
+          week: p.week,
+          mode: p.mode || mode,
+          createdAt: p.created_at || p.createdAt || p.timestamp,
+        })),
+      };
+
+      return transformed;
     } catch (error: any) {
       console.error('[PredictionsAPI] Error fetching predictions:', error);
       throw new Error('Failed to load predictions. Please try again.');

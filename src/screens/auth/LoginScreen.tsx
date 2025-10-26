@@ -93,11 +93,33 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
 
   const handleGoogleLogin = async () => {
     try {
-      // TODO: Implement Google login
+      setLoading(true);
       console.log("[LoginScreen] Google login initiated");
-      Alert.alert("Info", "Google Sign-In non ancora implementato");
+
+      // Sign in with Google
+      const user = await authService.signInWithGoogle();
+
+      console.log("[LoginScreen] Google login successful:", {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+      });
+
+      // Google users are automatically verified
+      // Navigate directly to mode selection
+      onNavigate("ModeSelection");
     } catch (error: any) {
-      Alert.alert("Errore", "Accesso con Google non riuscito");
+      console.error("[LoginScreen] Google login error:", error);
+
+      // Check if user cancelled
+      if (error.message === 'Google sign-in was cancelled') {
+        // Don't show error for cancellation
+        return;
+      }
+
+      Alert.alert("Errore", error.message || "Accesso con Google non riuscito");
+    } finally {
+      setLoading(false);
     }
   };
 

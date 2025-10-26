@@ -13,14 +13,21 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.swipick.app"
+      "bundleIdentifier": "com.swipick.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "com.googleusercontent.apps.519582989697-5bdjhl5n88npeboflcid3oqq3k73pkt6"
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.swipick.app"
+      "package": "com.swipick.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,6 +43,9 @@
       "firebaseAppId": "1:519582989697:web:53f6a71176d9de4db9fc80",
       "firebaseMeasurementId": "G-RGZGLGNK3Q",
       "appEnv": "production"
-    }
+    },
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ]
   }
 }

@@ -73,8 +73,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const weeklyStats = await predictionsApi.getWeeklyPredictions(userId, week, mode);
       const predictionsMap = new Map<string, PredictionChoice>();
 
-      weeklyStats.predictions.forEach((pred) => {
-        predictionsMap.set(pred.fixtureId, pred.choice);
+      console.log(`[GameStore] Loaded ${weeklyStats.predictions.length} predictions from API for week ${week}`);
+      console.log(`[GameStore] Raw first prediction:`, JSON.stringify(weeklyStats.predictions[0]));
+
+      weeklyStats.predictions.forEach((pred: any) => {
+        // Backend returns fixture_id (snake_case), but we need fixtureId (camelCase)
+        const fixtureId = pred.fixtureId || pred.fixture_id;
+        console.log(`[GameStore] Prediction: ${fixtureId} -> ${pred.choice}`);
+        if (fixtureId) {
+          predictionsMap.set(fixtureId, pred.choice);
+        }
+      });
+
+      // Check if game is already complete
+      const now = new Date();
+      const actualPredictions = Array.from(predictionsMap.values()).filter(
+        (p) => p !== 'SKIP'
+      ).length;
+
+      const missedGames = fixtures.filter(
+        (fixture) => new Date(fixture.kickoff.iso) <= now && !predictionsMap.has(fixture.fixtureId)
+      ).length;
+
+      const isGameComplete = actualPredictions + missedGames >= fixtures.length;
+      console.log(`[GameStore] Completion check:`, {
+        totalFixtures: fixtures.length,
+        predictions: actualPredictions,
+        missed: missedGames,
+        complete: isGameComplete,
+        predictionsMapSize: predictionsMap.size,
       });
 
       set({
@@ -85,11 +112,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         currentIndex: 0,
         skippedFixtures: [],
         loading: false,
-        isComplete: false,
-        showSummary: false,
+        isComplete: isGameComplete,
+        showSummary: isGameComplete,
       });
-
-      console.log(`[GameStore] Loaded ${fixtures.length} fixtures for week ${week}`);
     } catch (error: any) {
       console.error('[GameStore] Error loading week:', error);
       set({ loading: false, error: error.message });
