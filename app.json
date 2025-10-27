@@ -15,6 +15,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.swipick.app",
       "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Swipick necessita l'accesso alla tua libreria fotografica per permetterti di caricare un'immagine del profilo.",
+        "NSCameraUsageDescription": "Swipick necessita l'accesso alla fotocamera per permetterti di scattare una foto del profilo."
+      },
       "config": {
         "googleSignIn": {
           "reservedClientId": "com.googleusercontent.apps.519582989697-5bdjhl5n88npeboflcid3oqq3k73pkt6"

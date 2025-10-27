@@ -49,20 +49,6 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
     loadSettingsData();
   }, [user]);
 
-  // Request permissions on mount
-  useEffect(() => {
-    requestPermissions();
-  }, []);
-
-  const requestPermissions = async () => {
-    if (Platform.OS !== 'web') {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        console.warn('[ImpostazioniScreen] Media library permission denied');
-      }
-    }
-  };
-
   const loadSettingsData = async () => {
     if (!user?.uid) {
       setError('Utente non autenticato');
@@ -139,6 +125,18 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
     if (!userId) return;
 
     try {
+      // Request permission first
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permesso richiesto',
+            'Swipick necessita l\'accesso alla tua libreria fotografica per caricare un\'immagine del profilo.'
+          );
+          return;
+        }
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,

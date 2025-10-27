@@ -14,12 +14,8 @@ import { WeeklyStats, UserSummary, ProfileKPI, WeekPerformance } from '../types/
  * Handles both single-wrapped and double-wrapped responses
  */
 export function normalizeSummaryResponse(response: any): UserSummary {
-  console.log('[ProfileCalc] normalizeSummaryResponse input:', JSON.stringify(response, null, 2));
-
   // Handle double-wrapped response: { data: { data: { ... } } }
   const rawData = response.data?.data || response.data || response;
-  console.log('[ProfileCalc] Extracted rawData:', JSON.stringify(rawData, null, 2));
-  console.log('[ProfileCalc] Raw weekly_stats:', rawData.weekly_stats);
 
   const weeklyStats: WeeklyStats[] = (rawData.weekly_stats || []).map((week: any) => {
     // IMPORTANT: Backend sometimes reports total_predictions: 0 incorrectly
@@ -37,8 +33,6 @@ export function normalizeSummaryResponse(response: any): UserSummary {
       ? (finishedCorrect / finishedPredictions.length) * 100
       : 0;
 
-    console.log(`[ProfileCalc] Week ${week.week}: predictions=${actualTotalPredictions}, finished=${finishedPredictions.length}, correct=${actualCorrectPredictions}, accuracy=${actualAccuracy.toFixed(1)}%`);
-
     return {
       week: week.week,
       totalPredictions: actualTotalPredictions,
@@ -48,18 +42,13 @@ export function normalizeSummaryResponse(response: any): UserSummary {
     };
   });
 
-  console.log('[ProfileCalc] Mapped weeklyStats:', weeklyStats);
-
-  const normalized = {
+  return {
     userId: rawData.user_id,
     totalPredictions: rawData.total_predictions,
     correctPredictions: rawData.correct_predictions,
     overallAccuracy: rawData.overall_success_rate,
     weeklyStats,
   };
-
-  console.log('[ProfileCalc] Returning normalized:', normalized);
-  return normalized;
 }
 
 /**
@@ -199,10 +188,7 @@ export function formatItalianPercentage(value: number): string {
  * Main function to generate display data for profile screen
  */
 export function calculateProfileKPIs(summary: UserSummary | null): ProfileKPI {
-  console.log('[ProfileCalc] calculateProfileKPIs called with summary:', summary);
-
   if (!summary || summary.weeklyStats.length === 0) {
-    console.log('[ProfileCalc] No summary or empty weekly stats, returning defaults');
     return {
       average: formatItalianPercentage(0),
       weeksPlayed: 0,
@@ -211,19 +197,10 @@ export function calculateProfileKPIs(summary: UserSummary | null): ProfileKPI {
     };
   }
 
-  console.log('[ProfileCalc] Processing weekly stats:', summary.weeklyStats);
-
   const weeksPlayed = calculateWeeksPlayed(summary.weeklyStats);
-  console.log('[ProfileCalc] Weeks played:', weeksPlayed);
-
   const average = calculateWeightedAverage(summary.weeklyStats);
-  console.log('[ProfileCalc] Average:', average);
-
   const best = findBestWeek(summary.weeklyStats);
-  console.log('[ProfileCalc] Best week:', best);
-
   const worst = findWorstWeek(summary.weeklyStats);
-  console.log('[ProfileCalc] Worst week:', worst);
 
   return {
     average: formatItalianPercentage(average),

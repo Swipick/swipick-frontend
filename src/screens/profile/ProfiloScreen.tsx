@@ -49,9 +49,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
 
   // Calculate KPIs using useMemo
   const kpi = useMemo(() => {
-    const calculated = calculateProfileKPIs(summary);
-    console.log('[ProfiloScreen] Calculated KPIs:', JSON.stringify(calculated, null, 2));
-    return calculated;
+    return calculateProfileKPIs(summary);
   }, [summary]);
 
   // Load profile data
@@ -89,15 +87,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
       // Step 2: Get user summary (predictions & statistics)
       console.log('[ProfiloScreen] Loading summary for Firebase UID:', user.uid);
       const summaryResponse = await profileApi.getUserSummary(user.uid, 'live');
-      console.log('[ProfiloScreen] Raw API response:', JSON.stringify(summaryResponse, null, 2));
-
       const normalizedSummary = normalizeSummaryResponse(summaryResponse);
-      console.log('[ProfiloScreen] Normalized summary:', JSON.stringify(normalizedSummary, null, 2));
-      console.log('[ProfiloScreen] Weekly stats count:', normalizedSummary.weeklyStats.length);
-      console.log('[ProfiloScreen] Weekly stats:', normalizedSummary.weeklyStats.map(w =>
-        `Week ${w.week}: ${w.correctPredictions}/${w.totalPredictions} = ${w.accuracy}%`
-      ));
-
       setSummary(normalizedSummary);
 
       // Step 3: Try to get uploaded avatar (optional)
@@ -137,7 +127,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
 
   const handleSettingsPress = () => {
     if (navigation) {
-      navigation.navigate('Impostazioni');
+      navigation.navigate('impostazioni');
     } else {
       Alert.alert('Impostazioni', 'Navigazione alle impostazioni non ancora configurata');
     }
