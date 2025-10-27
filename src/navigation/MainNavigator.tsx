@@ -4,22 +4,40 @@ import BottomNav from '../components/navigation/BottomNav';
 import GiocaScreen from '../screens/game/GiocaScreen';
 import RisultatiScreen from '../screens/results/RisultatiScreen';
 import ProfiloScreen from '../screens/profile/ProfiloScreen';
+import ImpostazioniScreen from '../screens/profile/ImpostazioniScreen';
 import { useGameStore } from '../store/stores/useGameStore';
 
+type ScreenType = 'gioca' | 'risultati' | 'profilo' | 'impostazioni';
+
 export default function MainNavigator() {
-  const [activeTab, setActiveTab] = useState<'gioca' | 'risultati' | 'profilo'>('gioca');
+  const [activeScreen, setActiveScreen] = useState<ScreenType>('gioca');
   const { currentWeek, mode } = useGameStore();
 
+  // Simple navigation object to pass to screens
+  const navigation = {
+    navigate: (screen: ScreenType) => {
+      setActiveScreen(screen);
+    },
+    goBack: () => {
+      // Go back to profilo from impostazioni
+      if (activeScreen === 'impostazioni') {
+        setActiveScreen('profilo');
+      }
+    },
+  };
+
   const renderScreen = () => {
-    switch (activeTab) {
+    switch (activeScreen) {
       case 'risultati':
         return <RisultatiScreen mode={mode} week={currentWeek} />;
       case 'gioca':
         return <GiocaScreen />;
       case 'profilo':
-        return <ProfiloScreen onLogout={() => {
+        return <ProfiloScreen navigation={navigation} onLogout={() => {
           // Logout handled by ProfiloScreen
         }} />;
+      case 'impostazioni':
+        return <ImpostazioniScreen navigation={navigation} />;
       default:
         return null;
     }
@@ -32,15 +50,17 @@ export default function MainNavigator() {
         {renderScreen()}
       </View>
 
-      {/* Bottom Navigation */}
-      <BottomNav
-        currentMode={mode}
-        selectedWeek={currentWeek}
-        onNavigateToResults={() => setActiveTab('risultati')}
-        onNavigateToGioca={() => setActiveTab('gioca')}
-        onNavigateToProfile={() => setActiveTab('profilo')}
-        activeTab={activeTab}
-      />
+      {/* Bottom Navigation - Hide on Impostazioni screen */}
+      {activeScreen !== 'impostazioni' && (
+        <BottomNav
+          currentMode={mode}
+          selectedWeek={currentWeek}
+          onNavigateToResults={() => setActiveScreen('risultati')}
+          onNavigateToGioca={() => setActiveScreen('gioca')}
+          onNavigateToProfile={() => setActiveScreen('profilo')}
+          activeTab={activeScreen === 'impostazioni' ? 'profilo' : activeScreen}
+        />
+      )}
     </View>
   );
 }

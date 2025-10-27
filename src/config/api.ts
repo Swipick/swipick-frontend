@@ -35,6 +35,11 @@ export const ENDPOINTS = {
     PROFILE: '/user/profile',
     STATS: '/user/stats',
     UPDATE: '/user/update',
+    BY_FIREBASE_UID: (firebaseUid: string) => `/users/profile/firebase/${firebaseUid}`,
+    AVATAR: (userId: string) => `/users/${userId}/avatar`,
+    AVATAR_UPLOAD: (userId: string) => `/users/${userId}/avatar/upload`,
+    PREFERENCES: (userId: string) => `/users/${userId}/preferences`,
+    DELETE: (userId: string) => `/users/${userId}`,
   },
 
   // Fixtures
