@@ -42,7 +42,7 @@ export default function GiocaScreen() {
   // Load fixtures on mount (only if not already loaded)
   useEffect(() => {
     if (user && fixtures.length === 0) {
-      console.log('[GiocaScreen] Initial load - loading live week');
+      console.log("[GiocaScreen] Initial load - loading live week");
       loadLiveWeek(user.uid);
     }
   }, [user]);
@@ -244,7 +244,9 @@ export default function GiocaScreen() {
                 </>
               ) : (
                 <View style={styles.centerContainer}>
-                  <Text style={styles.emptyText}>Nessuna partita selezionata</Text>
+                  <Text style={styles.emptyText}>
+                    Nessuna partita selezionata
+                  </Text>
                 </View>
               )}
             </View>
@@ -253,7 +255,9 @@ export default function GiocaScreen() {
             {currentFixture && !currentPrediction && (
               <View style={styles.buttonsContainer}>
                 <PredictionButtons
-                  currentPrediction={currentPrediction as "1" | "X" | "2" | undefined}
+                  currentPrediction={
+                    currentPrediction as "1" | "X" | "2" | undefined
+                  }
                   disabled={loading}
                   isSkipAnimating={false}
                   onAnimateAndCommit={(direction) => {
@@ -273,14 +277,14 @@ export default function GiocaScreen() {
         )}
       </View>
 
-    {/* Toast Notification - Outside main container for proper visibility */}
-    <Toast
-      message={toastMessage}
-      visible={showToast}
-      duration={3000}
-      onHide={handleToastHide}
-    />
-  </>
+      {/* Toast Notification - Outside main container for proper visibility */}
+      <Toast
+        message={toastMessage}
+        visible={showToast}
+        duration={3000}
+        onHide={handleToastHide}
+      />
+    </>
   );
 }
 
@@ -406,7 +410,7 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     alignItems: "center",
     paddingVertical: 8,
-    paddingBottom: 96,
+    paddingBottom: 146,
   },
   instructionText: {
     marginTop: spacing.md,

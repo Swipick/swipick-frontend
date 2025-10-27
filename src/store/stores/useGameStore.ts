@@ -104,12 +104,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
         predictionsMapSize: predictionsMap.size,
       });
 
+      // Find the first fixture that doesn't have a prediction yet
+      let startingIndex = 0;
+      if (!isGameComplete) {
+        startingIndex = fixtures.findIndex(
+          (fixture) => !predictionsMap.has(fixture.fixtureId)
+        );
+        // If all fixtures have predictions but game isn't complete (e.g., all skipped), start at 0
+        if (startingIndex === -1) {
+          startingIndex = 0;
+        }
+        console.log(`[GameStore] Starting at index ${startingIndex} (first unpredicted card)`);
+      }
+
       set({
         currentWeek: week,
         mode,
         fixtures,
         predictions: predictionsMap,
-        currentIndex: 0,
+        currentIndex: startingIndex,
         skippedFixtures: [],
         loading: false,
         isComplete: isGameComplete,

@@ -667,12 +667,13 @@ function MatchCard({
           <TouchableOpacity
             style={styles.revealButton}
             onPress={handleRevealPress}
+            activeOpacity={0.7}
           >
             <Text style={styles.revealButtonText}>MOSTRA</Text>
             <Text style={styles.revealButtonText}>RISULTATO</Text>
           </TouchableOpacity>
         ) : (
-          <View style={styles.finishedButton}>
+          <View style={styles.finishedButton} pointerEvents="none">
             <Text style={styles.finishedButtonText}>FINE</Text>
             <Text style={styles.finishedButtonText}>PARTITA</Text>
           </View>

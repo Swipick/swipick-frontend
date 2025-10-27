@@ -2,7 +2,7 @@
   "expo": {
     "name": "Swipick",
     "slug": "swipick",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,10 +14,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.swipick.app",
+      "buildNumber": "2",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Swipick necessita l'accesso alla tua libreria fotografica per permetterti di caricare un'immagine del profilo.",
-        "NSCameraUsageDescription": "Swipick necessita l'accesso alla fotocamera per permetterti di scattare una foto del profilo."
+        "NSCameraUsageDescription": "Swipick necessita l'accesso alla fotocamera per permetterti di scattare una foto del profilo.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "config": {
         "googleSignIn": {
@@ -46,7 +48,10 @@
       "firebaseMessagingSenderId": "519582989697",
       "firebaseAppId": "1:519582989697:web:53f6a71176d9de4db9fc80",
       "firebaseMeasurementId": "G-RGZGLGNK3Q",
-      "appEnv": "production"
+      "appEnv": "production",
+      "eas": {
+        "projectId": "a4f8f8ee-d90d-4258-8980-e12eca2a51f5"
+      }
     },
     "plugins": [
       "@react-native-google-signin/google-signin"

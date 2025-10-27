@@ -38,6 +38,7 @@ const teamLogos: Record<string, any> = {
 // Team name to logo path mapping (fallback for when API returns null)
 const teamNameToLogo: Record<string, string> = {
   'AC Milan': '/teams/AcMilanLogo.png',
+  'Milan': '/teams/AcMilanLogo.png',
   'AS Roma': '/teams/AsRomaLogo.png',
   'Roma': '/teams/AsRomaLogo.png',
   'Inter': '/teams/FcInternazionaleMilano.png',
@@ -59,6 +60,8 @@ const teamNameToLogo: Record<string, string> = {
   'Como': '/teams/ComoCalcioLogo.png',
   'Parma': '/teams/ParmaLogo.png',
   'Pisa': '/teams/PisaCalcioLogo.png',
+  'Cremonese': '/teams/CremoneseLogo.png',
+  'US Cremonese': '/teams/CremoneseLogo.png',
 };
 
 /**
