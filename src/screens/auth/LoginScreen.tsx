@@ -169,6 +169,14 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => onNavigate("Landing")}
+      >
+        <Text style={styles.backButtonText}>← Indietro</Text>
+      </TouchableOpacity>
+
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
@@ -275,6 +283,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: "#5742a4",
+    fontWeight: "600",
   },
   scrollContainer: {
     flexGrow: 1,

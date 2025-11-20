@@ -226,6 +226,14 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
 
   return (
     <LinearGradient colors={['#52418d', '#7a57f6']} style={styles.gradient}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => onNavigate("Landing")}
+      >
+        <Text style={styles.backButtonText}>← Indietro</Text>
+      </TouchableOpacity>
+
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
@@ -454,6 +462,18 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   scrollContainer: {
     flexGrow: 1,

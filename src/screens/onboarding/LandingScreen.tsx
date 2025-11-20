@@ -11,6 +11,7 @@ import {
   NativeSyntheticEvent,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 
 interface LandingScreenProps {
   onNavigate: (
@@ -150,7 +151,18 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
         {/* Login Button */}
         <TouchableOpacity
           style={styles.loginButton}
-          onPress={() => onNavigate("Login")}
+          onPress={async () => {
+            try {
+              console.log("[LandingScreen] Login button pressed");
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              console.log("[LandingScreen] Haptic feedback triggered");
+              onNavigate("Login");
+              console.log("[LandingScreen] Navigation to Login triggered");
+            } catch (error) {
+              console.error("[LandingScreen] Error with haptics:", error);
+              onNavigate("Login");
+            }
+          }}
         >
           <Text style={styles.loginButtonText}>Login</Text>
         </TouchableOpacity>
@@ -158,7 +170,18 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
         {/* Register Button */}
         <TouchableOpacity
           style={styles.registerButton}
-          onPress={() => onNavigate("Register")}
+          onPress={async () => {
+            try {
+              console.log("[LandingScreen] Register button pressed");
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              console.log("[LandingScreen] Haptic feedback triggered");
+              onNavigate("Register");
+              console.log("[LandingScreen] Navigation to Register triggered");
+            } catch (error) {
+              console.error("[LandingScreen] Error with haptics:", error);
+              onNavigate("Register");
+            }
+          }}
         >
           <Text style={styles.registerButtonText}>Registrati</Text>
         </TouchableOpacity>

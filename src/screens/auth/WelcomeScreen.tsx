@@ -2,12 +2,20 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 type WelcomeScreenProps = {
-  onNavigate: (screen: 'Welcome' | 'Login' | 'Register') => void;
+  onNavigate: (screen: 'Landing' | 'Welcome' | 'Login' | 'Register') => void;
 };
 
 export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => onNavigate("Landing")}
+      >
+        <Text style={styles.backButtonText}>← Indietro</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Welcome to Swipick</Text>
       <Text style={styles.subtitle}>Predict football matches with swipes</Text>
 
@@ -35,6 +43,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     backgroundColor: '#fff',
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: "#5742a4",
+    fontWeight: "600",
   },
   title: {
     fontSize: 32,
