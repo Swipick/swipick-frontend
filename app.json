@@ -55,6 +55,12 @@
     },
     "plugins": [
       "@react-native-google-signin/google-signin"
-    ]
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/a4f8f8ee-d90d-4258-8980-e12eca2a51f5"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

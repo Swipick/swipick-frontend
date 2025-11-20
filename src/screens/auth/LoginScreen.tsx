@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { authService } from "../../services/auth/authService";
@@ -244,6 +245,9 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           <Text style={styles.googleButtonText}>Accedi con Google</Text>
         </TouchableOpacity>
 
+        {/* Spacer to push forgot password to bottom */}
+        <View style={styles.spacer} />
+
         {/* Forgot Password */}
         <View style={styles.forgotPasswordContainer}>
           <Text style={styles.forgotPasswordText}>
@@ -264,6 +268,9 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   );
 }
 
+const { height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenHeight < 700; // iPhone XR is ~896, but content area is smaller
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -272,14 +279,14 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     padding: 24,
-    paddingTop: 60,
+    paddingTop: isSmallScreen ? 60 : 80,
     alignItems: "center",
   },
   title: {
     fontSize: 38,
     fontWeight: "bold",
     color: "#5742a4",
-    marginBottom: 60,
+    marginBottom: isSmallScreen ? 30 : 40,
     letterSpacing: -1,
   },
   inputContainer: {
@@ -355,10 +362,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
+  spacer: {
+    flex: 1,
+    minHeight: 20,
+  },
   forgotPasswordContainer: {
     alignItems: "center",
-    marginTop: 186,
     width: "100%",
+    marginBottom: 20,
   },
   forgotPasswordText: {
     fontSize: 14,
