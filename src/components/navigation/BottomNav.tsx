@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+
+const { height: screenHeight } = Dimensions.get("window");
+const isSmallScreen = screenHeight < 750;
 
 interface BottomNavProps {
   currentMode?: 'live' | 'test';
@@ -40,7 +43,7 @@ export default function BottomNav({
           <View style={styles.iconContainer}>
             <FontAwesome
               name="trophy"
-              size={24}
+              size={isSmallScreen ? 20 : 24}
               color={activeTab === 'risultati' ? '#6f49ff' : '#6B7280'}
             />
           </View>
@@ -65,7 +68,7 @@ export default function BottomNav({
           <View style={styles.iconContainer}>
             <MaterialCommunityIcons
               name="soccer"
-              size={24}
+              size={isSmallScreen ? 20 : 24}
               color={activeTab === 'gioca' ? '#6f49ff' : '#6B7280'}
             />
           </View>
@@ -89,7 +92,7 @@ export default function BottomNav({
           <View style={styles.iconContainer}>
             <Ionicons
               name="person"
-              size={24}
+              size={isSmallScreen ? 20 : 24}
               color={activeTab === 'profilo' ? '#6f49ff' : '#6B7280'}
             />
           </View>
@@ -130,7 +133,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: isSmallScreen ? 8 : 12,
     position: 'relative',
   },
   activeIndicator: {
@@ -142,10 +145,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#6f49ff',
   },
   iconContainer: {
-    marginBottom: 4,
+    marginBottom: isSmallScreen ? 2 : 4,
   },
   label: {
-    fontSize: 12,
+    fontSize: isSmallScreen ? 11 : 12,
     color: '#000000',
   },
   labelActive: {

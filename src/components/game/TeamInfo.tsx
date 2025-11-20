@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { LastFiveResults } from './LastFiveResults';
 import { getTeamLogoFallback, formatWinRate } from '../../utils/formatters';
+
+const { height: screenHeight } = Dimensions.get("window");
+const isSmallScreen = screenHeight < 750;
 
 interface TeamInfoProps {
   team: {
@@ -70,47 +73,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    marginBottom: 12,
+    marginBottom: isSmallScreen ? 6 : 12,
     marginHorizontal: 'auto',
   },
   logo: {
-    width: 96,
-    height: 96,
+    width: isSmallScreen ? 60 : 96,
+    height: isSmallScreen ? 60 : 96,
   },
   logoFallback: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: isSmallScreen ? 60 : 96,
+    height: isSmallScreen ? 60 : 96,
+    borderRadius: isSmallScreen ? 30 : 48,
     backgroundColor: '#DDD6FE', // purple-200
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoFallbackText: {
-    fontSize: 36,
+    fontSize: isSmallScreen ? 24 : 36,
     fontWeight: '700',
     color: '#7C3AED', // purple-600
   },
   teamName: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 14 : 18,
     fontWeight: '700',
-    lineHeight: 21.6,
+    lineHeight: isSmallScreen ? 16.8 : 21.6,
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: isSmallScreen ? 2 : 4,
   },
   statContainer: {
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: isSmallScreen ? 4 : 8,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: isSmallScreen ? 10 : 11,
     fontWeight: '400',
     color: '#000000',
   },
   statValue: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     fontWeight: '700',
     color: '#000000',
-    marginTop: 4,
+    marginTop: isSmallScreen ? 2 : 4,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,23 @@ import {
   TouchableOpacity,
   Share,
   Alert,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { spacing } from '../../theme';
-import CountdownTimer from './CountdownTimer';
-import ProgressBar from './ProgressBar';
-import { MatchCard } from '../../types/game.types';
+  Dimensions,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { spacing } from "../../theme";
+import CountdownTimer from "./CountdownTimer";
+import ProgressBar from "./ProgressBar";
+import { MatchCard } from "../../types/game.types";
+
+const { height: screenHeight } = Dimensions.get("window");
+const isSmallScreen = screenHeight < 750;
 
 interface GameHeaderProps {
   currentWeek: number;
   totalFixtures: number;
   completedPredictions: number;
-  mode: 'live' | 'test';
+  mode: "live" | "test";
   fixtures: MatchCard[];
   onReset: () => void;
   loading?: boolean;
@@ -43,18 +47,19 @@ export default function GameHeader({
     setShareLoading(true);
     try {
       const result = await Share.share({
-        title: 'Swipick - Previsioni Calcio',
-        message: 'Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? https://swipick-frontend-production.up.railway.app/registro',
+        title: "Swipick - Previsioni Calcio",
+        message:
+          "Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? https://swipick-frontend-production.up.railway.app/registro",
       });
 
       if (result.action === Share.sharedAction) {
-        console.log('[GameHeader] Successfully shared!');
+        console.log("[GameHeader] Successfully shared!");
       } else if (result.action === Share.dismissedAction) {
-        console.log('[GameHeader] Share dismissed');
+        console.log("[GameHeader] Share dismissed");
       }
     } catch (error) {
-      Alert.alert('Errore', 'Impossibile condividere in questo momento.');
-      console.error('[GameHeader] Share error:', error);
+      Alert.alert("Errore", "Impossibile condividere in questo momento.");
+      console.error("[GameHeader] Share error:", error);
     } finally {
       setShareLoading(false);
     }
@@ -62,7 +67,7 @@ export default function GameHeader({
 
   // Calculate week date range
   const getWeekDateRange = (): string => {
-    if (fixtures.length === 0) return '';
+    if (fixtures.length === 0) return "";
 
     const dates = fixtures
       .map((f) => new Date(f.kickoff.iso))
@@ -98,7 +103,7 @@ export default function GameHeader({
 
   return (
     <LinearGradient
-      colors={['#52418d', '#7a57f6']}
+      colors={["#52418d", "#7a57f6"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.container, sticky && styles.sticky]}
@@ -111,7 +116,7 @@ export default function GameHeader({
       }}
     >
       {/* Mode Badge */}
-      {mode === 'test' && (
+      {mode === "test" && (
         <View style={styles.modeBadge}>
           <Text style={styles.modeText}>MODALITÀ TEST</Text>
         </View>
@@ -120,7 +125,7 @@ export default function GameHeader({
       {/* Week Header */}
       <View style={styles.weekHeader}>
         <Text style={styles.weekTitle}>
-          Giornata {currentWeek}  {weekDateRange}
+          Giornata {currentWeek} {weekDateRange}
         </Text>
       </View>
 
@@ -163,27 +168,27 @@ export default function GameHeader({
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 60, // Account for status bar
+    paddingTop: isSmallScreen ? 25 : 60, // Account for status bar
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: isSmallScreen ? 8 : spacing.lg,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
   sticky: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     zIndex: 100,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
   },
   modeBadge: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255, 193, 7, 0.9)',
+    alignSelf: "center",
+    backgroundColor: "rgba(255, 193, 7, 0.9)",
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 16,
@@ -191,76 +196,62 @@ const styles = StyleSheet.create({
   },
   modeText: {
     fontSize: 11,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     letterSpacing: 0.5,
   },
   weekHeader: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    position: 'relative',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: isSmallScreen ? 8 : spacing.md,
+    position: "relative",
   },
   weekTitle: {
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  shareButton: {
-    position: 'absolute',
-    right: 0,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shareIcon: {
-    fontSize: 20,
-    color: '#fff',
-    fontWeight: 'bold',
+    fontSize: isSmallScreen ? 13 : 16,
+    fontWeight: "400",
+    color: "#fff",
+    textAlign: "center",
   },
   countdownContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.md,
+    alignItems: "center",
+    marginBottom: isSmallScreen ? 6 : spacing.md,
   },
   progressContainer: {
     marginBottom: 0,
   },
   shareContainer: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: isSmallScreen ? 8 : 12,
+    paddingTop: isSmallScreen ? 8 : 12,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginBottom: 12,
   },
   shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    alignSelf: 'center',
-    shadowColor: '#000',
+    alignSelf: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
+
   shareButtonDisabled: {
-    backgroundColor: '#E5E5E5',
+    backgroundColor: "#E5E5E5",
   },
   shareButtonText: {
-    color: '#7a57f6',
+    color: "#7a57f6",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

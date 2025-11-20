@@ -5,9 +5,13 @@ import {
   Text,
   StyleSheet,
   Platform,
+  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { PredictionChoice } from "../../types/game.types";
+
+const { height: screenHeight } = Dimensions.get("window");
+const isSmallScreen = screenHeight < 750;
 
 interface PredictionButtonsProps {
   currentPrediction?: "1" | "X" | "2";
@@ -119,8 +123,8 @@ export default function PredictionButtons({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: isSmallScreen ? 4 : 8,
+    marginBottom: isSmallScreen ? 8 : 16,
     alignItems: "center",
   },
   topRow: {
@@ -130,27 +134,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 155,
+    gap: isSmallScreen ? 75 : 155,
   },
   bottomRow: {
     alignItems: "center",
-    marginTop: -12, // Pull up slightl
+    marginTop: isSmallScreen ? -6 : -12,
   },
   predictionButton: {
-    width: 80,
-    height: 45,
-    borderRadius: 15, // Pill shape (half of height)
+    width: isSmallScreen ? 50 : 80,
+    height: isSmallScreen ? 26 : 45,
+    borderRadius: isSmallScreen ? 11 : 15,
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
       ios: {
         shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: isSmallScreen ? 2 : 4 },
         shadowOpacity: 0.25,
-        shadowRadius: 8,
+        shadowRadius: isSmallScreen ? 4 : 8,
       },
       android: {
-        elevation: 6,
+        elevation: isSmallScreen ? 3 : 6,
       },
     }),
   },
@@ -162,14 +166,14 @@ const styles = StyleSheet.create({
   },
   predictionButtonText: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: isSmallScreen ? 10 : 14,
     fontWeight: "700",
     textAlign: "center",
   },
   skipButton: {
-    width: 80,
-    height: 45,
-    borderRadius: 15, // Pill shape (half of height)
+    width: isSmallScreen ? 60 : 80,
+    height: isSmallScreen ? 30 : 45,
+    borderRadius: isSmallScreen ? 11 : 15,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "rgba(99, 102, 241, 0.2)",
@@ -178,18 +182,18 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: isSmallScreen ? 2 : 4 },
         shadowOpacity: 0.15,
-        shadowRadius: 8,
+        shadowRadius: isSmallScreen ? 4 : 8,
       },
       android: {
-        elevation: 4,
+        elevation: isSmallScreen ? 2 : 4,
       },
     }),
   },
   skipButtonText: {
     color: "#3d2d73",
-    fontSize: 14,
+    fontSize: isSmallScreen ? 10 : 14,
     fontWeight: "700",
     textAlign: "center",
   },

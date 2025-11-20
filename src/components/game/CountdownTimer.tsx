@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
+
+const { height: screenHeight } = Dimensions.get("window");
+const isSmallScreen = screenHeight < 750;
 
 interface CountdownTimerProps {
   targetDate: Date | string;
@@ -74,18 +77,18 @@ const styles = StyleSheet.create({
   },
   timeUnit: {
     alignItems: 'center',
-    marginHorizontal: 8,
+    marginHorizontal: isSmallScreen ? 4 : 8,
   },
   timeValue: {
-    fontSize: 24,
+    fontSize: isSmallScreen ? 18 : 24,
     fontWeight: 'bold',
     color: '#fff',
     letterSpacing: 0,
   },
   timeLabel: {
-    fontSize: 11,
+    fontSize: isSmallScreen ? 9 : 11,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: 4,
+    marginTop: isSmallScreen ? 2 : 4,
     fontWeight: '400',
   },
 });

@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Text,
   TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import { useAuthStore } from "../../store/stores/useAuthStore";
 import { useGameStore } from "../../store/stores/useGameStore";
@@ -15,6 +16,9 @@ import MatchCard from "../../components/game/MatchCard";
 import PredictionButtons from "../../components/game/PredictionButtons";
 import GameSummaryScreen from "../../components/game/GameSummaryScreen";
 import Toast from "../../components/common/Toast";
+
+const { height: screenHeight } = Dimensions.get("window");
+const isSmallScreen = screenHeight < 750;
 
 export default function GiocaScreen() {
   const { user } = useAuthStore();
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
     minHeight: 450,
     justifyContent: "flex-start",
     alignItems: "center",
-    marginTop: 40,
+    marginTop: isSmallScreen ? 20 : 40,
   },
   previewCard: {
     position: "absolute",
@@ -408,9 +412,13 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   buttonsContainer: {
+    position: "absolute",
+    bottom: isSmallScreen ? 50 : 120, // Position above bottom nav
+    left: 0,
+    right: 0,
     alignItems: "center",
     paddingVertical: 8,
-    paddingBottom: 146,
+    zIndex: 50, // Above cards
   },
   instructionText: {
     marginTop: spacing.md,

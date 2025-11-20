@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CheckBox from 'expo-checkbox';
+import * as Haptics from 'expo-haptics';
 import { usersApi } from '../../services/api/users';
 import { authService } from '../../services/auth/authService';
 
@@ -229,7 +230,10 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => onNavigate("Landing")}
+        onPress={async () => {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onNavigate("Landing");
+        }}
       >
         <Text style={styles.backButtonText}>← Indietro</Text>
       </TouchableOpacity>
@@ -365,7 +369,10 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               />
               <Text style={styles.checkboxLabel}>
                 Accetto i{' '}
-                <Text style={styles.link} onPress={openTerms}>
+                <Text style={styles.link} onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  openTerms();
+                }}>
                   termini di servizio
                 </Text>
                 {' '}di Swipick
@@ -381,7 +388,10 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
                 styles.primaryButton,
                 (!isFormValid() || loading) && styles.buttonDisabled
               ]}
-              onPress={handleSubmit}
+              onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleSubmit();
+              }}
               disabled={!isFormValid() || loading}
             >
               {loading ? (
@@ -411,7 +421,10 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
                 styles.googleButton,
                 googleLoading && styles.buttonDisabled
               ]}
-              onPress={handleGoogleSignIn}
+              onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleGoogleSignIn();
+              }}
               disabled={googleLoading}
             >
               {googleLoading ? (
@@ -435,7 +448,10 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
             <View style={styles.loginLinkContainer}>
               <Text style={styles.loginText}>
                 Hai già un account?{' '}
-                <Text style={styles.link} onPress={() => onNavigate('Login')}>
+                <Text style={styles.link} onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onNavigate('Login');
+                }}>
                   Accedi
                 </Text>
               </Text>
@@ -444,11 +460,17 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
             {/* Footer Links */}
             <Text style={styles.footer}>
               Creando un account accetti i nostri{' '}
-              <Text style={styles.smallLink} onPress={openTerms}>
+              <Text style={styles.smallLink} onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                openTerms();
+              }}>
                 Termini di Servizio
               </Text>
               {' '}e la{' '}
-              <Text style={styles.smallLink} onPress={openPrivacy}>
+              <Text style={styles.smallLink} onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                openPrivacy();
+              }}>
                 Privacy Policy
               </Text>
             </Text>

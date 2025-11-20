@@ -17,9 +17,10 @@ import { MatchDetails } from './MatchDetails';
 import { TeamInfo } from './TeamInfo';
 import { getTeamLogo } from '../../utils/logoMapper';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const { width: SCREEN_WIDTH, height: screenHeight } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 150;
 const VELOCITY_THRESHOLD = 500;
+const isSmallScreen = screenHeight < 750;
 
 interface MatchCardProps {
   matchCard: MatchCardType;
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
+    padding: isSmallScreen ? 10 : 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     shadowColor: '#000',
@@ -343,6 +344,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: isSmallScreen ? 12 : 24,
   },
 });

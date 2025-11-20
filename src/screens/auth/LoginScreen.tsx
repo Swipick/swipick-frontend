@@ -12,6 +12,7 @@ import {
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { authService } from "../../services/auth/authService";
 import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
 
@@ -172,7 +173,10 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => onNavigate("Landing")}
+        onPress={async () => {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onNavigate("Landing");
+        }}
       >
         <Text style={styles.backButtonText}>← Indietro</Text>
       </TouchableOpacity>
@@ -226,7 +230,10 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         {/* Login Button */}
         <TouchableOpacity
           style={[styles.loginButton, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            handleLogin();
+          }}
           disabled={loading}
         >
           {loading ? (
@@ -242,7 +249,10 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         {/* Google Button */}
         <TouchableOpacity
           style={styles.googleButton}
-          onPress={handleGoogleLogin}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            handleGoogleLogin();
+          }}
           disabled={loading}
         >
           <Image
@@ -263,7 +273,10 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           </Text>
           <TouchableOpacity
             style={styles.forgotPasswordButton}
-            onPress={handleForgotPassword}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleForgotPassword();
+            }}
             disabled={loading}
           >
             <Text style={styles.forgotPasswordButtonText}>
