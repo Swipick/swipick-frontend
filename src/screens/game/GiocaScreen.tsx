@@ -229,7 +229,11 @@ export default function GiocaScreen() {
                     {fixtures[currentIndex + 1] && (
                       <View style={styles.previewCard}>
                         <View style={styles.previewCardInner}>
-                          <MatchCard matchCard={fixtures[currentIndex + 1]} />
+                          <MatchCard
+                            key={`preview-${fixtures[currentIndex + 1].fixtureId}`}
+                            matchCard={fixtures[currentIndex + 1]}
+                            isPreview
+                          />
                         </View>
                       </View>
                     )}
@@ -237,6 +241,7 @@ export default function GiocaScreen() {
                     {/* Current Card - On Top */}
                     <View style={styles.currentCard}>
                       <MatchCard
+                        key={currentFixture.fixtureId}
                         matchCard={currentFixture}
                         onSwipe={handlePrediction}
                         enabled={canSwipe}

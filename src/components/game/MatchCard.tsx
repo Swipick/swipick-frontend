@@ -12,6 +12,7 @@ import Animated, {
   withRepeat,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
 import { MatchCard as MatchCardType, PredictionChoice } from '../../types/game.types';
 import { MatchDetails } from './MatchDetails';
 import { TeamInfo } from './TeamInfo';
@@ -71,9 +72,9 @@ export default function MatchCard({
 
   const { home, away, kickoff, stadium } = matchCard;
 
-  // Get local logo assets
-  const homeTeamLogo = getTeamLogo(home.logo);
-  const awayTeamLogo = getTeamLogo(away.logo);
+  // Get local logo assets - pass team name as fallback
+  const homeTeamLogo = getTeamLogo(home.logo, home.name);
+  const awayTeamLogo = getTeamLogo(away.logo, away.name);
 
   const homeTeam = {
     name: home.name,
@@ -85,9 +86,22 @@ export default function MatchCard({
     logo: awayTeamLogo,
   };
 
+  const triggerHaptic = async (choice: PredictionChoice) => {
+    // Medium haptic for predictions (1, X, 2), Light for skip
+    if (choice === 'SKIP') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } else {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+  };
+
   const handleSwipeComplete = (choice: PredictionChoice) => {
     console.log('[MatchCard] Swipe completed with choice:', choice);
     console.log('[MatchCard] onSwipe callback exists:', !!onSwipe);
+
+    // Trigger haptic feedback
+    triggerHaptic(choice);
+
     if (onSwipe) {
       onSwipe(choice);
       console.log('[MatchCard] onSwipe callback called');
@@ -132,15 +146,10 @@ export default function MatchCard({
         if (ax > SWIPE_THRESHOLD || vx > VELOCITY_THRESHOLD) {
           const choice: PredictionChoice = dx < 0 ? '1' : '2';
 
-          // Animate off screen
+          // Animate off screen - no position reset needed as component will unmount
           translateX.value = withTiming(
             dx < 0 ? -SCREEN_WIDTH : SCREEN_WIDTH,
-            { duration: 220 },
-            () => {
-              // Reset position after animation
-              translateX.value = 0;
-              translateY.value = 0;
-            }
+            { duration: 220 }
           );
 
           runOnJS(handleSwipeComplete)(choice);
@@ -158,26 +167,12 @@ export default function MatchCard({
       } else {
         // Vertical swipe dominates
         if (dy < -SWIPE_THRESHOLD || vy < -VELOCITY_THRESHOLD) {
-          // Swipe up - Draw
-          translateY.value = withTiming(
-            -SCREEN_WIDTH,
-            { duration: 220 },
-            () => {
-              translateX.value = 0;
-              translateY.value = 0;
-            }
-          );
+          // Swipe up - Draw - no position reset needed as component will unmount
+          translateY.value = withTiming(-SCREEN_WIDTH, { duration: 220 });
           runOnJS(handleSwipeComplete)('X');
         } else if (dy > SWIPE_THRESHOLD || vy > VELOCITY_THRESHOLD) {
-          // Swipe down - Skip (with complex animation)
-          translateY.value = withTiming(
-            SCREEN_WIDTH,
-            { duration: 600 },
-            () => {
-              translateX.value = 0;
-              translateY.value = 0;
-            }
-          );
+          // Swipe down - Skip - no position reset needed as component will unmount
+          translateY.value = withTiming(SCREEN_WIDTH, { duration: 600 });
           runOnJS(handleSwipeComplete)('SKIP');
         } else {
           // Snap back

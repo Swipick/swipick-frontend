@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { PredictionChoice } from "../../types/game.types";
 
 const { height: screenHeight } = Dimensions.get("window");
@@ -42,7 +43,10 @@ export default function PredictionButtons({
       {/* X Button - Top Center */}
       <View style={styles.topRow}>
         <TouchableOpacity
-          onPress={() => onAnimateAndCommit("up")}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onAnimateAndCommit("up");
+          }}
           disabled={isPredictionDisabled}
           activeOpacity={0.8}
         >
@@ -64,7 +68,10 @@ export default function PredictionButtons({
       {/* 1 and 2 Buttons - Middle Row */}
       <View style={styles.middleRow}>
         <TouchableOpacity
-          onPress={() => onAnimateAndCommit("left")}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onAnimateAndCommit("left");
+          }}
           disabled={isPredictionDisabled}
           activeOpacity={0.8}
         >
@@ -83,7 +90,10 @@ export default function PredictionButtons({
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => onAnimateAndCommit("right")}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onAnimateAndCommit("right");
+          }}
           disabled={isPredictionDisabled}
           activeOpacity={0.8}
         >
@@ -105,7 +115,10 @@ export default function PredictionButtons({
       {/* Skip Button - Bottom Center */}
       <View style={styles.bottomRow}>
         <TouchableOpacity
-          onPress={() => onAnimateAndCommit("down")}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onAnimateAndCommit("down");
+          }}
           disabled={isSkipDisabled}
           activeOpacity={0.8}
         >

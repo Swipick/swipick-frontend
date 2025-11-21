@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
@@ -36,7 +37,10 @@ export default function BottomNav({
         {/* Risultati Tab */}
         <TouchableOpacity
           style={styles.tab}
-          onPress={onNavigateToResults}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onNavigateToResults();
+          }}
           activeOpacity={0.7}
         >
           {activeTab === 'risultati' && <View style={styles.activeIndicator} />}
@@ -60,7 +64,10 @@ export default function BottomNav({
         {/* Gioca Tab */}
         <TouchableOpacity
           style={styles.tab}
-          onPress={onNavigateToGioca}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onNavigateToGioca?.();
+          }}
           activeOpacity={0.7}
           disabled={!onNavigateToGioca}
         >
@@ -85,7 +92,10 @@ export default function BottomNav({
         {/* Profilo Tab */}
         <TouchableOpacity
           style={styles.tab}
-          onPress={onNavigateToProfile}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onNavigateToProfile();
+          }}
           activeOpacity={0.7}
         >
           {activeTab === 'profilo' && <View style={styles.activeIndicator} />}
