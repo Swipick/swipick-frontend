@@ -175,7 +175,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       setGoogleLoading(true);
       console.log('[RegisterScreen] Google sign-in initiated');
 
-      // Sign in with Google
+      // Sign in with Google via Firebase
       const user = await authService.signInWithGoogle();
 
       console.log('[RegisterScreen] Google sign-in successful:', {
@@ -183,6 +183,14 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
         email: user.email,
         displayName: user.displayName,
       });
+
+      // Get Firebase ID token to sync with backend
+      const idToken = await user.getIdToken();
+      console.log('[RegisterScreen] Got Firebase ID token, syncing with backend...');
+
+      // Sync user to NeonDB via backend
+      const syncResult = await usersApi.syncGoogleUser(idToken);
+      console.log('[RegisterScreen] User synced to backend:', syncResult);
 
       // Google users are automatically verified
       // Navigate to email verification screen (which handles the mode selection flow)

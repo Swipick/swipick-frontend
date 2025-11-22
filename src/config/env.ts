@@ -11,6 +11,7 @@ export const ENV = {
   // API Configuration
   BFF_URL: extra.bffUrl || 'http://localhost:9000',
   BFF_API_URL: extra.bffApiUrl || 'http://localhost:9000/api',
+  GAMING_API_URL: extra.gamingApiUrl || 'http://localhost:9000',
 
   // Firebase Configuration
   FIREBASE_API_KEY: extra.firebaseApiKey || '',

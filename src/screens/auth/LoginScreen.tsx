@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { authService } from "../../services/auth/authService";
+import { usersApi } from "../../services/api/users";
 import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
 
 type LoginScreenProps = {
@@ -98,7 +99,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       setLoading(true);
       console.log("[LoginScreen] Google login initiated");
 
-      // Sign in with Google
+      // Sign in with Google via Firebase
       const user = await authService.signInWithGoogle();
 
       console.log("[LoginScreen] Google login successful:", {
@@ -107,8 +108,16 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         displayName: user.displayName,
       });
 
-      // Google users are automatically verified
-      // Navigate directly to mode selection
+      // Get Firebase ID token to sync with backend
+      const idToken = await user.getIdToken();
+      console.log("[LoginScreen] Got Firebase ID token, syncing with backend...");
+
+      // Sync user to NeonDB via backend
+      const syncResult = await usersApi.syncGoogleUser(idToken);
+      console.log("[LoginScreen] User synced to backend:", syncResult);
+
+      // Navigate based on profile completion status
+      // Google users are automatically verified, so skip email verification
       onNavigate("ModeSelection");
     } catch (error: any) {
       console.error("[LoginScreen] Google login error:", error);

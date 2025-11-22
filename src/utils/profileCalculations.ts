@@ -18,20 +18,31 @@ export function normalizeSummaryResponse(response: any): UserSummary {
   const rawData = response.data?.data || response.data || response;
 
   const weeklyStats: WeeklyStats[] = (rawData.weekly_stats || []).map((week: any) => {
-    // IMPORTANT: Backend sometimes reports total_predictions: 0 incorrectly
-    // When there are unfinished matches (result: null), it doesn't count them
-    // So we calculate the ACTUAL count from the predictions array
-    const actualTotalPredictions = week.predictions?.length || week.total_predictions || 0;
+    // Check if backend provides detailed predictions array
+    const hasPredictionsArray = Array.isArray(week.predictions) && week.predictions.length > 0;
 
-    // Also recalculate correct predictions by counting is_correct: true
-    const actualCorrectPredictions = week.predictions?.filter((p: any) => p.is_correct === true).length || week.correct_predictions || 0;
+    let actualTotalPredictions: number;
+    let actualCorrectPredictions: number;
+    let actualAccuracy: number;
 
-    // Recalculate accuracy based on FINISHED matches only
-    const finishedPredictions = week.predictions?.filter((p: any) => p.result !== null) || [];
-    const finishedCorrect = finishedPredictions.filter((p: any) => p.is_correct === true).length;
-    const actualAccuracy = finishedPredictions.length > 0
-      ? (finishedCorrect / finishedPredictions.length) * 100
-      : 0;
+    if (hasPredictionsArray) {
+      // Calculate from predictions array (when available)
+      actualTotalPredictions = week.predictions.length;
+      actualCorrectPredictions = week.predictions.filter((p: any) => p.is_correct === true).length;
+
+      // Recalculate accuracy based on FINISHED matches only
+      const finishedPredictions = week.predictions.filter((p: any) => p.result !== null);
+      const finishedCorrect = finishedPredictions.filter((p: any) => p.is_correct === true).length;
+      actualAccuracy = finishedPredictions.length > 0
+        ? (finishedCorrect / finishedPredictions.length) * 100
+        : 0;
+    } else {
+      // Use backend-provided values (summary endpoint)
+      actualTotalPredictions = week.total_predictions || 0;
+      actualCorrectPredictions = week.correct_predictions || 0;
+      // Use success_rate from backend (already calculated correctly)
+      actualAccuracy = week.success_rate || 0;
+    }
 
     return {
       week: week.week,

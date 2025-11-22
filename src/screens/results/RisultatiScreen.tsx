@@ -16,7 +16,11 @@ import {
   Share,
   Animated,
   Image,
+  Dimensions,
 } from "react-native";
+
+const { height: screenHeight } = Dimensions.get("window");
+const isSmallScreen = screenHeight < 750;
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -58,7 +62,7 @@ export default function RisultatiScreen({
   mode = "live",
 }: RisultatiScreenProps) {
   const { user } = useAuthStore();
-  const [selectedWeek, setSelectedWeek] = useState<number>(7);
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [fixturesWithResults, setFixturesWithResults] = useState<
     FixtureWithResult[]
   >([]);
@@ -71,6 +75,25 @@ export default function RisultatiScreen({
     origin: { x: number; y: number };
   } | null>(null);
   const confettiRef = useRef<ConfettiCannon>(null);
+
+  // Fetch the current week on mount and set to previous week
+  useEffect(() => {
+    const initializeWeek = async () => {
+      try {
+        const currentWeek = await fixturesApi.getLiveWeek();
+        // Set to previous week (minimum week 1)
+        const previousWeek = Math.max(1, currentWeek - 1);
+        console.log(`[RisultatiScreen] Current week: ${currentWeek}, loading previous week: ${previousWeek}`);
+        setSelectedWeek(previousWeek);
+      } catch (error) {
+        console.error("[RisultatiScreen] Error fetching current week:", error);
+        // Fallback to week 1 if API fails
+        setSelectedWeek(1);
+      }
+    };
+
+    initializeWeek();
+  }, []);
 
   // Get AsyncStorage key for reveal state
   const getRevealKey = (week: number, userId: string) => {
@@ -120,11 +143,13 @@ export default function RisultatiScreen({
 
   // Load fixtures and predictions for selected week
   useEffect(() => {
-    loadWeekData();
+    if (selectedWeek !== null) {
+      loadWeekData();
+    }
   }, [selectedWeek, user]);
 
   const loadWeekData = async () => {
-    if (!user) return;
+    if (!user || selectedWeek === null) return;
 
     // Only show full loading on initial load
     if (fixturesWithResults.length === 0) {
@@ -306,7 +331,7 @@ export default function RisultatiScreen({
     fixtureId: string,
     origin: { x: number; y: number }
   ) => {
-    if (!user) return;
+    if (!user || selectedWeek === null) return;
 
     const match = matchResults.find((m) => m.fixtureId === fixtureId);
 
@@ -331,14 +356,14 @@ export default function RisultatiScreen({
   };
 
   const handlePreviousWeek = () => {
-    setSelectedWeek((prev) => Math.max(1, prev - 1));
+    setSelectedWeek((prev) => prev !== null ? Math.max(1, prev - 1) : 1);
   };
 
   const handleNextWeek = () => {
-    setSelectedWeek((prev) => Math.min(38, prev + 1));
+    setSelectedWeek((prev) => prev !== null ? Math.min(38, prev + 1) : 1);
   };
 
-  if (loading) {
+  if (loading || selectedWeek === null) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -473,12 +498,15 @@ export default function RisultatiScreen({
 function CircularMeter({ percent }: { percent: number }) {
   const clamped = Math.max(0, Math.min(100, Math.round(percent)));
 
-  // Arc properties
-  const radius = 84;
-  const strokeWidth = 16;
+  // Arc properties - smaller on small screens
+  const radius = isSmallScreen ? 67 : 84;
+  const strokeWidth = isSmallScreen ? 12 : 16;
 
   // The path is the same for both background and progress
-  const arcPath = "M 18 102 A 84 84 0 0 1 182 102";
+  // Scaled path for small screens
+  const arcPath = isSmallScreen
+    ? "M 14 82 A 67 67 0 0 1 146 82"
+    : "M 18 102 A 84 84 0 0 1 182 102";
 
   // Calculate the total length of the semicircle arc
   // Arc length = radius × angle (in radians)
@@ -492,9 +520,14 @@ function CircularMeter({ percent }: { percent: number }) {
   // strokeDashoffset: how much to offset the start of the dash
   const dashArray = `${progressLength} ${arcLength}`;
 
+  // SVG dimensions
+  const svgWidth = isSmallScreen ? 160 : 200;
+  const svgHeight = isSmallScreen ? 88 : 110;
+  const viewBox = isSmallScreen ? "0 0 160 88" : "0 0 200 110";
+
   return (
     <View style={styles.meter}>
-      <Svg width={200} height={110} viewBox="0 0 200 110">
+      <Svg width={svgWidth} height={svgHeight} viewBox={viewBox}>
         <Defs>
           <SvgLinearGradient
             id="meterGradient"
@@ -758,9 +791,9 @@ const styles = StyleSheet.create({
   headerGradient: {
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
-    paddingTop: 60,
+    paddingTop: isSmallScreen ? 35 : 60,
     paddingHorizontal: 16,
-    paddingBottom: 20, // Extend to overlap with blur
+    paddingBottom: isSmallScreen ? 12 : 20, // Extend to overlap with blur
     shadowColor: "#554099",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -779,14 +812,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
-    minHeight: 60,
+    marginBottom: isSmallScreen ? 12 : 24,
+    minHeight: isSmallScreen ? 40 : 60,
   },
   sideWeek: {
     flex: 1,
   },
   sideWeekText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     fontWeight: "500",
     color: "#fff",
   },
@@ -795,31 +828,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   currentWeekTitle: {
-    fontSize: 24,
+    fontSize: isSmallScreen ? 18 : 24,
     fontWeight: "bold",
     color: "#fff",
   },
   dateRangeText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 8,
+    marginTop: isSmallScreen ? 4 : 8,
   },
 
   // Success Meter
   meterContainer: {
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: isSmallScreen ? 6 : 12,
   },
   meter: {
-    width: 200,
-    height: 110,
+    width: isSmallScreen ? 160 : 200,
+    height: isSmallScreen ? 88 : 110,
     alignItems: "center",
     justifyContent: "center",
   },
   percentText: {
     position: "absolute",
     top: "58%",
-    fontSize: 28,
+    fontSize: isSmallScreen ? 22 : 28,
     fontWeight: "bold",
     color: "#000",
   },
@@ -828,14 +861,14 @@ const styles = StyleSheet.create({
   shareButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: isSmallScreen ? 6 : 8,
     backgroundColor: "#312e81",
     paddingHorizontal: 8,
-    paddingVertical: 16,
+    paddingVertical: isSmallScreen ? 10 : 16,
     borderRadius: 12,
-    width: 200,
+    width: isSmallScreen ? 170 : 200,
     justifyContent: "center",
-    marginTop: 8,
+    marginTop: isSmallScreen ? 4 : 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -844,7 +877,7 @@ const styles = StyleSheet.create({
   },
   shareText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     fontWeight: "600",
   },
 
@@ -866,8 +899,8 @@ const styles = StyleSheet.create({
   // Match Card
   matchCard: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: isSmallScreen ? 12 : 16,
+    padding: isSmallScreen ? 10 : 16,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
@@ -877,98 +910,98 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: "rgba(0, 0, 0, 0.05)",
-    gap: 12,
+    gap: isSmallScreen ? 8 : 12,
   },
 
   // Teams Column
   teamsColumn: {
     flex: 1,
-    gap: 12,
+    gap: isSmallScreen ? 8 : 12,
   },
   teamRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    height: 56,
+    gap: isSmallScreen ? 8 : 12,
+    height: isSmallScreen ? 40 : 56,
   },
   teamLogoImage: {
-    width: 48,
-    height: 48,
+    width: isSmallScreen ? 32 : 48,
+    height: isSmallScreen ? 32 : 48,
   },
   teamLogoFallback: {
-    width: 48,
-    height: 48,
+    width: isSmallScreen ? 32 : 48,
+    height: isSmallScreen ? 32 : 48,
     backgroundColor: "#f9fafb",
     borderRadius: 0,
     alignItems: "center",
     justifyContent: "center",
   },
   teamLogoText: {
-    fontSize: 20,
+    fontSize: isSmallScreen ? 14 : 20,
     fontWeight: "bold",
     color: "#6366f1",
   },
   teamName: {
     flex: 1,
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     fontWeight: "600",
     color: "#000",
   },
 
   // Scores Column
   scoresColumn: {
-    gap: 12,
-    minWidth: 30,
+    gap: isSmallScreen ? 8 : 12,
+    minWidth: isSmallScreen ? 24 : 30,
     alignItems: "center",
   },
   score: {
-    fontSize: 24,
+    fontSize: isSmallScreen ? 18 : 24,
     fontWeight: "600",
     color: "#000",
-    height: 56,
-    lineHeight: 56,
+    height: isSmallScreen ? 40 : 56,
+    lineHeight: isSmallScreen ? 40 : 56,
     textAlign: "center",
-    minWidth: 16,
+    minWidth: isSmallScreen ? 14 : 16,
   },
 
   // Button Column
   buttonColumn: {
-    minWidth: 72,
+    minWidth: isSmallScreen ? 56 : 72,
   },
   revealButton: {
     backgroundColor: "rgba(99, 102, 241, 0.9)",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: isSmallScreen ? 6 : 8,
+    paddingVertical: isSmallScreen ? 6 : 8,
     borderRadius: 6,
     alignItems: "center",
   },
   revealButtonText: {
-    fontSize: 11,
+    fontSize: isSmallScreen ? 9 : 11,
     fontWeight: "600",
     color: "#fff",
-    lineHeight: 14,
+    lineHeight: isSmallScreen ? 12 : 14,
   },
   finishedButton: {
     backgroundColor: "#e5e7eb",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: isSmallScreen ? 6 : 8,
+    paddingVertical: isSmallScreen ? 6 : 8,
     borderRadius: 6,
     alignItems: "center",
   },
   finishedButtonText: {
-    fontSize: 11,
+    fontSize: isSmallScreen ? 9 : 11,
     fontWeight: "600",
     color: "#374151",
-    lineHeight: 14,
+    lineHeight: isSmallScreen ? 12 : 14,
   },
 
   // Prediction Badges
   badgesColumn: {
-    gap: 8,
+    gap: isSmallScreen ? 6 : 8,
   },
   badge: {
-    width: 32,
-    height: 32,
+    width: isSmallScreen ? 26 : 32,
+    height: isSmallScreen ? 26 : 32,
     borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
@@ -988,7 +1021,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffb3b3",
   },
   badgeText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     fontWeight: "600",
   },
   badgeTextDefault: {
