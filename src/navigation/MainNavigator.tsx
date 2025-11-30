@@ -29,7 +29,7 @@ export default function MainNavigator() {
   const renderScreen = () => {
     switch (activeScreen) {
       case 'risultati':
-        return <RisultatiScreen mode={mode} week={currentWeek} />;
+        return <RisultatiScreen mode={mode} />;
       case 'gioca':
         return <GiocaScreen />;
       case 'profilo':
@@ -58,7 +58,7 @@ export default function MainNavigator() {
           onNavigateToResults={() => setActiveScreen('risultati')}
           onNavigateToGioca={() => setActiveScreen('gioca')}
           onNavigateToProfile={() => setActiveScreen('profilo')}
-          activeTab={activeScreen === 'impostazioni' ? 'profilo' : activeScreen}
+          activeTab={activeScreen}
         />
       )}
     </View>

@@ -115,7 +115,7 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
         <View style={styles.carouselPage}>
           <Image
             source={require("../../../src/assets/landingLogos/landinScroll2.png")}
-            style={styles.landingImage}
+            style={styles.landingImage2}
             resizeMode="contain"
           />
         </View>
@@ -233,9 +233,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   landingImage: {
-    width: isSmallScreen ? 300 : 400,
+    width: isSmallScreen ? 300 : 450,
     height: isSmallScreen ? 300 : 600,
-    marginTop: isSmallScreen ? 100 : 0,
+    marginTop: isSmallScreen ? 100 : 50,
+  },
+  landingImage2: {
+    width: isSmallScreen ? 450 : 750,
+    height: isSmallScreen ? 300 : 600,
+    marginTop: isSmallScreen ? 80 : 0,
+    alignSelf: "center",
+    marginLeft: isSmallScreen ? 45 : 65,
   },
   logosContainer: {
     flexDirection: "row",

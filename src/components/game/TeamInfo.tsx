@@ -61,7 +61,7 @@ export function TeamInfo({
       {/* Win Rate */}
       <View style={styles.statContainer}>
         <Text style={styles.statLabel}>{winRateLabel}</Text>
-        <Text style={styles.statValue}>{formatWinRate(winRate)}</Text>
+        <Text style={styles.statValue}>{formatWinRate(winRate ?? undefined)}</Text>
       </View>
 
       {/* Last 5 Results */}

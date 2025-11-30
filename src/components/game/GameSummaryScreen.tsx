@@ -18,7 +18,8 @@ interface GameSummaryScreenProps {
 // Team Logo Component with Fallback
 function TeamLogo({ logoPath, teamName }: { logoPath?: string | null; teamName: string }) {
   // Get local asset from logoMapper (with team name fallback)
-  const localLogo = getTeamLogo(logoPath, teamName);
+  // Convert undefined to null for getTeamLogo
+  const localLogo = getTeamLogo(logoPath ?? null, teamName);
 
   // Debug: Log when logo is not found
   if (!localLogo) {
