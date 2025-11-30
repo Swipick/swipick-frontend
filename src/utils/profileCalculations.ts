@@ -23,6 +23,7 @@ export function normalizeSummaryResponse(response: any): UserSummary {
 
     let actualTotalPredictions: number;
     let actualCorrectPredictions: number;
+    let actualFinishedPredictions: number;
     let actualAccuracy: number;
 
     if (hasPredictionsArray) {
@@ -33,6 +34,7 @@ export function normalizeSummaryResponse(response: any): UserSummary {
       // Recalculate accuracy based on FINISHED matches only
       const finishedPredictions = week.predictions.filter((p: any) => p.result !== null);
       const finishedCorrect = finishedPredictions.filter((p: any) => p.is_correct === true).length;
+      actualFinishedPredictions = finishedPredictions.length;
       actualAccuracy = finishedPredictions.length > 0
         ? (finishedCorrect / finishedPredictions.length) * 100
         : 0;
@@ -40,6 +42,8 @@ export function normalizeSummaryResponse(response: any): UserSummary {
       // Use backend-provided values (summary endpoint)
       actualTotalPredictions = week.total_predictions || 0;
       actualCorrectPredictions = week.correct_predictions || 0;
+      // For summary endpoint, assume all predictions are finished if accuracy exists
+      actualFinishedPredictions = week.success_rate > 0 || week.correct_predictions > 0 ? actualTotalPredictions : 0;
       // Use success_rate from backend (already calculated correctly)
       actualAccuracy = week.success_rate || 0;
     }
@@ -48,6 +52,7 @@ export function normalizeSummaryResponse(response: any): UserSummary {
       week: week.week,
       totalPredictions: actualTotalPredictions,
       correctPredictions: actualCorrectPredictions,
+      finishedPredictions: actualFinishedPredictions,
       accuracy: actualAccuracy,
       points: week.points,
     };
@@ -115,19 +120,21 @@ export function calculateWeightedAverage(weeklyStats: WeeklyStats[]): number {
 
 /**
  * Find best week (highest accuracy)
+ * Only considers weeks with finished matches
  * Tie-breaking rules:
  * 1. Highest accuracy percentage
  * 2. If tied: Most correct predictions
  * 3. If still tied: Earliest week number
  */
 export function findBestWeek(weeklyStats: WeeklyStats[]): WeekPerformance {
-  const played = weeklyStats.filter((w) => w.totalPredictions > 0);
+  // Only consider weeks where matches have actually finished
+  const playedAndFinished = weeklyStats.filter((w) => w.finishedPredictions > 0);
 
-  if (played.length === 0) {
+  if (playedAndFinished.length === 0) {
     return { pct: formatItalianPercentage(0), week: 1 };
   }
 
-  const best = [...played].sort((a, b) => {
+  const best = [...playedAndFinished].sort((a, b) => {
     // Higher accuracy wins
     if (b.accuracy !== a.accuracy) {
       return b.accuracy - a.accuracy;
@@ -151,19 +158,21 @@ export function findBestWeek(weeklyStats: WeeklyStats[]): WeekPerformance {
 
 /**
  * Find worst week (lowest accuracy)
+ * Only considers weeks with finished matches
  * Tie-breaking rules:
  * 1. Lowest accuracy percentage
  * 2. If tied: Fewest correct predictions
  * 3. If still tied: Earliest week number
  */
 export function findWorstWeek(weeklyStats: WeeklyStats[]): WeekPerformance {
-  const played = weeklyStats.filter((w) => w.totalPredictions > 0);
+  // Only consider weeks where matches have actually finished
+  const playedAndFinished = weeklyStats.filter((w) => w.finishedPredictions > 0);
 
-  if (played.length === 0) {
+  if (playedAndFinished.length === 0) {
     return { pct: formatItalianPercentage(0), week: 1 };
   }
 
-  const worst = [...played].sort((a, b) => {
+  const worst = [...playedAndFinished].sort((a, b) => {
     // Lower accuracy wins (worst)
     if (a.accuracy !== b.accuracy) {
       return a.accuracy - b.accuracy;

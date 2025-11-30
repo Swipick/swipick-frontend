@@ -17,7 +17,9 @@ import {
   Animated,
   Image,
   Dimensions,
+  Vibration,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 
 const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
@@ -283,6 +285,9 @@ export default function RisultatiScreen({
       );
       if (match?.isCorrect === true) {
         confettiRef.current?.start();
+        // Trigger longer vibration pattern for correct prediction
+        // Pattern: [delay, vibrate, delay, vibrate, ...]
+        Vibration.vibrate([0, 100, 50, 100, 50, 200]);
       }
       setRecentlyRevealed(null);
     }
@@ -582,7 +587,10 @@ function MatchCard({
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const buttonRef = useRef<View>(null);
 
-  const handleRevealPress = () => {
+  const handleRevealPress = async () => {
+    // Trigger haptic feedback for button press
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     // If match not finished, shake the button
     if (!match.actualResult || match.status !== "FINISHED") {
       Animated.sequence([

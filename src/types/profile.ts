@@ -27,6 +27,7 @@ export interface WeeklyStats {
   week: number;                    // Week number (1-38)
   totalPredictions: number;        // Predictions made this week (0-10)
   correctPredictions: number;      // Correct predictions this week
+  finishedPredictions: number;     // Predictions with finished matches
   accuracy: number;                // Percentage (0-100)
   points: number;                  // Points earned this week
 }
