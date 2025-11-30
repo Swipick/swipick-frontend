@@ -10,7 +10,7 @@ export interface Team {
   logo: string | null;
   position?: number; // Standings position
   winRate?: number; // Win rate percentage
-  last5?: string[]; // Last 5 results ['W', 'L', 'D', etc]
+  last5?: string[]; // Last 5 results - 2-char format: position+outcome (e.g., "1W"=home win, "2D"=away draw, "1L"=home loss)
   form?: string; // Form indicator
 }
 
@@ -26,6 +26,14 @@ export interface Fixture {
   season?: string;
 }
 
+export interface FormEntry {
+  fixtureId: string;
+  code: string; // "1" (home won), "2" (away won), or "X" (draw)
+  predicted: string | null;
+  correct: boolean | null;
+  wasHome: boolean; // Was this team playing home in this match
+}
+
 export interface MatchCard {
   fixtureId: string;  // UUID string from backend
   week: number;
@@ -38,17 +46,17 @@ export interface MatchCard {
     name: string;
     logo: string | null;
     winRateHome: number;
-    last5: string[];
+    last5: string[]; // Legacy: ["1", "X", "2"] - just result codes
     standingsPosition: number;
-    form: any[];
+    form: FormEntry[]; // New: includes wasHome + code for proper display
   };
   away: {
     name: string;
     logo: string | null;
     winRateAway: number;
-    last5: string[];
+    last5: string[]; // Legacy: ["1", "X", "2"] - just result codes
     standingsPosition: number;
-    form: any[];
+    form: FormEntry[]; // New: includes wasHome + code for proper display
   };
 }
 

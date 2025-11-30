@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { LastFiveResults } from './LastFiveResults';
 import { getTeamLogoFallback, formatWinRate } from '../../utils/formatters';
+import { FormEntry } from '../../types/game.types';
 
 const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
@@ -16,7 +17,8 @@ interface TeamInfoProps {
   winRate?: number | null;
   winRateLabel: string; // "Vittorie in casa" or "Vittorie in trasferta"
   last5: string[];
-  isHomeTeam: boolean;
+  form?: FormEntry[];
+  isHomeTeam?: boolean; // For legacy support
 }
 
 export function TeamInfo({
@@ -25,6 +27,7 @@ export function TeamInfo({
   winRate,
   winRateLabel,
   last5,
+  form,
   isHomeTeam,
 }: TeamInfoProps) {
   return (
@@ -62,7 +65,7 @@ export function TeamInfo({
       </View>
 
       {/* Last 5 Results */}
-      <LastFiveResults last5={last5} isHomeTeam={isHomeTeam} />
+      <LastFiveResults last5={last5} form={form} isHomeTeam={isHomeTeam} />
     </View>
   );
 }

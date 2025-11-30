@@ -274,6 +274,7 @@ export default function MatchCard({
           winRate={home.winRateHome}
           winRateLabel="Vittorie in casa"
           last5={home.last5 || []}
+          form={home.form}
           isHomeTeam={true}
         />
 
@@ -283,6 +284,7 @@ export default function MatchCard({
           winRate={away.winRateAway}
           winRateLabel="Vittorie in trasferta"
           last5={away.last5 || []}
+          form={away.form}
           isHomeTeam={false}
         />
       </View>

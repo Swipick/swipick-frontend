@@ -1,47 +1,80 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
+interface FormEntry {
+  fixtureId: string;
+  code: string; // "1", "2", or "X"
+  predicted: string | null;
+  correct: boolean | null;
+  wasHome: boolean;
+}
+
 interface LastFiveResultsProps {
-  last5: string[];
-  isHomeTeam: boolean;
+  last5?: string[]; // Legacy format (will be deprecated)
+  form?: FormEntry[]; // New format with full data
+  isHomeTeam?: boolean; // Legacy prop for old format
 }
 
 /**
  * LastFiveResults - Shows 5 colored badges showing recent form
  *
- * Badge Display Logic:
- * - Shows position not result: "1" (home) or "2" (away)
- * - Colors based on outcome:
- *   🟢 Green = Win (team won)
- *   🔴 Red = Loss (team lost)
- *   ⚪ Gray = Draw or no data
+ * Data Format (using form array):
+ * - form[].code: Match result ("1"=home won, "2"=away won, "X"=draw)
+ * - form[].wasHome: Boolean indicating if this team was home or away
  *
- * For home team:
- * - If match code = '1' (home won) → Green "1"
- * - If match code = 'X' (draw) → Gray "1"
- * - If match code = '2' (away won) → Red "1"
+ * Display Logic:
+ * - Number: "1" if team was home, "2" if team was away
+ * - Color: Green if won, Red if lost, Gray if draw
  *
- * For away team:
- * - If match code = '2' (away won) → Green "2"
- * - If match code = 'X' (draw) → Gray "2"
- * - If match code = '1' (home won) → Red "2"
+ * Examples for Como's last 5 games:
+ * - wasHome=true, code="1" → Como HOME and WON → Green "1"
+ * - wasHome=false, code="2" → Como AWAY and WON → Green "2"
+ * - wasHome=true, code="X" → Como HOME and DREW → Gray "1"
+ * - wasHome=false, code="1" → Como AWAY and LOST → Red "2"
  */
-export function LastFiveResults({ last5, isHomeTeam }: LastFiveResultsProps) {
-  const getBadgeStyle = (result: string) => {
-    const upperResult = result.toUpperCase();
-    const displayText = isHomeTeam ? '1' : '2';
+export function LastFiveResults({ last5, form, isHomeTeam }: LastFiveResultsProps) {
+  const getBadgeFromForm = (entry: FormEntry) => {
+    const position = entry.wasHome ? '1' : '2';
+    const code = entry.code.toUpperCase();
 
-    // Determine if this result is a win, loss, or draw for this team
+    // Determine outcome from team's perspective
     let type: 'win' | 'loss' | 'draw' = 'draw';
 
-    if (isHomeTeam) {
-      if (upperResult === '1' || upperResult === 'W') type = 'win';
-      else if (upperResult === '2' || upperResult === 'L') type = 'loss';
-      else type = 'draw'; // 'X' or 'D'
+    if (code === 'X') {
+      type = 'draw';
+    } else if (entry.wasHome) {
+      // Team was home
+      type = code === '1' ? 'win' : 'loss';
     } else {
-      if (upperResult === '2' || upperResult === 'W') type = 'win';
-      else if (upperResult === '1' || upperResult === 'L') type = 'loss';
-      else type = 'draw'; // 'X' or 'D'
+      // Team was away
+      type = code === '2' ? 'win' : 'loss';
+    }
+
+    return {
+      displayText: position,
+      ...badgeStyles[type],
+    };
+  };
+
+  const getBadgeFromLegacy = (code: string) => {
+    if (!code) {
+      return {
+        displayText: isHomeTeam ? '1' : '2',
+        ...badgeStyles.draw,
+      };
+    }
+
+    const upperCode = code.toUpperCase();
+    const displayText = isHomeTeam ? '1' : '2';
+
+    let type: 'win' | 'loss' | 'draw' = 'draw';
+
+    if (upperCode === 'X' || upperCode === 'D') {
+      type = 'draw';
+    } else if (isHomeTeam) {
+      type = upperCode === '1' || upperCode === 'W' ? 'win' : 'loss';
+    } else {
+      type = upperCode === '2' || upperCode === 'W' ? 'win' : 'loss';
     }
 
     return {
@@ -50,36 +83,47 @@ export function LastFiveResults({ last5, isHomeTeam }: LastFiveResultsProps) {
     };
   };
 
+  // Prefer form array over last5 (backward compatibility)
+  let badges: Array<{ displayText: string; backgroundColor: string; textColor: string; borderColor: string }>;
+
+  if (form && form.length > 0) {
+    // Use new format
+    badges = form.slice(0, 5).map(entry => getBadgeFromForm(entry));
+  } else if (last5 && last5.length > 0) {
+    // Use legacy format
+    badges = last5.slice(0, 5).map(code => getBadgeFromLegacy(code));
+  } else {
+    badges = [];
+  }
+
   // Ensure we always have 5 results (pad with empty if needed)
-  const results = [...last5];
-  while (results.length < 5) {
-    results.push('');
+  while (badges.length < 5) {
+    badges.push({
+      displayText: '1',
+      ...badgeStyles.draw,
+    });
   }
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Ultimi 5 risultati</Text>
       <View style={styles.badgesContainer}>
-        {results.slice(0, 5).map((result, index) => {
-          const badge = result ? getBadgeStyle(result) : { displayText: isHomeTeam ? '1' : '2', ...badgeStyles.draw };
-
-          return (
-            <View
-              key={index}
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: badge.backgroundColor,
-                  borderColor: badge.borderColor,
-                },
-              ]}
-            >
-              <Text style={[styles.badgeText, { color: badge.textColor }]}>
-                {badge.displayText}
-              </Text>
-            </View>
-          );
-        })}
+        {badges.map((badge, index) => (
+          <View
+            key={index}
+            style={[
+              styles.badge,
+              {
+                backgroundColor: badge.backgroundColor,
+                borderColor: badge.borderColor,
+              },
+            ]}
+          >
+            <Text style={[styles.badgeText, { color: badge.textColor }]}>
+              {badge.displayText}
+            </Text>
+          </View>
+        ))}
       </View>
     </View>
   );
