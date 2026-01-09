@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Swipick",
+    "slug": "swipick",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#7a57f6"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.swipick.app",
+      "buildNumber": "2",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Swipick necessita l'accesso alla tua libreria fotografica per permetterti di caricare un'immagine del profilo.",
+        "NSCameraUsageDescription": "Swipick necessita l'accesso alla fotocamera per permetterti di scattare una foto del profilo.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "com.googleusercontent.apps.519582989697-5bdjhl5n88npeboflcid3oqq3k73pkt6"
+        }
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.swipick.app",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "bffUrl": "https://swipick-backend-production-2650.up.railway.app",
+      "bffApiUrl": "https://swipick-backend-production-2650.up.railway.app/api",
+      "gamingApiUrl": "https://web-production-89230.up.railway.app",
+      "firebaseApiKey": "AIzaSyBuGtxb0-a04wUqUHxCOKRIbZEfLNJAwY4",
+      "firebaseAuthDomain": "swipick-ab224.firebaseapp.com",
+      "firebaseProjectId": "swipick-ab224",
+      "firebaseStorageBucket": "swipick-ab224.firebasestorage.app",
+      "firebaseMessagingSenderId": "519582989697",
+      "firebaseAppId": "1:519582989697:web:53f6a71176d9de4db9fc80",
+      "firebaseMeasurementId": "G-RGZGLGNK3Q",
+      "appEnv": "production",
+      "eas": {
+        "projectId": "a4f8f8ee-d90d-4258-8980-e12eca2a51f5"
+      }
+    },
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/a4f8f8ee-d90d-4258-8980-e12eca2a51f5"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}
