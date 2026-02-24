@@ -1,40 +1,48 @@
 {
   "project_info": {
-    "project_number": "519582989697",
-    "project_id": "swipick-ab224",
-    "storage_bucket": "swipick-ab224.firebasestorage.app"
+    "project_number": "614934207425",
+    "project_id": "swipick-2026",
+    "storage_bucket": "swipick-2026.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:519582989697:android:9e0736bcdebcb43fb9fc80",
+        "mobilesdk_app_id": "1:614934207425:android:6eae3c625d5037b498ed40",
         "android_client_info": {
-          "package_name": "com.swipick.app"
+          "package_name": "com.zenotomiolo.swipick"
         }
       },
       "oauth_client": [
         {
-          "client_id": "519582989697-b7tnbp6tv2ri11pev7fgep194hnjifto.apps.googleusercontent.com",
+          "client_id": "614934207425-bc6h7kg88fa0311n11i6t05ivua4nhk1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zenotomiolo.swipick",
+            "certificate_hash": "050e1446a81bd8e84347f994689a647503829a7b"
+          }
+        },
+        {
+          "client_id": "614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAeVddL4aquxHQhs8FKm3-uZk9dZxRb5jk"
+          "current_key": "AIzaSyA8tCffajErEmwRDDrehu22jDmBSXNmEFc"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "519582989697-b7tnbp6tv2ri11pev7fgep194hnjifto.apps.googleusercontent.com",
+              "client_id": "614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "519582989697-5bdjhl5n88npeboflcid3oqq3k73pkt6.apps.googleusercontent.com",
+              "client_id": "614934207425-j173qqha5p3l3lj8mm1gdincuan38d2d.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.swipick.app"
+                "bundle_id": "com.zenotomiolo.swipick"
               }
             }
           ]

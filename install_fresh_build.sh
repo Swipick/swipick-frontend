@@ -10,7 +10,7 @@ open -a Simulator
 sleep 3
 
 echo "🗑️  Uninstalling old app..."
-xcrun simctl uninstall booted com.swipick.app 2>/dev/null || true
+xcrun simctl uninstall booted com.zenotomiolo.swipick 2>/dev/null || true
 
 echo "📦 Installing fresh build..."
 xcrun simctl install booted /Users/ashm4/Projects/swipick-frontend/swipick-mobile/ios/build/Build/Products/Debug-iphonesimulator/Swipick.app

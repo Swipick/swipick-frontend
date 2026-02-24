@@ -23,14 +23,14 @@ sleep 3
 
 # Uninstall old app
 echo "🗑️  Uninstalling old app..."
-xcrun simctl uninstall booted com.swipick.app 2>/dev/null || true
+xcrun simctl uninstall booted com.zenotomiolo.swipick 2>/dev/null || true
 
 # Install new app with new icon
 echo "📦 Installing new app with updated icon..."
 xcrun simctl install booted ios/build/Build/Products/Debug-iphonesimulator/Swipick.app
 
 echo "🚀 Launching app..."
-xcrun simctl launch booted com.swipick.app
+xcrun simctl launch booted com.zenotomiolo.swipick
 
 echo ""
 echo "✨ Done! Your new icon should now be visible on the home screen!"
