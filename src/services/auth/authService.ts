@@ -21,12 +21,16 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const EMAIL_KEY = '@swipick:emailForSignIn';
 
-// Configure Google Sign-In
-GoogleSignin.configure({
-  webClientId: '519582989697-5bdjhl5n88npeboflcid3oqq3k73pkt6.apps.googleusercontent.com',
-  iosClientId: '519582989697-5bdjhl5n88npeboflcid3oqq3k73pkt6.apps.googleusercontent.com',
-  offlineAccess: true,
-});
+// Configure Google Sign-In safely to prevent launch crashes
+try {
+  GoogleSignin.configure({
+    webClientId: '614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com',
+    iosClientId: '614934207425-j173qqha5p3l3lj8mm1gdincuan38d2d.apps.googleusercontent.com',
+    offlineAccess: true,
+  });
+} catch (error) {
+  console.warn('[AuthService] GoogleSignin.configure() failed at module load:', error);
+}
 
 /**
  * Authentication Service

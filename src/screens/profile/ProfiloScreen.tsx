@@ -31,7 +31,7 @@ type ProfiloScreenProps = {
 };
 
 export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenProps) {
-  const { user } = useAuthStore();
+  const { user, signOut } = useAuthStore();
 
   // User info state
   const [userId, setUserId] = useState<string | null>(null);
@@ -109,6 +109,27 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
       setError(err.message || 'Errore nel caricamento del profilo');
       setLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Disconnetti',
+      'Sei sicuro di voler uscire dal tuo account?',
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Disconnetti',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (err) {
+              console.error('[ProfiloScreen] Logout error:', err);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleShare = async () => {
@@ -248,6 +269,12 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
           >
             <Ionicons name="share-outline" size={20} color="#FFFFFF" />
             <Text style={styles.shareButtonText}>Condividi profilo</Text>
+          </TouchableOpacity>
+
+          {/* Logout Button */}
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+            <Text style={styles.logoutButtonText}>Disconnetti</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -435,6 +462,25 @@ const styles = StyleSheet.create({
   },
   shareButtonText: {
     color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+
+  // Logout Button
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    marginTop: spacing.lg,
+  },
+  logoutButtonText: {
+    color: '#dc2626',
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 8,
