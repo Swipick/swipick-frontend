@@ -25,7 +25,7 @@ const EMAIL_KEY = '@swipick:emailForSignIn';
 try {
   GoogleSignin.configure({
     webClientId: '614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com',
-    iosClientId: '614934207425-j173qqha5p3l3lj8mm1gdincuan38d2d.apps.googleusercontent.com',
+    iosClientId: '614934207425-a2slvratu5hufc9ibf3c27lt6b3lvdq9.apps.googleusercontent.com',
     offlineAccess: true,
   });
 } catch (error) {
