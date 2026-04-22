@@ -10,9 +10,11 @@ import {
   Alert,
   Image,
   Dimensions,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { authService } from "../../services/auth/authService";
 import { usersApi } from "../../services/api/users";
 import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
@@ -129,6 +131,30 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       }
 
       Alert.alert("Errore", error.message || "Accesso con Google non riuscito");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    try {
+      setLoading(true);
+      console.log("[LoginScreen] Apple login initiated");
+
+      await authService.signInWithApple();
+
+      console.log("[LoginScreen] Apple login successful, navigating...");
+      onNavigate("ModeSelection");
+    } catch (error: any) {
+      console.error("[LoginScreen] Apple login error:", error);
+
+      // Silently ignore user cancellation
+      if (error.code === "ERR_REQUEST_CANCELED" || error.message === "apple-sign-in-cancelled") {
+        return;
+      }
+
+      const errorMessage = AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES[error.message] || AUTH_ERROR_MESSAGES.default;
+      Alert.alert("Errore", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -272,6 +298,20 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           <Text style={styles.googleButtonText}>Accedi con Google</Text>
         </TouchableOpacity>
 
+        {/* Apple Sign-In Button — iOS only (required by App Store guideline 4.8) */}
+        {Platform.OS === "ios" && (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            cornerRadius={8}
+            style={styles.appleButton}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleAppleLogin();
+            }}
+          />
+        )}
+
         {/* Spacer to push forgot password to bottom */}
         <View style={styles.spacer} />
 
@@ -403,6 +443,11 @@ const styles = StyleSheet.create({
     color: "#374151",
     fontSize: 16,
     fontWeight: "500",
+  },
+  appleButton: {
+    width: "100%" as any,
+    height: 56,
+    marginBottom: 32,
   },
   spacer: {
     flex: 1,

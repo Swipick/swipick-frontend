@@ -35,6 +35,7 @@ export const ENDPOINTS = {
     PROFILE: '/user/profile',
     STATS: '/user/stats',
     UPDATE: '/user/update',
+    SYNC_APPLE: '/users/sync-apple',
     BY_FIREBASE_UID: (firebaseUid: string) => `/users/profile/firebase/${firebaseUid}`,
     AVATAR: (userId: string) => `/users/${userId}/avatar`,
     AVATAR_UPLOAD: (userId: string) => `/users/${userId}/avatar/upload`,

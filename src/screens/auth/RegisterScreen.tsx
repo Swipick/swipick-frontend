@@ -13,6 +13,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { LinearGradient } from 'expo-linear-gradient';
 import CheckBox from 'expo-checkbox';
 import * as Haptics from 'expo-haptics';
@@ -208,6 +209,36 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       }
 
       Alert.alert('Errore', error.message || 'Accesso con Google non riuscito');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    if (!formData.agreeToTerms) {
+      triggerShake();
+      Alert.alert('Attenzione', 'Devi accettare i termini di servizio prima di continuare');
+      return;
+    }
+
+    try {
+      setGoogleLoading(true);
+      console.log('[RegisterScreen] Apple sign-in initiated');
+
+      await authService.signInWithApple();
+
+      onNavigate('EmailVerification', {
+        email: null,
+        isAppleSignIn: true,
+      });
+    } catch (error: any) {
+      console.error('[RegisterScreen] Apple sign-in error:', error);
+
+      if (error.code === 'ERR_REQUEST_CANCELED' || error.message === 'apple-sign-in-cancelled') {
+        return;
+      }
+
+      Alert.alert('Errore', error.message || 'Accesso con Apple non riuscito');
     } finally {
       setGoogleLoading(false);
     }
@@ -452,6 +483,20 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               )}
             </TouchableOpacity>
 
+            {/* Apple Sign-In Button — iOS only (required by App Store guideline 4.8) */}
+            {Platform.OS === 'ios' && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={8}
+                style={styles.appleButton}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  handleAppleSignIn();
+                }}
+              />
+            )}
+
             {/* Login Link */}
             <View style={styles.loginLinkContainer}>
               <Text style={styles.loginText}>
@@ -636,6 +681,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 16,
+  },
+  appleButton: {
+    width: '100%' as any,
+    height: 48,
     marginBottom: 16,
   },
   googleLogoImage: {

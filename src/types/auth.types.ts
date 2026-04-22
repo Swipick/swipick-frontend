@@ -34,6 +34,7 @@ export interface AuthActions {
   signUp: (credentials: RegisterCredentials) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  signInWithApple: () => Promise<void>;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -73,5 +74,8 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   [FirebaseAuthError.TOO_MANY_REQUESTS]:
     'Troppi tentativi falliti. Riprova più tardi.',
   'auth/invalid-credential': 'Credenziali non valide. Verifica email e password.',
+  'apple-sign-in-cancelled': 'Accesso con Apple annullato.',
+  'apple-sign-in-unavailable': 'Accesso con Apple non disponibile su questo dispositivo.',
+  'ERR_REQUEST_CANCELED': 'Accesso con Apple annullato.',
   default: 'Errore durante l\'accesso. Riprova.',
 };

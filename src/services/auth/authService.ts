@@ -8,6 +8,7 @@ import {
   updateProfile,
   UserCredential,
   GoogleAuthProvider,
+  OAuthProvider,
   signInWithCredential,
 } from 'firebase/auth';
 import { auth } from '../../config/firebase';
@@ -18,6 +19,9 @@ import {
   AUTH_ERROR_MESSAGES,
 } from '../../types/auth.types';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
+import { usersApi } from '../api/users';
 
 const EMAIL_KEY = '@swipick:emailForSignIn';
 
@@ -148,6 +152,52 @@ class AuthService {
         AUTH_ERROR_MESSAGES[error.code] || 'Failed to sign in with Google. Please try again.'
       );
     }
+  }
+
+  /**
+   * Sign in with Apple (iOS only)
+   */
+  async signInWithApple(): Promise<User> {
+    const available = await AppleAuthentication.isAvailableAsync();
+    if (!available) {
+      throw new Error('apple-sign-in-unavailable');
+    }
+
+    // Generate a nonce to prevent replay attacks
+    const rawNonce = Crypto.randomUUID();
+    const hashedNonce = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      rawNonce
+    );
+
+    // Native Apple authentication
+    const appleCredential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
+
+    // Build Firebase credential with raw nonce for verification
+    const provider = new OAuthProvider('apple.com');
+    const firebaseCredential = provider.credential({
+      idToken: appleCredential.identityToken!,
+      rawNonce,
+    });
+
+    // Sign in to Firebase
+    const userCredential: UserCredential = await signInWithCredential(
+      auth,
+      firebaseCredential
+    );
+
+    // Sync user to backend
+    const idToken = await userCredential.user.getIdToken();
+    await usersApi.syncAppleUser(idToken);
+
+    console.log('[AuthService] Apple Sign-In successful:', userCredential.user.uid);
+    return userCredential.user;
   }
 
   /**

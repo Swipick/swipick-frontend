@@ -13,8 +13,9 @@
     },
     "ios": {
       "supportsTablet": true,
+      "usesAppleSignIn": true,
       "bundleIdentifier": "com.zenotomiolo.swipick",
-      "buildNumber": "2",
+      "buildNumber": "12",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Swipick necessita l'accesso alla tua libreria fotografica per permetterti di caricare un'immagine del profilo.",
@@ -57,17 +58,15 @@
       "firebaseAppId": "1:614934207425:web:9520be51871f9f1998ed40",
       "appEnv": "production",
       "eas": {
-        "projectId": "a4f8f8ee-d90d-4258-8980-e12eca2a51f5"
+        "projectId": "ae8ab35a-481a-4a10-aab2-4c410d833b11"
       }
     },
     "plugins": [
       "@react-native-google-signin/google-signin"
     ],
-    "updates": {
-      "url": "https://u.expo.dev/a4f8f8ee-d90d-4258-8980-e12eca2a51f5"
-    },
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "owner": "zeno.tomiolo"
   }
 }

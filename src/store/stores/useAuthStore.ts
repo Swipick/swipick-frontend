@@ -80,6 +80,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
+  signInWithApple: async () => {
+    try {
+      set({ loading: true, error: null });
+      await authService.signInWithApple();
+      set({ loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+
   setUser: (firebaseUser: User | null) => {
     if (firebaseUser) {
       const user: AuthUser = {

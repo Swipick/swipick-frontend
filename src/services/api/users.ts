@@ -28,7 +28,38 @@ export interface SyncGoogleUserResponse {
   needsProfileCompletion: boolean;
 }
 
+export interface SyncAppleUserResponse {
+  id: string;
+  needsProfileCompletion: boolean;
+}
+
 export const usersApi = {
+  /**
+   * Sync Apple Sign-In user with backend (for Apple OAuth)
+   * Backend will create user if new, or return existing user
+   */
+  async syncAppleUser(firebaseIdToken: string): Promise<SyncAppleUserResponse> {
+    try {
+      console.log('[UsersAPI] Syncing Apple user');
+
+      const response = await apiClient.post<SyncAppleUserResponse>(
+        '/users/sync-apple',
+        { firebaseIdToken }
+      );
+
+      console.log('[UsersAPI] Apple user synced:', response);
+      return response;
+    } catch (error: any) {
+      console.error('[UsersAPI] Apple sync error:', error);
+
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+
+      throw new Error('Accesso con Apple non riuscito. Riprova più tardi.');
+    }
+  },
+
   /**
    * Register a new user with email/password
    * Backend will create Firebase user + DB record + send verification email

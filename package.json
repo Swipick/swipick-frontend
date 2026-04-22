@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -18,9 +19,11 @@
     "@tanstack/react-query": "^5.90.5",
     "axios": "^1.12.2",
     "expo": "^54.0.20",
+    "expo-apple-authentication": "~8.0.8",
     "expo-blur": "~15.0.7",
     "expo-checkbox": "^5.0.7",
     "expo-constants": "^18.0.10",
+    "expo-crypto": "~15.0.8",
     "expo-haptics": "^15.0.7",
     "expo-image-picker": "^17.0.8",
     "expo-linear-gradient": "^15.0.7",
@@ -41,9 +44,16 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/expo__vector-icons": "^9.0.1",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
+    "babel-jest": "^30.3.0",
     "babel-preset-expo": "^54.0.6",
+    "jest": "^30.3.0",
+    "jest-expo": "^55.0.16",
+    "react-native-worklets-core": "^1.6.3",
     "typescript": "~5.9.2"
   },
   "private": true
