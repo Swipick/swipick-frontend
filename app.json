@@ -58,7 +58,7 @@
       "firebaseAppId": "1:614934207425:web:9520be51871f9f1998ed40",
       "appEnv": "production",
       "eas": {
-        "projectId": "ae8ab35a-481a-4a10-aab2-4c410d833b11"
+        "projectId": "cf2a1dfa-b50c-4f70-bd99-1adf5f00e724"
       }
     },
     "plugins": [
@@ -67,6 +67,6 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "owner": "zeno.tomiolo"
+    "owner": "zenotomiolos-organization"
   }
 }
