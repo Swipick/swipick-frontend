@@ -56,6 +56,8 @@
       "firebaseStorageBucket": "swipick-2026.firebasestorage.app",
       "firebaseMessagingSenderId": "614934207425",
       "firebaseAppId": "1:614934207425:web:9520be51871f9f1998ed40",
+      "googleWebClientId": "614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com",
+      "googleIosClientId": "614934207425-a2slvratu5hufc9ibf3c27lt6b3lvdq9.apps.googleusercontent.com",
       "appEnv": "production",
       "eas": {
         "projectId": "cf2a1dfa-b50c-4f70-bd99-1adf5f00e724"

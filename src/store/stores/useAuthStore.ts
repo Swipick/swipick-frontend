@@ -7,6 +7,7 @@ import {
   RegisterCredentials,
 } from '../../types/auth.types';
 import { authService } from '../../services/auth/authService';
+import { setUnauthorizedHandler } from '../../services/api/unauthorizedHandler';
 
 /**
  * Zustand Auth Store
@@ -111,5 +112,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   clearError: () => set({ error: null }),
 }));
+
+// Sessioni zombie: su 401 ripetuti il client API forza il signout tramite
+// questo handler (registrato qui per evitare l'import circolare client→store).
+setUnauthorizedHandler(() => {
+  const { user, signOut } = useAuthStore.getState();
+  if (user) {
+    console.warn(
+      '[AuthStore] Sessione non più valida (401 ripetuti) — signout forzato',
+    );
+    void signOut();
+  }
+});
 
 export default useAuthStore;

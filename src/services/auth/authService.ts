@@ -22,14 +22,15 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { usersApi } from '../api/users';
+import { ENV } from '../../config/env';
 
 const EMAIL_KEY = '@swipick:emailForSignIn';
 
 // Configure Google Sign-In safely to prevent launch crashes
 try {
   GoogleSignin.configure({
-    webClientId: '614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com',
-    iosClientId: '614934207425-a2slvratu5hufc9ibf3c27lt6b3lvdq9.apps.googleusercontent.com',
+    webClientId: ENV.GOOGLE_WEB_CLIENT_ID,
+    iosClientId: ENV.GOOGLE_IOS_CLIENT_ID,
     offlineAccess: true,
   });
 } catch (error) {

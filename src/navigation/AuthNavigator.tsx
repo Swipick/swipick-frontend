@@ -14,9 +14,15 @@ import ModeSelectionScreen from '../screens/game/ModeSelectionScreen';
 
 type AuthScreen = 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerification' | 'LoginVerified' | 'ModeSelection';
 
+/** Parametri passati tra le schermate auth (oggi usati solo da EmailVerification). */
+export interface AuthNavParams {
+  email?: string;
+  verificationLink?: string;
+}
+
 interface NavigationState {
   screen: AuthScreen;
-  params?: any;
+  params?: AuthNavParams;
 }
 
 export default function AuthNavigator() {
@@ -25,7 +31,7 @@ export default function AuthNavigator() {
     params: undefined,
   });
 
-  const navigate = (screen: AuthScreen, params?: any) => {
+  const navigate = (screen: AuthScreen, params?: AuthNavParams) => {
     setNavigationState({ screen, params });
   };
 
@@ -37,7 +43,17 @@ export default function AuthNavigator() {
     case 'Register':
       return <RegisterScreen onNavigate={navigate} />;
     case 'EmailVerification':
-      return <EmailVerificationScreen route={{ params: navigationState.params }} onNavigate={navigate} />;
+      return (
+        <EmailVerificationScreen
+          route={{
+            params: {
+              email: navigationState.params?.email ?? '',
+              verificationLink: navigationState.params?.verificationLink,
+            },
+          }}
+          onNavigate={navigate}
+        />
+      );
     case 'LoginVerified':
       return <LoginVerifiedScreen onNavigate={navigate} />;
     case 'ModeSelection':

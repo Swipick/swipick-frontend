@@ -1,6 +1,10 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { authService } from '../auth/authService';
 import { ENV } from '../../config/env';
+import {
+  reportRequestSuccess,
+  reportUnauthorized,
+} from './unauthorizedHandler';
 
 /**
  * API Client
@@ -36,13 +40,16 @@ class ApiClient {
 
     // Response interceptor - Handle errors
     this.instance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        reportRequestSuccess();
+        return response;
+      },
       async (error) => {
         if (error.response?.status === 401) {
-          // Token expired or invalid - sign out
           console.warn('[ApiClient] Unauthorized - token expired');
-          // Don't call signOut here to avoid circular dependencies
-          // The auth store will handle this
+          // Su 401 ripetuti l'handler registrato dallo store forza il signout
+          // (registrazione in useAuthStore — niente import circolari qui).
+          reportUnauthorized();
         }
 
         console.error('[ApiClient] Response error:', {
