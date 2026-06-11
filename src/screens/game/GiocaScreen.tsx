@@ -21,21 +21,22 @@ const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
 
 export default function GiocaScreen() {
-  const { user } = useAuthStore();
-  const {
-    currentWeek,
-    mode,
-    fixtures,
-    predictions,
-    currentIndex,
-    loading,
-    error,
-    isComplete,
-    loadLiveWeek,
-    makePrediction,
-    skipCurrent,
-    resetGame,
-  } = useGameStore();
+  // Selettore: re-render solo quando cambia user (non loading/error auth)
+  const user = useAuthStore((s) => s.user);
+  // Selettori per campo: lo screen non si ri-renderizza per cambi di parti
+  // dello store che non consuma (le azioni Zustand hanno riferimenti stabili).
+  const currentWeek = useGameStore((s) => s.currentWeek);
+  const mode = useGameStore((s) => s.mode);
+  const fixtures = useGameStore((s) => s.fixtures);
+  const predictions = useGameStore((s) => s.predictions);
+  const currentIndex = useGameStore((s) => s.currentIndex);
+  const loading = useGameStore((s) => s.loading);
+  const error = useGameStore((s) => s.error);
+  const isComplete = useGameStore((s) => s.isComplete);
+  const loadLiveWeek = useGameStore((s) => s.loadLiveWeek);
+  const makePrediction = useGameStore((s) => s.makePrediction);
+  const skipCurrent = useGameStore((s) => s.skipCurrent);
+  const resetGame = useGameStore((s) => s.resetGame);
 
   const [showSummary, setShowSummary] = useState(false);
   const [shouldShake, setShouldShake] = useState(false);

@@ -21,7 +21,7 @@ import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
 
 type LoginScreenProps = {
   onNavigate: (
-    screen: "Landing" | "Welcome" | "Login" | "Register" | "EmailVerification" | "ModeSelection",
+    screen: "Landing" | "Welcome" | "Login" | "Register" | "EmailVerification",
     params?: any
   ) => void;
 };
@@ -81,9 +81,8 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         return;
       }
 
-      // User is verified, navigate to mode selection
-      console.log("[LoginScreen] Email verified, navigating to mode selection");
-      onNavigate("ModeSelection");
+      // Utente verificato: la transizione alla home la fa AppNavigator
+      // via onAuthStateChanged (AuthNavigator viene smontato).
     } catch (error: any) {
       console.error("[LoginScreen] Login error:", error);
 
@@ -118,9 +117,8 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       const syncResult = await usersApi.syncGoogleUser(idToken);
       console.log("[LoginScreen] User synced to backend:", syncResult);
 
-      // Navigate based on profile completion status
-      // Google users are automatically verified, so skip email verification
-      onNavigate("ModeSelection");
+      // Utenti Google già verificati: la transizione alla home la fa
+      // AppNavigator via onAuthStateChanged.
     } catch (error: any) {
       console.error("[LoginScreen] Google login error:", error);
 
@@ -143,8 +141,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
 
       await authService.signInWithApple();
 
-      console.log("[LoginScreen] Apple login successful, navigating...");
-      onNavigate("ModeSelection");
+      // Transizione alla home gestita da AppNavigator via onAuthStateChanged.
     } catch (error: any) {
       console.error("[LoginScreen] Apple login error:", error);
 

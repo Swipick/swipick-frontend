@@ -64,7 +64,8 @@ interface MatchResult {
 export default function RisultatiScreen({
   mode = "live",
 }: RisultatiScreenProps) {
-  const { user } = useAuthStore();
+  // Selettore: re-render solo quando cambia user (non loading/error auth)
+  const user = useAuthStore((s) => s.user);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [fixturesWithResults, setFixturesWithResults] = useState<
     FixtureWithResult[]

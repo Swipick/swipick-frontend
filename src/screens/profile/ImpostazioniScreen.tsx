@@ -24,7 +24,8 @@ type ImpostazioniScreenProps = {
 };
 
 export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenProps) {
-  const { user } = useAuthStore();
+  // Selettore: re-render solo quando cambia user (non loading/error auth)
+  const user = useAuthStore((s) => s.user);
 
   // User info state
   const [userId, setUserId] = useState<string | null>(null);

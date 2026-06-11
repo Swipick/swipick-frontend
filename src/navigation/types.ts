@@ -20,7 +20,6 @@ export type MainTabParamList = {
 
 // Game Stack
 export type GameStackParamList = {
-  ModeSelection: undefined;
   GiocaScreen: { mode: 'live' | 'test' };
   TestGiocaScreen: undefined;
 };

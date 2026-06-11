@@ -31,7 +31,9 @@ type ProfiloScreenProps = {
 };
 
 export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenProps) {
-  const { user, signOut } = useAuthStore();
+  // Selettori: re-render solo su cambi effettivi (azioni Zustand sono stabili)
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
 
   // User info state
   const [userId, setUserId] = useState<string | null>(null);

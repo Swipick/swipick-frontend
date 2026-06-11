@@ -5,14 +5,13 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
 import LoginVerifiedScreen from '../screens/auth/LoginVerifiedScreen';
-import ModeSelectionScreen from '../screens/game/ModeSelectionScreen';
 
 /**
  * Auth flow without Stack Navigator (to avoid boolean/string error in Expo Go)
  * Uses simple conditional rendering instead
  */
 
-type AuthScreen = 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerification' | 'LoginVerified' | 'ModeSelection';
+type AuthScreen = 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerification' | 'LoginVerified';
 
 /** Parametri passati tra le schermate auth (oggi usati solo da EmailVerification). */
 export interface AuthNavParams {
@@ -56,8 +55,6 @@ export default function AuthNavigator() {
       );
     case 'LoginVerified':
       return <LoginVerifiedScreen onNavigate={navigate} />;
-    case 'ModeSelection':
-      return <ModeSelectionScreen onNavigate={navigate} />;
     case 'Welcome':
     default:
       return <WelcomeScreen onNavigate={navigate} />;
