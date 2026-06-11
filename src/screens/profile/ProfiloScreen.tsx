@@ -242,7 +242,9 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
               <Text style={styles.cardLabel}>Risultato migliore</Text>
               <View style={styles.cardValueContainer}>
                 <Text style={styles.cardValueMedium}>{kpi.best.pct}</Text>
-                <Text style={styles.cardSubtitle}>giornata {kpi.best.week}</Text>
+                <Text style={styles.cardSubtitle}>
+                  {kpi.best.week !== null ? `giornata ${kpi.best.week}` : 'in attesa dei primi risultati'}
+                </Text>
               </View>
             </LinearGradient>
 
@@ -256,7 +258,9 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
               <Text style={styles.cardLabel}>Risultato peggiore</Text>
               <View style={styles.cardValueContainer}>
                 <Text style={styles.cardValueMedium}>{kpi.worst.pct}</Text>
-                <Text style={styles.cardSubtitle}>giornata {kpi.worst.week}</Text>
+                <Text style={styles.cardSubtitle}>
+                  {kpi.worst.week !== null ? `giornata ${kpi.worst.week}` : 'in attesa dei primi risultati'}
+                </Text>
               </View>
             </LinearGradient>
           </View>

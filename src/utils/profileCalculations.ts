@@ -9,17 +9,43 @@ import { WeeklyStats, UserSummary, ProfileKPI, WeekPerformance } from '../types/
 // DATA NORMALIZATION
 // ============================================================================
 
+/** Forma grezza (snake_case) della risposta del backend per il summary. */
+interface RawPrediction {
+  is_correct?: boolean | null;
+  result?: string | null;
+}
+
+interface RawWeeklyStat {
+  week: number;
+  predictions?: RawPrediction[];
+  total_predictions?: number;
+  correct_predictions?: number;
+  success_rate?: number;
+  points?: number;
+}
+
+interface RawSummary {
+  user_id: string;
+  total_predictions: number;
+  correct_predictions: number;
+  overall_success_rate: number;
+  weekly_stats?: RawWeeklyStat[];
+}
+
 /**
  * Normalize snake_case API response to camelCase
  * Handles both single-wrapped and double-wrapped responses
  */
-export function normalizeSummaryResponse(response: any): UserSummary {
+export function normalizeSummaryResponse(response: unknown): UserSummary {
   // Handle double-wrapped response: { data: { data: { ... } } }
-  const rawData = response.data?.data || response.data || response;
+  const envelope = response as { data?: { data?: RawSummary } & RawSummary };
+  const rawData: RawSummary =
+    envelope.data?.data || envelope.data || (response as RawSummary);
 
-  const weeklyStats: WeeklyStats[] = (rawData.weekly_stats || []).map((week: any) => {
+  const weeklyStats: WeeklyStats[] = (rawData.weekly_stats || []).map((week: RawWeeklyStat) => {
     // Check if backend provides detailed predictions array
-    const hasPredictionsArray = Array.isArray(week.predictions) && week.predictions.length > 0;
+    const predictions = week.predictions ?? [];
+    const hasPredictionsArray = Array.isArray(week.predictions) && predictions.length > 0;
 
     let actualTotalPredictions: number;
     let actualCorrectPredictions: number;
@@ -28,12 +54,12 @@ export function normalizeSummaryResponse(response: any): UserSummary {
 
     if (hasPredictionsArray) {
       // Calculate from predictions array (when available)
-      actualTotalPredictions = week.predictions.length;
-      actualCorrectPredictions = week.predictions.filter((p: any) => p.is_correct === true).length;
+      actualTotalPredictions = predictions.length;
+      actualCorrectPredictions = predictions.filter((p) => p.is_correct === true).length;
 
       // Recalculate accuracy based on FINISHED matches only
-      const finishedPredictions = week.predictions.filter((p: any) => p.result !== null);
-      const finishedCorrect = finishedPredictions.filter((p: any) => p.is_correct === true).length;
+      const finishedPredictions = predictions.filter((p) => p.result !== null);
+      const finishedCorrect = finishedPredictions.filter((p) => p.is_correct === true).length;
       actualFinishedPredictions = finishedPredictions.length;
       actualAccuracy = finishedPredictions.length > 0
         ? (finishedCorrect / finishedPredictions.length) * 100
@@ -43,7 +69,10 @@ export function normalizeSummaryResponse(response: any): UserSummary {
       actualTotalPredictions = week.total_predictions || 0;
       actualCorrectPredictions = week.correct_predictions || 0;
       // For summary endpoint, assume all predictions are finished if accuracy exists
-      actualFinishedPredictions = week.success_rate > 0 || week.correct_predictions > 0 ? actualTotalPredictions : 0;
+      actualFinishedPredictions =
+        (week.success_rate ?? 0) > 0 || (week.correct_predictions ?? 0) > 0
+          ? actualTotalPredictions
+          : 0;
       // Use success_rate from backend (already calculated correctly)
       actualAccuracy = week.success_rate || 0;
     }
@@ -54,7 +83,7 @@ export function normalizeSummaryResponse(response: any): UserSummary {
       correctPredictions: actualCorrectPredictions,
       finishedPredictions: actualFinishedPredictions,
       accuracy: actualAccuracy,
-      points: week.points,
+      points: week.points ?? 0,
     };
   });
 
@@ -100,7 +129,9 @@ export function calculateWeeksPlayed(weeklyStats: WeeklyStats[]): number {
  * Weeks with more predictions weigh more heavily
  */
 export function calculateWeightedAverage(weeklyStats: WeeklyStats[]): number {
-  const played = weeklyStats.filter((w) => w.totalPredictions > 0);
+  // Only finished matches count: predictions on matches still to be played
+  // must not dilute the average (start of season / giornata in corso).
+  const played = weeklyStats.filter((w) => w.finishedPredictions > 0);
 
   if (played.length === 0) {
     return 0;
@@ -108,7 +139,7 @@ export function calculateWeightedAverage(weeklyStats: WeeklyStats[]): number {
 
   const totals = played.reduce(
     (acc, week) => {
-      acc.finished += week.totalPredictions;
+      acc.finished += week.finishedPredictions;
       acc.correct += week.correctPredictions;
       return acc;
     },
@@ -131,7 +162,7 @@ export function findBestWeek(weeklyStats: WeeklyStats[]): WeekPerformance {
   const playedAndFinished = weeklyStats.filter((w) => w.finishedPredictions > 0);
 
   if (playedAndFinished.length === 0) {
-    return { pct: formatItalianPercentage(0), week: 1 };
+    return { pct: formatItalianPercentage(0), week: null };
   }
 
   const best = [...playedAndFinished].sort((a, b) => {
@@ -169,7 +200,7 @@ export function findWorstWeek(weeklyStats: WeeklyStats[]): WeekPerformance {
   const playedAndFinished = weeklyStats.filter((w) => w.finishedPredictions > 0);
 
   if (playedAndFinished.length === 0) {
-    return { pct: formatItalianPercentage(0), week: 1 };
+    return { pct: formatItalianPercentage(0), week: null };
   }
 
   const worst = [...playedAndFinished].sort((a, b) => {
@@ -212,8 +243,8 @@ export function calculateProfileKPIs(summary: UserSummary | null): ProfileKPI {
     return {
       average: formatItalianPercentage(0),
       weeksPlayed: 0,
-      best: { pct: formatItalianPercentage(0), week: 1 },
-      worst: { pct: formatItalianPercentage(0), week: 1 },
+      best: { pct: formatItalianPercentage(0), week: null },
+      worst: { pct: formatItalianPercentage(0), week: null },
     };
   }
 

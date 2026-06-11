@@ -46,7 +46,7 @@ export interface UserSummary {
 
 export interface WeekPerformance {
   pct: string;                     // Formatted percentage (e.g., "80,0%")
-  week: number;                    // Week number
+  week: number | null;             // Week number; null before the first finished results
 }
 
 export interface ProfileKPI {

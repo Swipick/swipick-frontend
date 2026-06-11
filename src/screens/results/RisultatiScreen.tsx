@@ -44,6 +44,7 @@ import {
   FixtureWithResult,
 } from "../../types/game.types";
 import { getTeamLogo } from "../../utils/logoMapper";
+import { formatDateRange, getAdjacentWeekLabels } from "../../utils/dateRange";
 
 type RisultatiScreenProps = {
   mode?: "live" | "test";
@@ -294,20 +295,15 @@ export default function RisultatiScreen({
   }, [recentlyRevealed, matchResults]);
 
   // Calculate date range for week
-  const dateRange = useMemo(() => {
-    if (fixturesWithResults.length === 0) return "dal 05/10 al 12/10";
+  const dateRange = useMemo(
+    () => formatDateRange(fixturesWithResults.map((m) => m.match_date)),
+    [fixturesWithResults]
+  );
 
-    const times = fixturesWithResults.map((m) =>
-      new Date(m.match_date).getTime()
-    );
-    const min = new Date(Math.min(...times));
-    const max = new Date(Math.max(...times));
-
-    const toIt = (d: Date) =>
-      d.toLocaleDateString("it-IT", { day: "2-digit", month: "numeric" });
-
-    return `dal ${toIt(min)} al ${toIt(max)}`;
-  }, [fixturesWithResults]);
+  const weekLabels = useMemo(
+    () => (selectedWeek !== null ? getAdjacentWeekLabels(selectedWeek) : null),
+    [selectedWeek]
+  );
 
   // Handle share
   const handleShare = async () => {
@@ -407,7 +403,7 @@ export default function RisultatiScreen({
                     },
                   ]}
                 >
-                  Giornata {selectedWeek - 1}
+                  {weekLabels?.previous ?? ""}
                 </Text>
               </TouchableOpacity>
 
@@ -415,7 +411,9 @@ export default function RisultatiScreen({
                 <Text style={styles.currentWeekTitle}>
                   Giornata {selectedWeek}
                 </Text>
-                <Text style={styles.dateRangeText}>{dateRange}</Text>
+                {dateRange !== null && (
+                  <Text style={styles.dateRangeText}>{dateRange}</Text>
+                )}
               </View>
 
               <TouchableOpacity
@@ -432,7 +430,7 @@ export default function RisultatiScreen({
                     },
                   ]}
                 >
-                  Giornata {selectedWeek + 1}
+                  {weekLabels?.next ?? ""}
                 </Text>
               </TouchableOpacity>
             </View>
