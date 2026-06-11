@@ -24,8 +24,8 @@ type RegisterScreenProps = {
   onNavigate: (screen: 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerification', params?: any) => void;
 };
 
-const TERMS_URL = "https://www.iubenda.com/terms-and-conditions/55491947?ifr=false#terms-of-use";
-const PRIVACY_URL = "https://www.iubenda.com/terms-and-conditions/55491947?ifr=false#user-rights";
+const TERMS_URL = "https://www.swipick.com/termini-e-condizioni.html";
+const PRIVACY_URL = "https://www.swipick.com/privacy-e-cookie.html";
 
 export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
   const [formData, setFormData] = useState({
