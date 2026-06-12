@@ -22,11 +22,6 @@ module.exports = defineConfig([
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       // Testi italiani: gli apostrofi in JSX sono legittimi.
       'react/no-unescaped-entities': 'off',
-      // Pattern pre-esistenti nei grandi screen: declassati a warning,
-      // da risolvere con il refactor della Fase 4 (non bloccano la CI).
-      'react-hooks/refs': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/immutability': 'warn',
     },
   },
   {
