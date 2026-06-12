@@ -18,7 +18,6 @@ import {
   RegisterCredentials,
   AUTH_ERROR_MESSAGES,
 } from '../../types/auth.types';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { usersApi } from '../api/users';
@@ -26,15 +25,34 @@ import { ENV } from '../../config/env';
 
 const EMAIL_KEY = '@swipick:emailForSignIn';
 
-// Configure Google Sign-In safely to prevent launch crashes
+// RNGoogleSignin è un modulo NATIVO assente in Expo Go: l'import statico
+// crasherebbe l'app al bundle (TurboModuleRegistry.getEnforcing). Require
+// difensivo: in Expo Go l'app parte e solo il login Google è indisponibile;
+// nei dev build e in produzione il comportamento è identico a prima.
+type GoogleSigninModule =
+  typeof import('@react-native-google-signin/google-signin').GoogleSignin;
+
+let GoogleSignin: GoogleSigninModule | null = null;
 try {
-  GoogleSignin.configure({
-    webClientId: ENV.GOOGLE_WEB_CLIENT_ID,
-    iosClientId: ENV.GOOGLE_IOS_CLIENT_ID,
-    offlineAccess: true,
-  });
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
 } catch (error) {
-  console.warn('[AuthService] GoogleSignin.configure() failed at module load:', error);
+  console.warn(
+    '[AuthService] Modulo nativo Google Sign-In non disponibile (Expo Go?). Login Google disabilitato.',
+  );
+}
+
+// Configure Google Sign-In safely to prevent launch crashes
+if (GoogleSignin) {
+  try {
+    GoogleSignin.configure({
+      webClientId: ENV.GOOGLE_WEB_CLIENT_ID,
+      iosClientId: ENV.GOOGLE_IOS_CLIENT_ID,
+      offlineAccess: true,
+    });
+  } catch (error) {
+    console.warn('[AuthService] GoogleSignin.configure() failed at module load:', error);
+  }
 }
 
 /**
@@ -105,6 +123,11 @@ class AuthService {
    * Sign in with Google
    */
   async signInWithGoogle(): Promise<User> {
+    if (!GoogleSignin) {
+      throw new Error(
+        'Login Google non disponibile in questa build (Expo Go). Usa email e password, oppure un development build.',
+      );
+    }
     try {
       console.log('[AuthService] Starting Google Sign-In');
 
@@ -211,7 +234,7 @@ class AuthService {
 
       // Sign out from Google if user was signed in with Google
       try {
-        await GoogleSignin.signOut();
+        await GoogleSignin?.signOut();
       } catch (googleSignOutError) {
         // Ignore error if user wasn't signed in with Google
         console.log('[AuthService] Google sign out skipped:', googleSignOutError);
