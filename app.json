@@ -2,7 +2,7 @@
   "expo": {
     "name": "Swipick",
     "slug": "swipick",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -69,6 +69,9 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "owner": "zenotomiolos-organization"
+    "owner": "zenotomiolos-organization",
+    "updates": {
+      "url": "https://u.expo.dev/cf2a1dfa-b50c-4f70-bd99-1adf5f00e724"
+    }
   }
 }
