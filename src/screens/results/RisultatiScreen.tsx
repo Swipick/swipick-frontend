@@ -67,6 +67,10 @@ export default function RisultatiScreen({
   // Selettore: re-render solo quando cambia user (non loading/error auth)
   const user = useAuthStore((s) => s.user);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  // Season being shown. During the pre-season gap this is the previous
+  // season (last with results); it follows last-played once the new season
+  // has played matches. Navigation stays within this season (MVP: stop at edges).
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [fixturesWithResults, setFixturesWithResults] = useState<
     FixtureWithResult[]
   >([]);
@@ -80,18 +84,20 @@ export default function RisultatiScreen({
   } | null>(null);
   const confettiRef = useRef<ConfettiCannon>(null);
 
-  // Fetch the current week on mount and set to previous week
+  // Open on the most recent giornata that has at least one played match.
+  // Backend handles the gap (shows the previous season until the new one starts).
   useEffect(() => {
     const initializeWeek = async () => {
       try {
-        const currentWeek = await fixturesApi.getLiveWeek();
-        // Set to previous week (minimum week 1)
-        const previousWeek = Math.max(1, currentWeek - 1);
-        console.log(`[RisultatiScreen] Current week: ${currentWeek}, loading previous week: ${previousWeek}`);
-        setSelectedWeek(previousWeek);
+        const { season, week } = await fixturesApi.getLastPlayed();
+        console.log(
+          `[RisultatiScreen] Last played: season ${season}, week ${week}`
+        );
+        setSelectedSeason(season);
+        setSelectedWeek(week);
       } catch (error) {
-        console.error("[RisultatiScreen] Error fetching current week:", error);
-        // Fallback to week 1 if API fails
+        console.error("[RisultatiScreen] Error fetching last played:", error);
+        setSelectedSeason(2025);
         setSelectedWeek(1);
       }
     };
@@ -99,9 +105,9 @@ export default function RisultatiScreen({
     initializeWeek();
   }, []);
 
-  // Get AsyncStorage key for reveal state
+  // Get AsyncStorage key for reveal state (season-scoped so seasons don't mix)
   const getRevealKey = (week: number, userId: string) => {
-    return `@swipick:revealed:${mode}:week${week}:${userId}`;
+    return `@swipick:revealed:${mode}:s${selectedSeason ?? 0}:week${week}:${userId}`;
   };
 
   // Load revealed state from AsyncStorage
@@ -147,13 +153,14 @@ export default function RisultatiScreen({
 
   // Load fixtures and predictions for selected week
   useEffect(() => {
-    if (selectedWeek !== null) {
+    if (selectedWeek !== null && selectedSeason !== null) {
       loadWeekData();
     }
-  }, [selectedWeek, user]);
+  }, [selectedWeek, selectedSeason, user]);
 
   const loadWeekData = async () => {
-    if (!user || selectedWeek === null) return;
+    if (!user || selectedWeek === null || selectedSeason === null) return;
+    const season = selectedSeason;
 
     // Only show full loading on initial load
     if (fixturesWithResults.length === 0) {
@@ -165,9 +172,10 @@ export default function RisultatiScreen({
     try {
       console.log("[RisultatiScreen] Loading data for week", selectedWeek);
 
-      // Load fixtures with results for the week
+      // Load fixtures with results for the week (season-scoped)
       const fixturesData = await fixturesApi.getFixturesWithResults(
-        selectedWeek
+        selectedWeek,
+        season
       );
       console.log(
         "[RisultatiScreen] Fixtures with results loaded:",
@@ -175,11 +183,12 @@ export default function RisultatiScreen({
       );
       setFixturesWithResults(fixturesData);
 
-      // Load user's predictions for the week
+      // Load user's predictions for the week (season-scoped)
       const stats = await predictionsApi.getWeeklyPredictions(
         user.uid,
         selectedWeek,
-        mode
+        mode,
+        season
       );
       console.log(
         "[RisultatiScreen] Predictions loaded:",

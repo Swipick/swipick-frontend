@@ -11,17 +11,39 @@ export const fixturesApi = {
   /**
    * Get match cards for a specific week
    */
-  getFixturesByWeek: async (week: number): Promise<MatchCard[]> => {
+  getFixturesByWeek: async (
+    week: number,
+    season?: number
+  ): Promise<MatchCard[]> => {
     try {
       // API returns array directly, not wrapped in object
       const response = await apiClient.get<MatchCard[]>(
-        ENDPOINTS.MATCH_CARDS.BY_WEEK(week)
+        ENDPOINTS.MATCH_CARDS.BY_WEEK(week, season)
       );
       console.log(`[FixturesAPI] Loaded ${response.length} match cards for week ${week}`);
       return response;
     } catch (error: any) {
       console.error("[FixturesAPI] Error fetching fixtures:", error);
       throw new Error("Failed to load fixtures. Please try again.");
+    }
+  },
+
+  /**
+   * Most recent (season, week) that has at least one played match.
+   * Drives the Risultati screen's initial open.
+   */
+  getLastPlayed: async (): Promise<{ season: number; week: number }> => {
+    try {
+      const response = await apiClient.get<{ season: number; week: number }>(
+        ENDPOINTS.FIXTURES.LAST_PLAYED
+      );
+      return {
+        season: response.season ?? 2025,
+        week: response.week ?? 1,
+      };
+    } catch (error: any) {
+      console.error("[FixturesAPI] Error fetching last played:", error);
+      return { season: 2025, week: 38 };
     }
   },
 
@@ -63,10 +85,13 @@ export const fixturesApi = {
    * Get fixtures with results for a specific week
    * This endpoint includes match scores and status
    */
-  getFixturesWithResults: async (week: number): Promise<FixtureWithResult[]> => {
+  getFixturesWithResults: async (
+    week: number,
+    season?: number
+  ): Promise<FixtureWithResult[]> => {
     try {
       const response = await apiClient.get<FixtureWithResult[]>(
-        ENDPOINTS.FIXTURES.BY_WEEK(week)
+        ENDPOINTS.FIXTURES.BY_WEEK(week, season)
       );
       console.log(`[FixturesAPI] Loaded ${response.length} fixtures with results for week ${week}`);
       return response;

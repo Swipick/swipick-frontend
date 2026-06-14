@@ -45,16 +45,25 @@ export const ENDPOINTS = {
 
   // Fixtures
   FIXTURES: {
-    BY_WEEK: (week: number) => `/fixtures/week/${week}`,
+    BY_WEEK: (week: number, season?: number) =>
+      `/fixtures/week/${week}${season ? `?season=${season}` : ''}`,
     BY_ID: (id: string) => `/fixtures/${id}`,
     LIVE_WEEK: '/fixtures/live-week',
+    LAST_PLAYED: '/fixtures/last-played',
   },
 
   // Predictions
   PREDICTIONS: {
     CREATE: '/predictions',
-    BY_WEEK: (userId: string, week: number, mode: 'live' | 'test' = 'live') =>
-      `/predictions/user/${userId}/week/${week}?mode=${mode}`,
+    BY_WEEK: (
+      userId: string,
+      week: number,
+      mode: 'live' | 'test' = 'live',
+      season?: number,
+    ) =>
+      `/predictions/user/${userId}/week/${week}?mode=${mode}${
+        season ? `&season=${season}` : ''
+      }`,
     SUMMARY: (userId: string, mode: 'live' | 'test' = 'live') =>
       `/predictions/user/${userId}/summary?mode=${mode}`,
     DELETE: (userId: string, mode?: 'live' | 'test') =>
@@ -63,7 +72,8 @@ export const ENDPOINTS = {
 
   // Match Cards
   MATCH_CARDS: {
-    BY_WEEK: (week: number) => `/match-cards/week/${week}`,
+    BY_WEEK: (week: number, season?: number) =>
+      `/match-cards/week/${week}${season ? `?season=${season}` : ''}`,
   },
 } as const;
 

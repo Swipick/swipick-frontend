@@ -39,11 +39,12 @@ export const predictionsApi = {
   getWeeklyPredictions: async (
     userId: string,
     week: number,
-    mode: 'live' | 'test' = 'live'
+    mode: 'live' | 'test' = 'live',
+    season?: number
   ): Promise<WeeklyStats> => {
     try {
       const response = await apiClient.get<any>(
-        ENDPOINTS.PREDICTIONS.BY_WEEK(userId, week, mode)
+        ENDPOINTS.PREDICTIONS.BY_WEEK(userId, week, mode, season)
       );
 
       // Transform snake_case to camelCase
