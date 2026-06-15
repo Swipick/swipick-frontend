@@ -2,7 +2,6 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  sendPasswordResetEmail,
   User,
   sendEmailVerification,
   updateProfile,
@@ -251,15 +250,10 @@ class AuthService {
    * Send password reset email
    */
   async resetPassword(email: string): Promise<void> {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      console.log('[AuthService] Password reset email sent to:', email);
-    } catch (error: any) {
-      console.error('[AuthService] Password reset error:', error.code);
-      throw new Error(
-        AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default
-      );
-    }
+    // Sent server-side via our branded EmailService (not Firebase's template).
+    // The BFF generates the reset link with the Admin SDK.
+    await usersApi.sendPasswordReset(email);
+    console.log('[AuthService] Password reset email requested for:', email);
   }
 
   /**

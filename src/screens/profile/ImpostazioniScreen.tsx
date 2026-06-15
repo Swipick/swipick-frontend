@@ -316,10 +316,15 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
 
         {/* Notification Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifiche</Text>
+          <Text style={styles.sectionTitle}>
+            Notifiche <Text style={styles.comingSoon}>(coming soon)</Text>
+          </Text>
           <View style={styles.sectionContent}>
-            {/* Risultati (Active) */}
-            <View style={styles.toggleRow}>
+            {/* Risultati (Disabled - coming soon) */}
+            <TouchableOpacity
+              style={[styles.toggleRow, styles.disabledRow]}
+              onPress={showProssimamente}
+            >
               <View style={styles.toggleLeft}>
                 <Text style={styles.toggleTitle}>Risultati</Text>
                 <Text style={styles.toggleDescription}>
@@ -329,10 +334,11 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
               <Switch
                 value={notifResults}
                 onValueChange={(value) => optimisticUpdate({ results: value })}
+                disabled={true}
                 trackColor={{ false: '#e5e7eb', true: '#9333ea' }}
                 thumbColor="#ffffff"
               />
-            </View>
+            </TouchableOpacity>
 
             {/* Partite (Disabled) */}
             <TouchableOpacity
@@ -374,7 +380,8 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
 
         {/* Delete Account Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pericolo</Text>
+          <Text style={styles.sectionTitle}>Attenzione</Text>
+          <Text style={styles.dangerSubtitle}>Chiudi e distruggi il tuo account</Text>
           <View style={styles.sectionContent}>
             <TouchableOpacity
               style={[styles.deleteButton, deleting && styles.disabledRow]}
@@ -519,6 +526,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1f2937',
+    marginBottom: spacing.sm,
+  },
+  comingSoon: {
+    fontStyle: 'italic',
+    fontWeight: '400',
+    color: '#6b7280',
+  },
+  dangerSubtitle: {
+    fontSize: 12,
+    color: '#4b5563',
+    marginTop: -spacing.xs,
     marginBottom: spacing.sm,
   },
   sectionContent: {
