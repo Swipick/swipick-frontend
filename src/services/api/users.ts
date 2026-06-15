@@ -109,6 +109,29 @@ export const usersApi = {
   },
 
   /**
+   * Request a branded password reset email (sent server-side via the BFF
+   * EmailService, not Firebase's default template).
+   */
+  async sendPasswordReset(email: string): Promise<void> {
+    try {
+      console.log('[UsersAPI] Requesting password reset for:', email);
+
+      await apiClient.post('/users/send-password-reset', { email });
+
+      console.log('[UsersAPI] Password reset email requested successfully');
+    } catch (error: any) {
+      console.error('[UsersAPI] Password reset error:', error);
+      console.error('[UsersAPI] Error response:', error.response?.data);
+
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+
+      throw new Error('Impossibile inviare l\'email. Riprova più tardi.');
+    }
+  },
+
+  /**
    * Sync Google user with backend (for Google OAuth)
    * Backend will create user if new, or return existing user
    */
