@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,7 +30,15 @@ export default function EmailVerificationScreen({
   const { email, verificationLink } = route.params;
   const [resending, setResending] = useState(false);
   const [manualLink, setManualLink] = useState('');
+  // Cooldown to avoid rapid re-clicks that trip Firebase's per-IP throttle.
+  const [cooldown, setCooldown] = useState(0);
   const isDev = ENV.IS_DEV;
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   const handleManualLinkTest = () => {
     // For testing: Simply navigate to LoginVerified screen
@@ -60,9 +68,11 @@ export default function EmailVerificationScreen({
 
       console.log('[EmailVerification] Verification email resent successfully');
 
+      setCooldown(60);
       Alert.alert('Email inviata', 'Controlla la tua casella di posta');
     } catch (error: any) {
       console.error('[EmailVerification] Failed to resend email:', error);
+      setCooldown(30);
       Alert.alert('Errore', error.message || 'Impossibile inviare email');
     } finally {
       setResending(false);
@@ -146,15 +156,17 @@ export default function EmailVerificationScreen({
 
       {/* Resend Button */}
       <TouchableOpacity
-        style={[styles.primaryButton, resending && styles.buttonDisabled]}
+        style={[styles.primaryButton, (resending || cooldown > 0) && styles.buttonDisabled]}
         onPress={handleResendEmail}
-        disabled={resending}
+        disabled={resending || cooldown > 0}
       >
         {resending ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator color="#FFFFFF" size="small" />
             <Text style={styles.primaryButtonText}>Invio in corso...</Text>
           </View>
+        ) : cooldown > 0 ? (
+          <Text style={styles.primaryButtonText}>Riprova tra {cooldown}s</Text>
         ) : (
           <Text style={styles.primaryButtonText}>
             Invia di nuovo l'email di verifica
