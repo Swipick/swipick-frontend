@@ -27,6 +27,18 @@ type RegisterScreenProps = {
 const TERMS_URL = "https://www.swipick.com/termini-e-condizioni.html";
 const PRIVACY_URL = "https://www.swipick.com/privacy-e-cookie.html";
 
+// Single live rule row: red ✗ while unmet, green ✓ once satisfied.
+const RuleRow = ({ ok, label }: { ok: boolean; label: string }) => (
+  <View style={styles.ruleRow}>
+    <Text style={[styles.ruleIcon, ok ? styles.ruleOk : styles.ruleBad]}>
+      {ok ? '✓' : '✗'}
+    </Text>
+    <Text style={[styles.ruleText, ok ? styles.ruleOk : styles.ruleBad]}>
+      {label}
+    </Text>
+  </View>
+);
+
 export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
   const [formData, setFormData] = useState({
     nome: '',
@@ -85,13 +97,13 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       newErrors.nome = 'Solo lettere e spazi sono consentiti';
     }
 
-    // Sopranome validation
+    // Nickname validation — must match backend rules: ^[a-z0-9_]+$, length 3-50
     if (!formData.sopranome.trim()) {
-      newErrors.sopranome = 'Sopranome è richiesto';
-    } else if (formData.sopranome.length < 2) {
-      newErrors.sopranome = 'Sopranome deve avere almeno 2 caratteri';
-    } else if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(formData.sopranome)) {
-      newErrors.sopranome = 'Solo lettere e spazi sono consentiti';
+      newErrors.sopranome = 'Nickname è richiesto';
+    } else if (formData.sopranome.length < 3 || formData.sopranome.length > 50) {
+      newErrors.sopranome = 'Il nickname deve avere tra 3 e 50 caratteri';
+    } else if (!/^[a-z0-9_]+$/.test(formData.sopranome)) {
+      newErrors.sopranome = 'Solo minuscole, numeri e underscore (_)';
     }
 
     // Email validation
@@ -159,7 +171,16 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       });
     } catch (error: any) {
       console.error('[RegisterScreen] Registration failed:', error);
-      Alert.alert('Errore', error.message || 'Registrazione non riuscita');
+      const msg: string = error?.message || 'Registrazione non riuscita';
+      // Map backend conflicts/validation to the relevant field so the user can
+      // fix it inline without the form getting "stuck".
+      if (/nickname/i.test(msg)) {
+        setErrors((prev) => ({ ...prev, sopranome: msg }));
+      } else if (/email/i.test(msg)) {
+        setErrors((prev) => ({ ...prev, email: msg }));
+      } else {
+        Alert.alert('Errore', msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -264,6 +285,20 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
     Linking.openURL(PRIVACY_URL);
   };
 
+  // Live validation state for the inline rule checklists
+  const pw = formData.password;
+  const passwordRules = {
+    length: pw.length >= 8,
+    lower: /[a-z]/.test(pw),
+    upper: /[A-Z]/.test(pw),
+    digit: /\d/.test(pw),
+  };
+  const nick = formData.sopranome;
+  const nicknameRules = {
+    length: nick.length >= 3 && nick.length <= 50,
+    charset: /^[a-z0-9_]+$/.test(nick),
+  };
+
   return (
     <LinearGradient colors={['#52418d', '#7a57f6']} style={styles.gradient}>
       {/* Back Button */}
@@ -307,17 +342,33 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               )}
             </View>
 
-            {/* Sopranome */}
+            {/* Nickname (unique username) */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={[styles.input, errors.sopranome && styles.inputError]}
-                placeholder="Sopranome"
+                placeholder="Nickname (es. mario_rossi)"
                 placeholderTextColor="#9ca3af"
                 value={formData.sopranome}
-                onChangeText={(text) => setFormData({ ...formData, sopranome: text })}
-                autoCapitalize="words"
+                onChangeText={(text) => {
+                  setFormData({ ...formData, sopranome: text.toLowerCase() });
+                  if (errors.sopranome) {
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.sopranome;
+                      return next;
+                    });
+                  }
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
                 editable={!loading}
               />
+              {nick.length > 0 && (
+                <View style={styles.rulesContainer}>
+                  <RuleRow ok={nicknameRules.length} label="Tra 3 e 50 caratteri" />
+                  <RuleRow ok={nicknameRules.charset} label="Solo minuscole, numeri e underscore (_)" />
+                </View>
+              )}
               {errors.sopranome && (
                 <Text style={styles.errorText}>{errors.sopranome}</Text>
               )}
@@ -362,6 +413,14 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
                   <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
                 </TouchableOpacity>
               </View>
+              {pw.length > 0 && (
+                <View style={styles.rulesContainer}>
+                  <RuleRow ok={passwordRules.length} label="Almeno 8 caratteri" />
+                  <RuleRow ok={passwordRules.lower} label="Una lettera minuscola" />
+                  <RuleRow ok={passwordRules.upper} label="Una lettera maiuscola" />
+                  <RuleRow ok={passwordRules.digit} label="Un numero" />
+                </View>
+              )}
               {errors.password && (
                 <Text style={styles.errorText}>{errors.password}</Text>
               )}
@@ -623,6 +682,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#DC2626',
     marginTop: 4,
+  },
+  rulesContainer: {
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  ruleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  ruleIcon: {
+    width: 16,
+    fontSize: 13,
+    fontWeight: '700',
+    marginRight: 6,
+  },
+  ruleText: {
+    fontSize: 13,
+  },
+  ruleOk: {
+    color: '#16A34A',
+  },
+  ruleBad: {
+    color: '#DC2626',
   },
   checkboxContainer: {
     flexDirection: 'row',
