@@ -69,21 +69,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return;
       }
 
-      // Load existing predictions
-      const weeklyStats = await predictionsApi.getWeeklyPredictions(userId, week, mode);
+      // Load existing predictions (only for authenticated users; in guest mode
+      // there is no userId so we show the fixtures without personal predictions).
       const predictionsMap = new Map<string, PredictionChoice>();
 
-      console.log(`[GameStore] Loaded ${weeklyStats.predictions.length} predictions from API for week ${week}`);
-      console.log(`[GameStore] Raw first prediction:`, JSON.stringify(weeklyStats.predictions[0]));
+      if (userId) {
+        const weeklyStats = await predictionsApi.getWeeklyPredictions(userId, week, mode);
 
-      weeklyStats.predictions.forEach((pred: any) => {
-        // Backend returns fixture_id (snake_case), but we need fixtureId (camelCase)
-        const fixtureId = pred.fixtureId || pred.fixture_id;
-        console.log(`[GameStore] Prediction: ${fixtureId} -> ${pred.choice}`);
-        if (fixtureId) {
-          predictionsMap.set(fixtureId, pred.choice);
-        }
-      });
+        console.log(`[GameStore] Loaded ${weeklyStats.predictions.length} predictions from API for week ${week}`);
+        console.log(`[GameStore] Raw first prediction:`, JSON.stringify(weeklyStats.predictions[0]));
+
+        weeklyStats.predictions.forEach((pred: any) => {
+          // Backend returns fixture_id (snake_case), but we need fixtureId (camelCase)
+          const fixtureId = pred.fixtureId || pred.fixture_id;
+          console.log(`[GameStore] Prediction: ${fixtureId} -> ${pred.choice}`);
+          if (fixtureId) {
+            predictionsMap.set(fixtureId, pred.choice);
+          }
+        });
+      }
 
       // Check if game is already complete
       const now = new Date();

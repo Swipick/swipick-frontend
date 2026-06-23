@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import { useAuthStore } from "../../store/stores/useAuthStore";
 
 interface LandingScreenProps {
   onNavigate: (
@@ -31,6 +32,17 @@ const { width: screenWidth } = Dimensions.get("window");
 export default function LandingScreen({ onNavigate }: LandingScreenProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  const setGuest = useAuthStore((s) => s.setGuest);
+
+  const handleExploreAsGuest = async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error) {
+      console.error("[LandingScreen] Error with haptics:", error);
+    }
+    // Entra in modalità ospite: AppNavigator passa a MainNavigator (App Store 5.1.1).
+    setGuest(true);
+  };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
@@ -185,6 +197,15 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
         >
           <Text style={styles.registerButtonText}>Registrati</Text>
         </TouchableOpacity>
+
+        {/* Guest Mode Button - esplora senza account */}
+        <TouchableOpacity
+          style={styles.guestButton}
+          onPress={handleExploreAsGuest}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.guestButtonText}>Esplora senza account</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -335,5 +356,17 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  guestButton: {
+    width: "100%",
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  guestButtonText: {
+    color: "#6f49ff",
+    fontSize: 15,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

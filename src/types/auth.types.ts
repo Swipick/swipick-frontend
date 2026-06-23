@@ -25,6 +25,8 @@ export interface RegisterCredentials {
 export interface AuthState {
   user: AuthUser | null;
   firebaseUser: User | null;
+  /** Modalità ospite: l'utente esplora senza account (App Store 5.1.1). */
+  isGuest: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -36,6 +38,7 @@ export interface AuthActions {
   resetPassword: (email: string) => Promise<void>;
   signInWithApple: () => Promise<void>;
   setUser: (user: User | null) => void;
+  setGuest: (isGuest: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
