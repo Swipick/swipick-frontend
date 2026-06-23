@@ -1,6 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { colors, spacing } from "../../theme";
 import { useAuthStore } from "../../store/stores/useAuthStore";
 
@@ -28,10 +27,10 @@ export default function GuestCTA({
   return (
     <View style={[styles.container, compact && styles.containerCompact]}>
       {!compact && (
-        <Ionicons
-          name="person-circle-outline"
-          size={64}
-          color={colors.brand.purple}
+        <Image
+          source={require("../../../assets/icon.png")}
+          style={styles.logo}
+          resizeMode="contain"
         />
       )}
       <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
@@ -57,6 +56,11 @@ const styles = StyleSheet.create({
   containerCompact: {
     padding: spacing.lg,
     gap: spacing.xs,
+  },
+  logo: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
   },
   title: {
     fontSize: 20,
