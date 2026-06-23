@@ -57,12 +57,16 @@ export default function GiocaScreen() {
     }
   }, [user]);
 
-  // Show summary when all predictions complete
+  // Show summary when all predictions complete.
+  // In guest mode, after completing all scheduled matches, invite to register.
   useEffect(() => {
     if (isComplete) {
       setShowSummary(true);
+      if (!user) {
+        setShowGuestPrompt(true);
+      }
     }
-  }, [isComplete]);
+  }, [isComplete, user]);
 
   const handlePrediction = async (choice: PredictionChoice) => {
     console.log("[GiocaScreen] handlePrediction called with choice:", choice);
@@ -73,12 +77,6 @@ export default function GiocaScreen() {
     if (choice === "SKIP") {
       console.log("[GiocaScreen] Skipping current card");
       skipCurrent();
-      return;
-    }
-
-    // Guest mode: predictions are account-based — invite to register instead.
-    if (!user) {
-      setShowGuestPrompt(true);
       return;
     }
 
@@ -106,9 +104,10 @@ export default function GiocaScreen() {
       }
     }
 
-    // Make prediction for valid fixture
+    // Make prediction for valid fixture. Guests (no user) play locally — the
+    // store skips the API call when userId is empty.
     console.log("[GiocaScreen] Making prediction:", choice);
-    await makePrediction(choice, user.uid);
+    await makePrediction(choice, user?.uid ?? "");
   };
 
   const handleShakeComplete = () => {
@@ -321,8 +320,8 @@ export default function GiocaScreen() {
               <Text style={styles.guestModalCloseText}>✕</Text>
             </TouchableOpacity>
             <GuestCTA
-              title="Salva i tuoi pronostici"
-              message="Crea un account per salvare questo pronostico, vedere il tuo punteggio e scalare la classifica."
+              title="Hai completato la giornata!"
+              message="Registrati per salvare i tuoi pronostici, vedere il tuo punteggio e scalare la classifica."
             />
           </View>
         </View>

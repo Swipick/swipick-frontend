@@ -168,17 +168,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      // Save prediction to API
-      const predictionData: CreatePredictionDto = {
-        userId,
-        fixtureId: currentFixture.fixtureId,
-        choice,
-        week: currentWeek,
-        mode,
-      };
+      // Save prediction to API only for authenticated users. In guest mode
+      // (no userId) the prediction stays local — the user plays through the
+      // matchday as a demo and is invited to register at the end.
+      if (userId) {
+        const predictionData: CreatePredictionDto = {
+          userId,
+          fixtureId: currentFixture.fixtureId,
+          choice,
+          week: currentWeek,
+          mode,
+        };
 
-      console.log('[GameStore] Sending prediction data:', JSON.stringify(predictionData, null, 2));
-      await predictionsApi.createPrediction(predictionData);
+        console.log('[GameStore] Sending prediction data:', JSON.stringify(predictionData, null, 2));
+        await predictionsApi.createPrediction(predictionData);
+      }
 
       // Update local state
       const newPredictions = new Map(predictions);
