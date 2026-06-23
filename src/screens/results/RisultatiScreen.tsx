@@ -45,6 +45,7 @@ import {
 } from "../../types/game.types";
 import { getTeamLogo } from "../../utils/logoMapper";
 import { formatDateRange, getAdjacentWeekLabels } from "../../utils/dateRange";
+import GuestCTA from "../../components/common/GuestCTA";
 
 type RisultatiScreenProps = {
   mode?: "live" | "test";
@@ -159,7 +160,7 @@ export default function RisultatiScreen({
   }, [selectedWeek, selectedSeason, user]);
 
   const loadWeekData = async () => {
-    if (!user || selectedWeek === null || selectedSeason === null) return;
+    if (selectedWeek === null || selectedSeason === null) return;
     const season = selectedSeason;
 
     // Only show full loading on initial load
@@ -172,7 +173,8 @@ export default function RisultatiScreen({
     try {
       console.log("[RisultatiScreen] Loading data for week", selectedWeek);
 
-      // Load fixtures with results for the week (season-scoped)
+      // Load fixtures with results for the week (season-scoped).
+      // Public data: available also in guest mode.
       const fixturesData = await fixturesApi.getFixturesWithResults(
         selectedWeek,
         season
@@ -183,21 +185,26 @@ export default function RisultatiScreen({
       );
       setFixturesWithResults(fixturesData);
 
-      // Load user's predictions for the week (season-scoped)
-      const stats = await predictionsApi.getWeeklyPredictions(
-        user.uid,
-        selectedWeek,
-        mode,
-        season
-      );
-      console.log(
-        "[RisultatiScreen] Predictions loaded:",
-        stats.predictions.length
-      );
-      setWeeklyStats(stats);
+      // Personal predictions are account-based: load only for authenticated users.
+      if (user) {
+        const stats = await predictionsApi.getWeeklyPredictions(
+          user.uid,
+          selectedWeek,
+          mode,
+          season
+        );
+        console.log(
+          "[RisultatiScreen] Predictions loaded:",
+          stats.predictions.length
+        );
+        setWeeklyStats(stats);
 
-      // Load revealed state from AsyncStorage
-      await loadRevealedState(selectedWeek, user.uid);
+        // Load revealed state from AsyncStorage
+        await loadRevealedState(selectedWeek, user.uid);
+      } else {
+        setWeeklyStats(null);
+        setRevealed({});
+      }
     } catch (error) {
       console.error("[RisultatiScreen] Error loading data:", error);
       Alert.alert("Errore", "Impossibile caricare i risultati");
@@ -209,15 +216,11 @@ export default function RisultatiScreen({
 
   // Calculate match results with predictions
   const matchResults = useMemo((): MatchResult[] => {
-    if (!fixturesWithResults.length || !weeklyStats) return [];
+    if (!fixturesWithResults.length) return [];
 
     console.log(
       "[RisultatiScreen] Mapping predictions. Total predictions:",
-      weeklyStats.predictions.length
-    );
-    console.log(
-      "[RisultatiScreen] First prediction:",
-      JSON.stringify(weeklyStats.predictions[0])
+      weeklyStats?.predictions.length ?? 0
     );
     console.log(
       "[RisultatiScreen] First fixture ID:",
@@ -225,7 +228,8 @@ export default function RisultatiScreen({
     );
 
     const results = fixturesWithResults.map((fixture) => {
-      const prediction = weeklyStats.predictions.find(
+      // In guest mode weeklyStats is null → no personal prediction badges.
+      const prediction = weeklyStats?.predictions.find(
         (p) => p.fixtureId === fixture.id
       );
 
@@ -342,7 +346,7 @@ export default function RisultatiScreen({
     fixtureId: string,
     origin: { x: number; y: number }
   ) => {
-    if (!user || selectedWeek === null) return;
+    if (selectedWeek === null) return;
 
     const match = matchResults.find((m) => m.fixtureId === fixtureId);
 
@@ -359,8 +363,10 @@ export default function RisultatiScreen({
     const newRevealed = { ...revealed, [fixtureId]: true };
     setRevealed(newRevealed);
 
-    // Save to AsyncStorage
-    await saveRevealedState(selectedWeek, user.uid, newRevealed);
+    // Persist reveal state only for authenticated users (guest has no userId).
+    if (user) {
+      await saveRevealedState(selectedWeek, user.uid, newRevealed);
+    }
 
     // Set recently revealed with origin for confetti
     setRecentlyRevealed({ id: fixtureId, origin });
@@ -452,18 +458,27 @@ export default function RisultatiScreen({
             tint="light"
             style={styles.meterContainerWrapper}
           >
-            <View style={styles.meterContainer}>
-              <CircularMeter percent={meter.percent} />
+            {user ? (
+              <View style={styles.meterContainer}>
+                <CircularMeter percent={meter.percent} />
 
-              {/* Share Button */}
-              <TouchableOpacity
-                style={styles.shareButton}
-                onPress={handleShare}
-              >
-                <Ionicons name="share-outline" size={18} color="#fff" />
-                <Text style={styles.shareText}>Condividi risultato</Text>
-              </TouchableOpacity>
-            </View>
+                {/* Share Button */}
+                <TouchableOpacity
+                  style={styles.shareButton}
+                  onPress={handleShare}
+                >
+                  <Ionicons name="share-outline" size={18} color="#fff" />
+                  <Text style={styles.shareText}>Condividi risultato</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // Modalità ospite: niente statistiche personali, invito a registrarsi.
+              <GuestCTA
+                compact
+                title="Le tue statistiche, qui"
+                message="Registrati per pronosticare le partite e seguire la tua percentuale di risultati indovinati."
+              />
+            )}
           </BlurView>
         </View>
 
