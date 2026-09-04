@@ -15,7 +15,6 @@ import {
   Alert,
   Share,
   Animated,
-  Image,
   Dimensions,
   Vibration,
 } from "react-native";
@@ -43,7 +42,8 @@ import {
   WeeklyStats,
   FixtureWithResult,
 } from "../../types/game.types";
-import { getTeamLogo } from "../../utils/logoMapper";
+import { PixelPlayerLogo } from "../../components/game/PixelPlayerLogo";
+import { resolveTeamKey } from "../../utils/pixelPlayers";
 import { formatDateRange, getAdjacentWeekLabels } from "../../utils/dateRange";
 import GuestCTA from "../../components/common/GuestCTA";
 
@@ -53,8 +53,8 @@ type RisultatiScreenProps = {
 
 interface MatchResult {
   fixtureId: string;
-  home: { name: string; logo: any; score: number | null };
-  away: { name: string; logo: any; score: number | null };
+  home: { name: string; score: number | null };
+  away: { name: string; score: number | null };
   userPrediction: PredictionChoice | null;
   actualResult: "1" | "X" | "2" | null;
   isCorrect: boolean | null;
@@ -85,19 +85,36 @@ export default function RisultatiScreen({
   } | null>(null);
   const confettiRef = useRef<ConfettiCannon>(null);
 
-  // Open on the most recent giornata that has at least one played match.
-  // Backend handles the gap (shows the previous season until the new one starts).
+  // Regola "classica": aprire sulla giornata PRECEDENTE a quella da giocare,
+  // così durante una giornata in corso si vede l'ultima completata (non quella
+  // parzialmente giocata). La giornata da giocare è la "live week" (/fixtures/next);
+  // apriamo quindi su liveWeek - 1. La stagione è quella del last-played (durante
+  // il campionato coincide con quella della live week). A inizio stagione o nel
+  // gap tra stagioni (liveWeek <= 1) si torna al last-played come fallback sicuro.
   useEffect(() => {
     const initializeWeek = async () => {
       try {
-        const { season, week } = await fixturesApi.getLastPlayed();
-        console.log(
-          `[RisultatiScreen] Last played: season ${season}, week ${week}`
-        );
-        setSelectedSeason(season);
-        setSelectedWeek(week);
+        const [liveWeek, lastPlayed] = await Promise.all([
+          fixturesApi.getLiveWeek(),
+          fixturesApi.getLastPlayed(),
+        ]);
+
+        if (liveWeek > 1) {
+          const previousWeek = liveWeek - 1;
+          console.log(
+            `[RisultatiScreen] Live week ${liveWeek} -> apre su giornata ${previousWeek} (stagione ${lastPlayed.season})`
+          );
+          setSelectedSeason(lastPlayed.season);
+          setSelectedWeek(previousWeek);
+        } else {
+          console.log(
+            `[RisultatiScreen] Fallback last-played: stagione ${lastPlayed.season}, giornata ${lastPlayed.week}`
+          );
+          setSelectedSeason(lastPlayed.season);
+          setSelectedWeek(lastPlayed.week);
+        }
       } catch (error) {
-        console.error("[RisultatiScreen] Error fetching last played:", error);
+        console.error("[RisultatiScreen] Error initializing week:", error);
         setSelectedSeason(2025);
         setSelectedWeek(1);
       }
@@ -246,12 +263,10 @@ export default function RisultatiScreen({
         fixtureId: fixture.id,
         home: {
           name: fixture.home_team,
-          logo: getTeamLogo(null, fixture.home_team),
           score: homeScore,
         },
         away: {
           name: fixture.away_team,
-          logo: getTeamLogo(null, fixture.away_team),
           score: awayScore,
         },
         userPrediction: prediction?.choice || null,
@@ -662,12 +677,10 @@ function MatchCard({
       <View style={styles.teamsColumn}>
         {/* Home Team */}
         <View style={styles.teamRow}>
-          {match.home.logo ? (
-            <Image
-              source={match.home.logo}
-              style={styles.teamLogoImage}
-              resizeMode="contain"
-            />
+          {resolveTeamKey(match.home.name) ? (
+            <View style={styles.teamLogoImage}>
+              <PixelPlayerLogo teamName={match.home.name} size={40} />
+            </View>
           ) : (
             <View style={styles.teamLogoFallback}>
               <Text style={styles.teamLogoText}>
@@ -682,12 +695,10 @@ function MatchCard({
 
         {/* Away Team */}
         <View style={styles.teamRow}>
-          {match.away.logo ? (
-            <Image
-              source={match.away.logo}
-              style={styles.teamLogoImage}
-              resizeMode="contain"
-            />
+          {resolveTeamKey(match.away.name) ? (
+            <View style={styles.teamLogoImage}>
+              <PixelPlayerLogo teamName={match.away.name} size={40} />
+            </View>
           ) : (
             <View style={styles.teamLogoFallback}>
               <Text style={styles.teamLogoText}>
@@ -958,6 +969,8 @@ const styles = StyleSheet.create({
   teamLogoImage: {
     width: isSmallScreen ? 32 : 48,
     height: isSmallScreen ? 32 : 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
   teamLogoFallback: {
     width: isSmallScreen ? 32 : 48,

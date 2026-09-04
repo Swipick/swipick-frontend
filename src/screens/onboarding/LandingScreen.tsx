@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Dimensions,
   ScrollView,
@@ -13,6 +12,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useAuthStore } from "../../store/stores/useAuthStore";
+import { PixelPlayerLogo } from "../../components/game/PixelPlayerLogo";
+import { PredictSlide, ResultSlide } from "./WizardMockups";
 
 interface LandingScreenProps {
   onNavigate: (
@@ -72,15 +73,15 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
         {/* Screen 1: Team Logos + Prediction Buttons */}
         <View style={styles.carouselPage}>
           <View style={styles.logosContainer}>
-            <Image
-              source={require("../../../src/assets/landingLogos/JuventusFcLogo.png")}
-              style={[styles.teamLogo, styles.logoLeft]}
-              resizeMode="contain"
+            {/* Omini pixel: si guardano (casa a sinistra, ospite specchiato a destra) */}
+            <PixelPlayerLogo
+              teamName="Juventus"
+              size={isSmallScreen ? 70 : 100}
             />
-            <Image
-              source={require("../../../src/assets/landingLogos/NapolLogo.png")}
-              style={[styles.teamLogo, styles.logoRight]}
-              resizeMode="contain"
+            <PixelPlayerLogo
+              teamName="Napoli"
+              mirror
+              size={isSmallScreen ? 70 : 100}
             />
           </View>
 
@@ -114,22 +115,14 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
           </View>
         </View>
 
-        {/* Screen 2: First Landing Image */}
+        {/* Screen 2: Pronostica le partite (mockup vivo con omini pixel) */}
         <View style={styles.carouselPage}>
-          <Image
-            source={require("../../../src/assets/landingLogos/landinScroll1.png")}
-            style={styles.landingImage}
-            resizeMode="contain"
-          />
+          <PredictSlide />
         </View>
 
-        {/* Screen 3: Second Landing Image */}
+        {/* Screen 3: Guarda i risultati (mockup vivo con omini pixel) */}
         <View style={styles.carouselPage}>
-          <Image
-            source={require("../../../src/assets/landingLogos/landinScroll2.png")}
-            style={styles.landingImage2}
-            resizeMode="contain"
-          />
+          <ResultSlide />
         </View>
       </ScrollView>
 
@@ -253,33 +246,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     flex: 1,
   },
-  landingImage: {
-    width: isSmallScreen ? 300 : 450,
-    height: isSmallScreen ? 300 : 600,
-    marginTop: isSmallScreen ? 100 : 50,
-  },
-  landingImage2: {
-    width: isSmallScreen ? 450 : 750,
-    height: isSmallScreen ? 300 : 600,
-    marginTop: isSmallScreen ? 80 : 0,
-    alignSelf: "center",
-    marginLeft: isSmallScreen ? 45 : 65,
-  },
   logosContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 40,
-  },
-  teamLogo: {
-    width: isSmallScreen ? 70 : 100,
-    height: isSmallScreen ? 70 : 100,
-  },
-  logoLeft: {
-    transform: [{ rotate: "-15deg" }],
-  },
-  logoRight: {
-    transform: [{ rotate: "15deg" }],
   },
   predictionButtonsContainer: {
     flexDirection: "row",

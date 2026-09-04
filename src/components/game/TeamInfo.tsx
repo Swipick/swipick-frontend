@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LastFiveResults } from './LastFiveResults';
+import { PixelPlayerLogo } from './PixelPlayerLogo';
 import { getTeamLogoFallback, formatWinRate } from '../../utils/formatters';
+import { resolveTeamKey } from '../../utils/pixelPlayers';
 import { FormEntry } from '../../types/game.types';
 
 const { height: screenHeight } = Dimensions.get("window");
@@ -11,7 +13,6 @@ interface TeamInfoProps {
   team: {
     id?: number;
     name: string;
-    logo: any; // Can be require() or { uri: string }
   };
   standingsPosition?: number | null;
   winRate?: number | null;
@@ -32,10 +33,14 @@ export function TeamInfo({
 }: TeamInfoProps) {
   return (
     <View style={styles.container}>
-      {/* Team Logo */}
+      {/* Team Logo (sprite pixel-art generato dai colori maglia) */}
       <View style={styles.logoContainer}>
-        {team.logo ? (
-          <Image source={team.logo} style={styles.logo} resizeMode="contain" />
+        {resolveTeamKey(team.name) ? (
+          <PixelPlayerLogo
+            teamName={team.name}
+            mirror={!isHomeTeam}
+            size={isSmallScreen ? 60 : 96}
+          />
         ) : (
           <View style={styles.logoFallback}>
             <Text style={styles.logoFallbackText}>
@@ -78,10 +83,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginBottom: isSmallScreen ? 6 : 12,
     marginHorizontal: 'auto',
-  },
-  logo: {
-    width: isSmallScreen ? 60 : 96,
-    height: isSmallScreen ? 60 : 96,
   },
   logoFallback: {
     width: isSmallScreen ? 60 : 96,
