@@ -328,7 +328,9 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
               onPress={showProssimamente}
               activeOpacity={0.7}
             >
-              <Text style={styles.rowLabel}>username</Text>
+              <Text style={styles.rowLabel}>
+                username <Text style={styles.comingSoon}>coming soon</Text>
+              </Text>
               <View style={styles.rowRight}>
                 <Text style={styles.rowValue}>{nickname || '—'}</Text>
                 <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
@@ -385,7 +387,11 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
                 </Text>
               </View>
               <Switch
-                value={notifResults}
+                // Mostrato spento come Partite e Goal: la notifica non viene
+                // ancora inviata, quindi esporre la preferenza salvata farebbe
+                // credere attivo un avviso che non arrivera'. Il gestore resta
+                // agganciato, pronto per quando la funzione sara' attiva.
+                value={false}
                 onValueChange={(value) => optimisticUpdate({ results: value })}
                 disabled={true}
                 trackColor={{ false: '#e5e7eb', true: '#9333ea' }}
@@ -410,13 +416,13 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
               />
             </TouchableOpacity>
 
-            {/* Gol (Disabled) */}
+            {/* Goal (Disabled) */}
             <TouchableOpacity
               style={[styles.toggleRow, styles.disabledRow]}
               onPress={showProssimamente}
             >
               <View style={styles.toggleLeft}>
-                <Text style={styles.toggleTitle}>Gol</Text>
+                <Text style={styles.toggleTitle}>Goal</Text>
                 <Text style={styles.toggleDescription}>
                   Ad ogni marcatura sarai il primo a saperlo
                 </Text>
