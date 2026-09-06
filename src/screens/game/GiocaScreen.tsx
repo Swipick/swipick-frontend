@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Modal,
   View,
   StyleSheet,
   ActivityIndicator,
   Text,
   TouchableOpacity,
   Dimensions,
-  Modal,
 } from "react-native";
 import { useAuthStore } from "../../store/stores/useAuthStore";
 import { useGameStore } from "../../store/stores/useGameStore";
@@ -16,8 +16,14 @@ import GameHeader from "../../components/game/GameHeader";
 import MatchCard from "../../components/game/MatchCard";
 import PredictionButtons from "../../components/game/PredictionButtons";
 import GameSummaryScreen from "../../components/game/GameSummaryScreen";
-import Toast from "../../components/common/Toast";
 import GuestCTA from "../../components/common/GuestCTA";
+import {
+  getNextDeadline,
+  getNextInDeck,
+  getPlayableDeck,
+  getRoundProgress,
+  isRoundOver,
+} from "../../utils/gameDeck";
 
 const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
@@ -31,139 +37,82 @@ export default function GiocaScreen() {
   const mode = useGameStore((s) => s.mode);
   const fixtures = useGameStore((s) => s.fixtures);
   const predictions = useGameStore((s) => s.predictions);
-  const currentIndex = useGameStore((s) => s.currentIndex);
   const loading = useGameStore((s) => s.loading);
   const error = useGameStore((s) => s.error);
-  const isComplete = useGameStore((s) => s.isComplete);
   const loadLiveWeek = useGameStore((s) => s.loadLiveWeek);
   const makePrediction = useGameStore((s) => s.makePrediction);
-  const skipCurrent = useGameStore((s) => s.skipCurrent);
   const resetGame = useGameStore((s) => s.resetGame);
 
-  const [showSummary, setShowSummary] = useState(false);
-  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
-  const [shouldShake, setShouldShake] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
   const [headerHeight, setHeaderHeight] = useState(160);
+  // Card mostrata, identificata dal fixtureId e non da un indice: il mazzo si
+  // accorcia da solo quando una partita scade, e un indice resterebbe appeso.
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  // Il mazzo dipende dall'ora, quindi va ricalcolato mentre lo schermo e'
+  // aperto: una partita puo' iniziare proprio mentre l'utente la guarda.
+  const [now, setNow] = useState(() => new Date());
 
-  // Load fixtures on mount (only if not already loaded).
-  // In guest mode (no user) we still load the public fixtures, just without
-  // personal predictions — userId empty signals guest to the store.
   useEffect(() => {
+    const tick = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(tick);
+  }, []);
+
+  // Load fixtures on mount (only if not already loaded)
+  useEffect(() => {
+    // In modalita' ospite non c'e' userId: le fixture pubbliche si caricano
+    // lo stesso, solo senza i pronostici personali.
     if (fixtures.length === 0) {
       console.log("[GiocaScreen] Initial load - loading live week");
       loadLiveWeek(user?.uid ?? "");
     }
   }, [user]);
 
-  // Show summary when all predictions complete.
-  // In guest mode, after completing all scheduled matches, invite to register.
+
+
+  // Il mazzo: solo partite non iniziate e non ancora giocate, in ordine di
+  // scadenza. Tutto il resto della schermata deriva da qui.
+  const deck = useMemo(
+    () => getPlayableDeck(fixtures, predictions, now),
+    [fixtures, predictions, now]
+  );
+  const roundOver = isRoundOver(fixtures, predictions, now);
+  const progress = getRoundProgress(fixtures, predictions, now);
+
+  // La card corrente resta valida anche se il mazzo si accorcia sotto di lei.
+  const currentFixture =
+    deck.find((fixture) => fixture.fixtureId === currentId) ?? deck[0];
+  const nextFixture = deck.find(
+    (fixture) => fixture.fixtureId !== currentFixture?.fixtureId
+  );
+
+  const canSwipe = !loading && !!currentFixture;
+
   useEffect(() => {
-    if (isComplete) {
-      setShowSummary(true);
-      if (!user) {
-        setShowGuestPrompt(true);
-      }
+    if (roundOver && !user) {
+      setShowGuestPrompt(true);
     }
-  }, [isComplete, user]);
+  }, [roundOver, user]);
 
   const handlePrediction = async (choice: PredictionChoice) => {
-    console.log("[GiocaScreen] handlePrediction called with choice:", choice);
-    console.log("[GiocaScreen] User exists:", !!user);
-    console.log("[GiocaScreen] Current fixture ID:", currentFixture?.fixtureId);
+    if (!currentFixture) return;
 
-    // Allow SKIP even for started fixtures (and for guests, to browse cards)
+    // Skip: rimanda dentro il mazzo, senza uscire dalle giocabili.
     if (choice === "SKIP") {
-      console.log("[GiocaScreen] Skipping current card");
-      skipCurrent();
+      setCurrentId(getNextInDeck(deck, currentFixture.fixtureId));
       return;
     }
 
-    // Check if fixture has already started (only block predictions, not skip)
-    if (currentFixture) {
-      const kickoffTime = new Date(currentFixture.kickoff.iso);
-      const now = new Date();
-
-      if (kickoffTime <= now) {
-        console.log(
-          "[GiocaScreen] Fixture has already started, showing shake and toast"
-        );
-
-        // Trigger shake animation
-        setShouldShake(true);
-
-        // Show toast notification in Italian
-        const message = "Partita iniziata. Per favore, salta questa partita.";
-        console.log("[GiocaScreen] Setting toast message:", message);
-        setToastMessage(message);
-        setShowToast(true);
-        console.log("[GiocaScreen] Toast visibility set to true");
-
-        return;
-      }
-    }
-
-    // Make prediction for valid fixture. Guests (no user) play locally — the
-    // store skips the API call when userId is empty.
-    console.log("[GiocaScreen] Making prediction:", choice);
-    await makePrediction(choice, user?.uid ?? "");
-  };
-
-  const handleShakeComplete = () => {
-    setShouldShake(false);
-  };
-
-  const handleToastHide = () => {
-    setShowToast(false);
+    // Chi arriva qui e' per forza giocabile: le card iniziate non si mostrano.
+    const target = currentFixture.fixtureId;
+    setCurrentId(getNextInDeck(deck, target));
+    await makePrediction(choice, user?.uid ?? "", target);
   };
 
   const handleReset = async () => {
     if (!user) return;
     await resetGame(user.uid);
-    setShowSummary(false);
+    setCurrentId(null);
   };
-
-  const handleCloseSummary = () => {
-    setShowSummary(false);
-  };
-
-  // Calculate completion stats
-  const now = new Date();
-
-  // Total is ALWAYS the full number of fixtures (e.g., 10)
-  const totalFixtures = fixtures.length;
-
-  // Count how many games have already passed (missed predictions)
-  const missedFixtures = fixtures.filter(
-    (fixture) => new Date(fixture.kickoff.iso) <= now
-  ).length;
-
-  // Count only actual predictions made (1, X, 2) - not SKIP
-  const actualPredictions = Array.from(predictions.values()).filter(
-    (choice) => choice !== "SKIP"
-  ).length;
-
-  // Progress = actual predictions + missed games
-  // If 5 games passed and user made 2 predictions, progress = 2 + 5 = 7/10
-  // Cap at totalFixtures to prevent showing 11/10
-  const completedPredictions = Math.min(
-    actualPredictions + missedFixtures,
-    totalFixtures
-  );
-
-  // Get current fixture
-  const currentFixture = fixtures[currentIndex];
-  const currentPrediction = currentFixture
-    ? predictions.get(currentFixture.fixtureId)
-    : undefined;
-
-  // Check if current card can be swiped
-  const isFixtureStarted = currentFixture
-    ? new Date(currentFixture.kickoff.iso) <= new Date()
-    : false;
-  const canSwipe =
-    !loading && !!currentFixture && !currentPrediction && !isFixtureStarted;
 
   // Loading state
   if (loading && fixtures.length === 0) {
@@ -209,18 +158,19 @@ export default function GiocaScreen() {
         {/* Header with progress - becomes sticky when summary shows */}
         <GameHeader
           currentWeek={currentWeek}
-          totalFixtures={totalFixtures}
-          completedPredictions={completedPredictions}
+          totalFixtures={progress.total}
+          completedPredictions={progress.resolved}
+          nextKickoff={getNextDeadline(deck)}
           mode={mode}
           fixtures={fixtures}
           onReset={handleReset}
           loading={loading}
-          sticky={showSummary}
+          sticky={roundOver}
           onHeightChange={setHeaderHeight}
         />
 
         {/* Conditionally render Summary or Normal Game View */}
-        {showSummary ? (
+        {roundOver ? (
           <GameSummaryScreen
             fixtures={fixtures}
             predictions={predictions}
@@ -235,12 +185,12 @@ export default function GiocaScreen() {
                   {/* Card Stack Container */}
                   <View style={styles.cardStack}>
                     {/* Preview Card (Next Card) - Behind */}
-                    {fixtures[currentIndex + 1] && (
+                    {nextFixture && (
                       <View style={styles.previewCard}>
                         <View style={styles.previewCardInner}>
                           <MatchCard
-                            key={`preview-${fixtures[currentIndex + 1].fixtureId}`}
-                            matchCard={fixtures[currentIndex + 1]}
+                            key={`preview-${nextFixture.fixtureId}`}
+                            matchCard={nextFixture}
                             isPreview
                           />
                         </View>
@@ -254,8 +204,6 @@ export default function GiocaScreen() {
                         matchCard={currentFixture}
                         onSwipe={handlePrediction}
                         enabled={canSwipe}
-                        shouldShake={shouldShake}
-                        onShakeComplete={handleShakeComplete}
                       />
                     </View>
                   </View>
@@ -269,13 +217,11 @@ export default function GiocaScreen() {
               )}
             </View>
 
-            {/* Prediction Buttons */}
-            {currentFixture && !currentPrediction && (
+            {/* Prediction Buttons — nel mazzo ci sono solo partite mai
+                giocate, quindi i tasti sono sempre quelli di scelta. */}
+            {currentFixture && (
               <View style={styles.buttonsContainer}>
                 <PredictionButtons
-                  currentPrediction={
-                    currentPrediction as "1" | "X" | "2" | undefined
-                  }
                   disabled={loading}
                   isSkipAnimating={false}
                   onAnimateAndCommit={(direction) => {
@@ -294,14 +240,6 @@ export default function GiocaScreen() {
           </>
         )}
       </View>
-
-      {/* Toast Notification - Outside main container for proper visibility */}
-      <Toast
-        message={toastMessage}
-        visible={showToast}
-        duration={3000}
-        onHide={handleToastHide}
-      />
 
       {/* Guest mode: invito alla registrazione quando si prova a pronosticare */}
       <Modal
@@ -331,6 +269,36 @@ export default function GiocaScreen() {
 }
 
 const styles = StyleSheet.create({
+  guestModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(31, 17, 71, 0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  guestModalCard: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  guestModalClose: {
+    alignSelf: "flex-end",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  guestModalCloseText: {
+    fontSize: 18,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
   container: {
     flex: 1,
     backgroundColor: colors.backgroundSecondary,
@@ -463,35 +431,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     textAlign: "center",
-  },
-  guestModalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(31, 17, 71, 0.55)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  guestModalCard: {
-    width: "100%",
-    maxWidth: 400,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  guestModalClose: {
-    alignSelf: "flex-end",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  guestModalCloseText: {
-    fontSize: 18,
-    color: colors.textSecondary,
-    fontWeight: "600",
   },
 });

@@ -8,6 +8,8 @@ import {
 import { MatchCard, PredictionChoice } from '../../types/game.types';
 import { PixelPlayerLogo } from './PixelPlayerLogo';
 import { resolveTeamKey } from '../../utils/pixelPlayers';
+import { isAnswered } from '../../utils/prediction';
+import { colors } from '../../theme';
 
 interface GameSummaryScreenProps {
   fixtures: MatchCard[];
@@ -101,7 +103,7 @@ export default function GameSummaryScreen({
                   {/* Home Team */}
                   <View style={styles.teamRow}>
                     <TeamLogo teamName={fixture.home.name} />
-                    <Text style={styles.teamName} numberOfLines={1}>
+                    <Text style={styles.teamName}>
                       {fixture.home.name}
                     </Text>
                   </View>
@@ -109,22 +111,38 @@ export default function GameSummaryScreen({
                   {/* Away Team */}
                   <View style={styles.teamRow}>
                     <TeamLogo teamName={fixture.away.name} />
-                    <Text style={styles.teamName} numberOfLines={1}>
+                    <Text style={styles.teamName}>
                       {fixture.away.name}
                     </Text>
                   </View>
                 </View>
 
-                {/* Kickoff Time Pill */}
-                <View style={styles.kickoffPill}>
-                  <Text style={styles.kickoffText}>{kickoff}</Text>
+                {/* Orario e, sotto, l'eventuale assenza di pronostico: la
+                    scritta sta al centro e non nella colonna di destra, che
+                    e' stretta come le caselle. Metterla li' rubava larghezza
+                    ai nomi delle squadre, troncandoli. */}
+                <View style={styles.centerColumn}>
+                  <View style={styles.kickoffPill}>
+                    <Text style={styles.kickoffText}>{kickoff}</Text>
+                  </View>
+                  {!isAnswered(prediction) && (
+                    <Text style={styles.noPredictionText}>
+                      nessun pronostico
+                    </Text>
+                  )}
                 </View>
 
-                {/* Choice Badges Column */}
+                {/* Tre caselle tutte vuote non direbbero nulla: su una partita
+                    non giocata la colonna resta vuota, conservando pero' la
+                    propria larghezza cosi' le righe restano allineate. */}
                 <View style={styles.badgesColumn}>
-                  <ChoiceBadge label="1" isSelected={prediction === '1'} />
-                  <ChoiceBadge label="X" isSelected={prediction === 'X'} />
-                  <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                  {isAnswered(prediction) && (
+                    <>
+                      <ChoiceBadge label="1" isSelected={prediction === '1'} />
+                      <ChoiceBadge label="X" isSelected={prediction === 'X'} />
+                      <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                    </>
+                  )}
                 </View>
               </View>
             );
@@ -135,6 +153,17 @@ export default function GameSummaryScreen({
 }
 
 const styles = StyleSheet.create({
+  centerColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noPredictionText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.brand.purple,
+    textAlign: 'center',
+    marginTop: 6,
+  },
   // Screen Container
   container: {
     flex: 1,
@@ -225,6 +254,10 @@ const styles = StyleSheet.create({
   badgesColumn: {
     gap: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    // Conservata anche da vuota, cosi' le righe giocate e non giocate
+    // hanno le stesse proporzioni.
+    minWidth: 36,
   },
   badge: {
     minWidth: 36,

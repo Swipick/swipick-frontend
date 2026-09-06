@@ -19,7 +19,11 @@ interface GameActions {
   loadLiveWeek: (userId: string) => Promise<void>;
 
   // Predictions
-  makePrediction: (choice: PredictionChoice, userId: string) => Promise<void>;
+  makePrediction: (
+    choice: PredictionChoice,
+    userId: string,
+    fixtureId?: string,
+  ) => Promise<void>;
   skipCurrent: () => void;
 
   // Navigation
@@ -150,9 +154,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // Make a prediction
-  makePrediction: async (choice: PredictionChoice, userId: string) => {
+  makePrediction: async (
+    choice: PredictionChoice,
+    userId: string,
+    fixtureId?: string,
+  ) => {
     const { fixtures, currentIndex, predictions, currentWeek, mode } = get();
-    const currentFixture = fixtures[currentIndex];
+    // Chi conosce la card su cui sta agendo la indica: GiocaScreen naviga sul
+    // mazzo delle partite giocabili, non sull'indice dell'elenco completo.
+    const currentFixture = fixtureId
+      ? fixtures.find((f) => f.fixtureId === fixtureId)
+      : fixtures[currentIndex];
 
     if (!currentFixture) {
       console.error('[GameStore] No current fixture');
@@ -192,10 +204,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       console.log(`[GameStore] Prediction saved: ${choice} for ${currentFixture.fixtureId}`);
 
-      // Move to next card after short delay
-      setTimeout(() => {
-        get().nextCard();
-      }, 300);
+      // L'avanzamento resta a chi ha indicato la card: ricalcola il mazzo e
+      // sa gia' dove andare. Senza fixtureId vale il comportamento storico.
+      if (!fixtureId) {
+        setTimeout(() => {
+          get().nextCard();
+        }, 300);
+      }
     } catch (error: any) {
       console.error('[GameStore] Error saving prediction:', error);
       set({ loading: false, error: error.message });
