@@ -116,7 +116,7 @@ export default function GameSummaryScreen({
                       logoPath={fixture.home.logo}
                       teamName={fixture.home.name}
                     />
-                    <Text style={styles.teamName} numberOfLines={1}>
+                    <Text style={styles.teamName}>
                       {fixture.home.name}
                     </Text>
                   </View>
@@ -127,33 +127,39 @@ export default function GameSummaryScreen({
                       logoPath={fixture.away.logo}
                       teamName={fixture.away.name}
                     />
-                    <Text style={styles.teamName} numberOfLines={1}>
+                    <Text style={styles.teamName}>
                       {fixture.away.name}
                     </Text>
                   </View>
                 </View>
 
-                {/* Kickoff Time Pill */}
-                <View style={styles.kickoffPill}>
-                  <Text style={styles.kickoffText}>{kickoff}</Text>
-                </View>
-
-                {/* Scelta fatta, oppure il perche' non c'e'. Tre caselle
-                    tutte vuote non direbbero nulla: al loro posto va detto
-                    esplicitamente che su questa partita non si e' giocato. */}
-                {isAnswered(prediction) ? (
-                  <View style={styles.badgesColumn}>
-                    <ChoiceBadge label="1" isSelected={prediction === '1'} />
-                    <ChoiceBadge label="X" isSelected={prediction === 'X'} />
-                    <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                {/* Orario e, sotto, l'eventuale assenza di pronostico: la
+                    scritta sta al centro e non nella colonna di destra, che
+                    e' stretta come le caselle. Metterla li' rubava larghezza
+                    ai nomi delle squadre, troncandoli. */}
+                <View style={styles.centerColumn}>
+                  <View style={styles.kickoffPill}>
+                    <Text style={styles.kickoffText}>{kickoff}</Text>
                   </View>
-                ) : (
-                  <View style={styles.noPredictionColumn}>
+                  {!isAnswered(prediction) && (
                     <Text style={styles.noPredictionText}>
                       nessun pronostico
                     </Text>
-                  </View>
-                )}
+                  )}
+                </View>
+
+                {/* Tre caselle tutte vuote non direbbero nulla: su una partita
+                    non giocata la colonna resta vuota, conservando pero' la
+                    propria larghezza cosi' le righe restano allineate. */}
+                <View style={styles.badgesColumn}>
+                  {isAnswered(prediction) && (
+                    <>
+                      <ChoiceBadge label="1" isSelected={prediction === '1'} />
+                      <ChoiceBadge label="X" isSelected={prediction === 'X'} />
+                      <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                    </>
+                  )}
+                </View>
               </View>
             );
           })}
@@ -163,18 +169,18 @@ export default function GameSummaryScreen({
 }
 
 const styles = StyleSheet.create({
-  noPredictionColumn: {
+  centerColumn: {
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    maxWidth: 96,
   },
   noPredictionText: {
     fontSize: 11,
     fontWeight: '600',
-    // Stesso viola della casella selezionata qui sotto: la scritta ne prende
-    // il posto, quindi ne eredita l'accento.
+    // Stesso viola della casella selezionata: la scritta ne prende il posto,
+    // quindi ne eredita l'accento.
     color: '#4F46E5',
-    textAlign: 'right',
+    textAlign: 'center',
+    marginTop: 6,
   },
   // Screen Container
   container: {
@@ -265,6 +271,10 @@ const styles = StyleSheet.create({
   badgesColumn: {
     gap: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    // Conservata anche da vuota, cosi' le righe giocate e non giocate
+    // hanno le stesse proporzioni.
+    minWidth: 36,
   },
   badge: {
     minWidth: 36,
