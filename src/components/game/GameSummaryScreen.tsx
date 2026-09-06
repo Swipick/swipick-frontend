@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { MatchCard, PredictionChoice } from '../../types/game.types';
 import { getTeamLogo } from '../../utils/logoMapper';
+import { isAnswered } from '../../utils/prediction';
 
 interface GameSummaryScreenProps {
   fixtures: MatchCard[];
@@ -137,12 +138,22 @@ export default function GameSummaryScreen({
                   <Text style={styles.kickoffText}>{kickoff}</Text>
                 </View>
 
-                {/* Choice Badges Column */}
-                <View style={styles.badgesColumn}>
-                  <ChoiceBadge label="1" isSelected={prediction === '1'} />
-                  <ChoiceBadge label="X" isSelected={prediction === 'X'} />
-                  <ChoiceBadge label="2" isSelected={prediction === '2'} />
-                </View>
+                {/* Scelta fatta, oppure il perche' non c'e'. Tre caselle
+                    tutte vuote non direbbero nulla: al loro posto va detto
+                    esplicitamente che su questa partita non si e' giocato. */}
+                {isAnswered(prediction) ? (
+                  <View style={styles.badgesColumn}>
+                    <ChoiceBadge label="1" isSelected={prediction === '1'} />
+                    <ChoiceBadge label="X" isSelected={prediction === 'X'} />
+                    <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                  </View>
+                ) : (
+                  <View style={styles.noPredictionColumn}>
+                    <Text style={styles.noPredictionText}>
+                      nessun pronostico
+                    </Text>
+                  </View>
+                )}
               </View>
             );
           })}
@@ -152,6 +163,19 @@ export default function GameSummaryScreen({
 }
 
 const styles = StyleSheet.create({
+  noPredictionColumn: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    maxWidth: 96,
+  },
+  noPredictionText: {
+    fontSize: 11,
+    fontWeight: '600',
+    // Stesso viola della casella selezionata qui sotto: la scritta ne prende
+    // il posto, quindi ne eredita l'accento.
+    color: '#4F46E5',
+    textAlign: 'right',
+  },
   // Screen Container
   container: {
     flex: 1,
