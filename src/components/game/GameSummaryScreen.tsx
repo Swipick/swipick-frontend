@@ -4,10 +4,12 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { MatchCard, PredictionChoice } from '../../types/game.types';
-import { getTeamLogo } from '../../utils/logoMapper';
+import { PixelPlayerLogo } from './PixelPlayerLogo';
+import { resolveTeamKey } from '../../utils/pixelPlayers';
+import { isAnswered } from '../../utils/prediction';
+import { colors } from '../../theme';
 
 interface GameSummaryScreenProps {
   fixtures: MatchCard[];
@@ -15,18 +17,9 @@ interface GameSummaryScreenProps {
   headerHeight?: number;
 }
 
-// Team Logo Component with Fallback
-function TeamLogo({ logoPath, teamName }: { logoPath?: string | null; teamName: string }) {
-  // Get local asset from logoMapper (with team name fallback)
-  // Convert undefined to null for getTeamLogo
-  const localLogo = getTeamLogo(logoPath ?? null, teamName);
-
-  // Debug: Log when logo is not found
-  if (!localLogo) {
-    console.log(`[TeamLogo] Logo not found for ${teamName}, path: "${logoPath}"`);
-  }
-
-  if (!localLogo) {
+// Team Logo Component: sprite pixel-art con fallback a iniziale
+function TeamLogo({ teamName }: { teamName: string }) {
+  if (!resolveTeamKey(teamName)) {
     return (
       <View style={styles.logoFallback}>
         <Text style={styles.logoFallbackText}>
@@ -37,11 +30,9 @@ function TeamLogo({ logoPath, teamName }: { logoPath?: string | null; teamName: 
   }
 
   return (
-    <Image
-      source={localLogo}
-      style={styles.teamLogo}
-      resizeMode="contain"
-    />
+    <View style={styles.teamLogo}>
+      <PixelPlayerLogo teamName={teamName} size={40} />
+    </View>
   );
 }
 
@@ -111,37 +102,47 @@ export default function GameSummaryScreen({
                 <View style={styles.teamsSection}>
                   {/* Home Team */}
                   <View style={styles.teamRow}>
-                    <TeamLogo
-                      logoPath={fixture.home.logo}
-                      teamName={fixture.home.name}
-                    />
-                    <Text style={styles.teamName} numberOfLines={1}>
+                    <TeamLogo teamName={fixture.home.name} />
+                    <Text style={styles.teamName}>
                       {fixture.home.name}
                     </Text>
                   </View>
 
                   {/* Away Team */}
                   <View style={styles.teamRow}>
-                    <TeamLogo
-                      logoPath={fixture.away.logo}
-                      teamName={fixture.away.name}
-                    />
-                    <Text style={styles.teamName} numberOfLines={1}>
+                    <TeamLogo teamName={fixture.away.name} />
+                    <Text style={styles.teamName}>
                       {fixture.away.name}
                     </Text>
                   </View>
                 </View>
 
-                {/* Kickoff Time Pill */}
-                <View style={styles.kickoffPill}>
-                  <Text style={styles.kickoffText}>{kickoff}</Text>
+                {/* Orario e, sotto, l'eventuale assenza di pronostico: la
+                    scritta sta al centro e non nella colonna di destra, che
+                    e' stretta come le caselle. Metterla li' rubava larghezza
+                    ai nomi delle squadre, troncandoli. */}
+                <View style={styles.centerColumn}>
+                  <View style={styles.kickoffPill}>
+                    <Text style={styles.kickoffText}>{kickoff}</Text>
+                  </View>
+                  {!isAnswered(prediction) && (
+                    <Text style={styles.noPredictionText}>
+                      nessun pronostico
+                    </Text>
+                  )}
                 </View>
 
-                {/* Choice Badges Column */}
+                {/* Tre caselle tutte vuote non direbbero nulla: su una partita
+                    non giocata la colonna resta vuota, conservando pero' la
+                    propria larghezza cosi' le righe restano allineate. */}
                 <View style={styles.badgesColumn}>
-                  <ChoiceBadge label="1" isSelected={prediction === '1'} />
-                  <ChoiceBadge label="X" isSelected={prediction === 'X'} />
-                  <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                  {isAnswered(prediction) && (
+                    <>
+                      <ChoiceBadge label="1" isSelected={prediction === '1'} />
+                      <ChoiceBadge label="X" isSelected={prediction === 'X'} />
+                      <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                    </>
+                  )}
                 </View>
               </View>
             );
@@ -152,6 +153,17 @@ export default function GameSummaryScreen({
 }
 
 const styles = StyleSheet.create({
+  centerColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noPredictionText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.brand.purple,
+    textAlign: 'center',
+    marginTop: 6,
+  },
   // Screen Container
   container: {
     flex: 1,
@@ -198,7 +210,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     marginRight: 12,
-    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoFallback: {
     width: 48,
@@ -241,6 +254,10 @@ const styles = StyleSheet.create({
   badgesColumn: {
     gap: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    // Conservata anche da vuota, cosi' le righe giocate e non giocate
+    // hanno le stesse proporzioni.
+    minWidth: 36,
   },
   badge: {
     minWidth: 36,

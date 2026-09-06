@@ -19,7 +19,11 @@ interface GameActions {
   loadLiveWeek: (userId: string) => Promise<void>;
 
   // Predictions
-  makePrediction: (choice: PredictionChoice, userId: string) => Promise<void>;
+  makePrediction: (
+    choice: PredictionChoice,
+    userId: string,
+    fixtureId?: string,
+  ) => Promise<void>;
   skipCurrent: () => void;
 
   // Navigation
@@ -69,21 +73,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return;
       }
 
-      // Load existing predictions
-      const weeklyStats = await predictionsApi.getWeeklyPredictions(userId, week, mode);
+      // Load existing predictions (only for authenticated users; in guest mode
+      // there is no userId so we show the fixtures without personal predictions).
       const predictionsMap = new Map<string, PredictionChoice>();
 
-      console.log(`[GameStore] Loaded ${weeklyStats.predictions.length} predictions from API for week ${week}`);
-      console.log(`[GameStore] Raw first prediction:`, JSON.stringify(weeklyStats.predictions[0]));
+      if (userId) {
+        const weeklyStats = await predictionsApi.getWeeklyPredictions(userId, week, mode);
 
-      weeklyStats.predictions.forEach((pred: any) => {
-        // Backend returns fixture_id (snake_case), but we need fixtureId (camelCase)
-        const fixtureId = pred.fixtureId || pred.fixture_id;
-        console.log(`[GameStore] Prediction: ${fixtureId} -> ${pred.choice}`);
-        if (fixtureId) {
-          predictionsMap.set(fixtureId, pred.choice);
-        }
-      });
+        console.log(`[GameStore] Loaded ${weeklyStats.predictions.length} predictions from API for week ${week}`);
+        console.log(`[GameStore] Raw first prediction:`, JSON.stringify(weeklyStats.predictions[0]));
+
+        weeklyStats.predictions.forEach((pred: any) => {
+          // Backend returns fixture_id (snake_case), but we need fixtureId (camelCase)
+          const fixtureId = pred.fixtureId || pred.fixture_id;
+          console.log(`[GameStore] Prediction: ${fixtureId} -> ${pred.choice}`);
+          if (fixtureId) {
+            predictionsMap.set(fixtureId, pred.choice);
+          }
+        });
+      }
 
       // Check if game is already complete
       const now = new Date();
@@ -146,9 +154,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // Make a prediction
-  makePrediction: async (choice: PredictionChoice, userId: string) => {
+  makePrediction: async (
+    choice: PredictionChoice,
+    userId: string,
+    fixtureId?: string,
+  ) => {
     const { fixtures, currentIndex, predictions, currentWeek, mode } = get();
-    const currentFixture = fixtures[currentIndex];
+    // Chi conosce la card su cui sta agendo la indica: GiocaScreen naviga sul
+    // mazzo delle partite giocabili, non sull'indice dell'elenco completo.
+    const currentFixture = fixtureId
+      ? fixtures.find((f) => f.fixtureId === fixtureId)
+      : fixtures[currentIndex];
 
     if (!currentFixture) {
       console.error('[GameStore] No current fixture');
@@ -164,17 +180,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      // Save prediction to API
-      const predictionData: CreatePredictionDto = {
-        userId,
-        fixtureId: currentFixture.fixtureId,
-        choice,
-        week: currentWeek,
-        mode,
-      };
+      // Save prediction to API only for authenticated users. In guest mode
+      // (no userId) the prediction stays local — the user plays through the
+      // matchday as a demo and is invited to register at the end.
+      if (userId) {
+        const predictionData: CreatePredictionDto = {
+          userId,
+          fixtureId: currentFixture.fixtureId,
+          choice,
+          week: currentWeek,
+          mode,
+        };
 
-      console.log('[GameStore] Sending prediction data:', JSON.stringify(predictionData, null, 2));
-      await predictionsApi.createPrediction(predictionData);
+        console.log('[GameStore] Sending prediction data:', JSON.stringify(predictionData, null, 2));
+        await predictionsApi.createPrediction(predictionData);
+      }
 
       // Update local state
       const newPredictions = new Map(predictions);
@@ -184,10 +204,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       console.log(`[GameStore] Prediction saved: ${choice} for ${currentFixture.fixtureId}`);
 
-      // Move to next card after short delay
-      setTimeout(() => {
-        get().nextCard();
-      }, 300);
+      // L'avanzamento resta a chi ha indicato la card: ricalcola il mazzo e
+      // sa gia' dove andare. Senza fixtureId vale il comportamento storico.
+      if (!fixtureId) {
+        setTimeout(() => {
+          get().nextCard();
+        }, 300);
+      }
     } catch (error: any) {
       console.error('[GameStore] Error saving prediction:', error);
       set({ loading: false, error: error.message });

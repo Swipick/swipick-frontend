@@ -16,7 +16,6 @@ import * as Haptics from 'expo-haptics';
 import { MatchCard as MatchCardType, PredictionChoice } from '../../types/game.types';
 import { MatchDetails } from './MatchDetails';
 import { TeamInfo } from './TeamInfo';
-import { getTeamLogo } from '../../utils/logoMapper';
 
 const { width: SCREEN_WIDTH, height: screenHeight } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 150;
@@ -72,19 +71,9 @@ export default function MatchCard({
 
   const { home, away, kickoff, stadium } = matchCard;
 
-  // Get local logo assets - pass team name as fallback
-  const homeTeamLogo = getTeamLogo(home.logo, home.name);
-  const awayTeamLogo = getTeamLogo(away.logo, away.name);
-
-  const homeTeam = {
-    name: home.name,
-    logo: homeTeamLogo,
-  };
-
-  const awayTeam = {
-    name: away.name,
-    logo: awayTeamLogo,
-  };
+  // Lo sprite pixel-art viene risolto dal nome squadra dentro TeamInfo.
+  const homeTeam = { name: home.name };
+  const awayTeam = { name: away.name };
 
   const triggerHaptic = async (choice: PredictionChoice) => {
     // Medium haptic for predictions (1, X, 2), Light for skip

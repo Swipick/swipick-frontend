@@ -25,6 +25,9 @@ interface GameHeaderProps {
   mode: "live" | "test";
   fixtures: MatchCard[];
   onReset: () => void;
+  /** Scadenza verso cui scala il countdown: la prossima card che si chiude.
+   *  Se assente, si ricade sul prossimo calcio d'inizio fra tutte le partite. */
+  nextKickoff?: Date | null;
   loading?: boolean;
   sticky?: boolean;
   onHeightChange?: (height: number) => void;
@@ -36,6 +39,7 @@ export default function GameHeader({
   completedPredictions,
   mode,
   fixtures,
+  nextKickoff,
   sticky = false,
   onHeightChange,
 }: GameHeaderProps) {
@@ -98,7 +102,10 @@ export default function GameHeader({
     return futureDates.length > 0 ? futureDates[0] : null;
   };
 
-  const nextMatchDate = getNextMatchDate();
+  // Il countdown segue il mazzo quando chi ci sta sopra sa quale sia la
+  // prossima scadenza; altrimenti se la calcola da se'.
+  const nextMatchDate =
+    nextKickoff !== undefined ? nextKickoff : getNextMatchDate();
   const weekDateRange = getWeekDateRange();
 
   return (
