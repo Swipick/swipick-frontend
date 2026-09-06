@@ -16,6 +16,7 @@ import MatchCard from "../../components/game/MatchCard";
 import PredictionButtons from "../../components/game/PredictionButtons";
 import GameSummaryScreen from "../../components/game/GameSummaryScreen";
 import Toast from "../../components/common/Toast";
+import { isAnswered } from "../../utils/prediction";
 
 const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
@@ -37,6 +38,7 @@ export default function GiocaScreen() {
   const makePrediction = useGameStore((s) => s.makePrediction);
   const skipCurrent = useGameStore((s) => s.skipCurrent);
   const resetGame = useGameStore((s) => s.resetGame);
+  const nextCard = useGameStore((s) => s.nextCard);
 
   const [showSummary, setShowSummary] = useState(false);
   const [shouldShake, setShouldShake] = useState(false);
@@ -150,12 +152,15 @@ export default function GiocaScreen() {
     ? predictions.get(currentFixture.fixtureId)
     : undefined;
 
+  // Una card e' giocata solo con 1/X/2: SKIP la rimanda, non la risolve.
+  const answered = isAnswered(currentPrediction);
+
   // Check if current card can be swiped
   const isFixtureStarted = currentFixture
     ? new Date(currentFixture.kickoff.iso) <= new Date()
     : false;
   const canSwipe =
-    !loading && !!currentFixture && !currentPrediction && !isFixtureStarted;
+    !loading && !!currentFixture && !answered && !isFixtureStarted;
 
   // Loading state
   if (loading && fixtures.length === 0) {
@@ -261,13 +266,15 @@ export default function GiocaScreen() {
               )}
             </View>
 
-            {/* Prediction Buttons */}
-            {currentFixture && !currentPrediction && (
+            {/* Prediction Buttons — presenti anche sulle card gia' giocate,
+                dove mostrano la scelta fatta e offrono l'avanzamento. Senza,
+                quelle card sono senza uscita: swipe disabilitato, nessun tasto,
+                e le partite successive restano irraggiungibili. */}
+            {currentFixture && (
               <View style={styles.buttonsContainer}>
                 <PredictionButtons
-                  currentPrediction={
-                    currentPrediction as "1" | "X" | "2" | undefined
-                  }
+                  currentPrediction={answered ? currentPrediction : undefined}
+                  onAdvance={nextCard}
                   disabled={loading}
                   isSkipAnimating={false}
                   onAnimateAndCommit={(direction) => {

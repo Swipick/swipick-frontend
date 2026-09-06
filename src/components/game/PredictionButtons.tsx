@@ -15,10 +15,15 @@ const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
 
 interface PredictionButtonsProps {
+  /** Scelta gia' fatta su questa card. Se presente, i tasti la mostrano
+   *  invece di raccoglierne una nuova. */
   currentPrediction?: "1" | "X" | "2";
   disabled?: boolean;
   isSkipAnimating?: boolean;
   onAnimateAndCommit: (direction: "up" | "down" | "left" | "right") => void;
+  /** Avanza senza toccare il pronostico. Usato sulle card gia' giocate, dove
+   *  "skip" sarebbe sbagliato: la partita non e' rimandata, e' risposta. */
+  onAdvance?: () => void;
 }
 
 /**
@@ -34,8 +39,14 @@ export default function PredictionButtons({
   disabled = false,
   isSkipAnimating = false,
   onAnimateAndCommit,
+  onAdvance,
 }: PredictionButtonsProps) {
-  const isPredictionDisabled = disabled || isSkipAnimating;
+  // Card gia' giocata: i tre tasti diventano la rappresentazione della scelta,
+  // non piu' un'azione, e in fondo compare l'avanzamento. Senza questo ramo la
+  // card era un vicolo cieco — niente tasti, swipe disabilitato, nessun modo
+  // di raggiungere le partite successive.
+  const answered = currentPrediction !== undefined;
+  const isPredictionDisabled = disabled || isSkipAnimating || answered;
   const isSkipDisabled = disabled;
 
   return (
@@ -56,8 +67,11 @@ export default function PredictionButtons({
             end={{ x: 1, y: 1 }}
             style={[
               styles.predictionButton,
-              currentPrediction === "X" && styles.selectedButton,
-              isPredictionDisabled && styles.disabledButton,
+              answered &&
+                (currentPrediction === "X"
+                  ? styles.selectedButton
+                  : styles.unselectedButton),
+              isPredictionDisabled && !answered && styles.disabledButton,
             ]}
           >
             <Text style={styles.predictionButtonText}>X</Text>
@@ -81,8 +95,11 @@ export default function PredictionButtons({
             end={{ x: 1, y: 1 }}
             style={[
               styles.predictionButton,
-              currentPrediction === "1" && styles.selectedButton,
-              isPredictionDisabled && styles.disabledButton,
+              answered &&
+                (currentPrediction === "1"
+                  ? styles.selectedButton
+                  : styles.unselectedButton),
+              isPredictionDisabled && !answered && styles.disabledButton,
             ]}
           >
             <Text style={styles.predictionButtonText}>1</Text>
@@ -103,8 +120,11 @@ export default function PredictionButtons({
             end={{ x: 1, y: 1 }}
             style={[
               styles.predictionButton,
-              currentPrediction === "2" && styles.selectedButton,
-              isPredictionDisabled && styles.disabledButton,
+              answered &&
+                (currentPrediction === "2"
+                  ? styles.selectedButton
+                  : styles.unselectedButton),
+              isPredictionDisabled && !answered && styles.disabledButton,
             ]}
           >
             <Text style={styles.predictionButtonText}>2</Text>
@@ -117,6 +137,10 @@ export default function PredictionButtons({
         <TouchableOpacity
           onPress={async () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (answered) {
+              onAdvance?.();
+              return;
+            }
             onAnimateAndCommit("down");
           }}
           disabled={isSkipDisabled}
@@ -125,7 +149,9 @@ export default function PredictionButtons({
           <View
             style={[styles.skipButton, isSkipDisabled && styles.disabledButton]}
           >
-            <Text style={styles.skipButtonText}>skip</Text>
+            <Text style={styles.skipButtonText}>
+              {answered ? "avanti" : "skip"}
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -173,6 +199,13 @@ const styles = StyleSheet.create({
   },
   selectedButton: {
     transform: [{ scale: 1.05 }],
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  // Le scelte non fatte restano leggibili ma chiaramente secondarie: servono
+  // a dare contesto alla scelta fatta, non a invitare a premerle.
+  unselectedButton: {
+    opacity: 0.3,
   },
   disabledButton: {
     opacity: 0.6,
