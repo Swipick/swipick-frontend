@@ -17,6 +17,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   // State
   user: null,
   firebaseUser: null,
+  isGuest: false,
   loading: false,
   error: null,
 
@@ -63,7 +64,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       set({ loading: true, error: null });
       await authService.signOut();
-      set({ user: null, firebaseUser: null, loading: false });
+      set({ user: null, firebaseUser: null, isGuest: false, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
       throw error;
@@ -100,11 +101,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
         displayName: firebaseUser.displayName,
         emailVerified: firebaseUser.emailVerified,
       };
-      set({ user, firebaseUser });
+      // Un utente reale annulla sempre la modalità ospite.
+      set({ user, firebaseUser, isGuest: false });
     } else {
       set({ user: null, firebaseUser: null });
     }
   },
+
+  setGuest: (isGuest: boolean) => set({ isGuest }),
 
   setLoading: (loading: boolean) => set({ loading }),
 

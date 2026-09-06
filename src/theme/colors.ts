@@ -3,6 +3,16 @@ export const colors = {
   primary: '#6366f1',
   secondary: '#8b5cf6',
 
+  // Swipick brand identity (viola) — usati nelle schermate reali.
+  // Riferimento per ogni nuovo elemento UI così resta coordinato al brand.
+  brand: {
+    purple: '#6f49ff',       // Azione primaria (tab attiva, bottoni)
+    purpleDark: '#4d32b1',   // Bottoni CTA pieni (es. Landing "Login")
+    purpleDeep: '#5742a4',   // Wordmark / titoli
+    gradientStart: '#554099', // Header gradient (top)
+    gradientEnd: '#3d2d73',   // Header gradient (bottom)
+  },
+
   // Status colors
   success: '#10b981',
   error: '#ef4444',

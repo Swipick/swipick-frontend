@@ -6,6 +6,7 @@
 export { default as MatchCard } from './MatchCard';
 export { MatchDetails } from './MatchDetails';
 export { TeamInfo } from './TeamInfo';
+export { PixelPlayerLogo } from './PixelPlayerLogo';
 export { LastFiveResults } from './LastFiveResults';
 
 // Prediction Components

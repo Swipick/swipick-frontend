@@ -4,10 +4,10 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { MatchCard, PredictionChoice } from '../../types/game.types';
-import { getTeamLogo } from '../../utils/logoMapper';
+import { PixelPlayerLogo } from './PixelPlayerLogo';
+import { resolveTeamKey } from '../../utils/pixelPlayers';
 
 interface GameSummaryScreenProps {
   fixtures: MatchCard[];
@@ -15,18 +15,9 @@ interface GameSummaryScreenProps {
   headerHeight?: number;
 }
 
-// Team Logo Component with Fallback
-function TeamLogo({ logoPath, teamName }: { logoPath?: string | null; teamName: string }) {
-  // Get local asset from logoMapper (with team name fallback)
-  // Convert undefined to null for getTeamLogo
-  const localLogo = getTeamLogo(logoPath ?? null, teamName);
-
-  // Debug: Log when logo is not found
-  if (!localLogo) {
-    console.log(`[TeamLogo] Logo not found for ${teamName}, path: "${logoPath}"`);
-  }
-
-  if (!localLogo) {
+// Team Logo Component: sprite pixel-art con fallback a iniziale
+function TeamLogo({ teamName }: { teamName: string }) {
+  if (!resolveTeamKey(teamName)) {
     return (
       <View style={styles.logoFallback}>
         <Text style={styles.logoFallbackText}>
@@ -37,11 +28,9 @@ function TeamLogo({ logoPath, teamName }: { logoPath?: string | null; teamName: 
   }
 
   return (
-    <Image
-      source={localLogo}
-      style={styles.teamLogo}
-      resizeMode="contain"
-    />
+    <View style={styles.teamLogo}>
+      <PixelPlayerLogo teamName={teamName} size={40} />
+    </View>
   );
 }
 
@@ -111,10 +100,7 @@ export default function GameSummaryScreen({
                 <View style={styles.teamsSection}>
                   {/* Home Team */}
                   <View style={styles.teamRow}>
-                    <TeamLogo
-                      logoPath={fixture.home.logo}
-                      teamName={fixture.home.name}
-                    />
+                    <TeamLogo teamName={fixture.home.name} />
                     <Text style={styles.teamName} numberOfLines={1}>
                       {fixture.home.name}
                     </Text>
@@ -122,10 +108,7 @@ export default function GameSummaryScreen({
 
                   {/* Away Team */}
                   <View style={styles.teamRow}>
-                    <TeamLogo
-                      logoPath={fixture.away.logo}
-                      teamName={fixture.away.name}
-                    />
+                    <TeamLogo teamName={fixture.away.name} />
                     <Text style={styles.teamName} numberOfLines={1}>
                       {fixture.away.name}
                     </Text>
@@ -198,7 +181,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     marginRight: 12,
-    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoFallback: {
     width: 48,

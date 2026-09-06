@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../theme';
 import { useAuthStore } from '../../store/stores/useAuthStore';
+import GuestCTA from '../../components/common/GuestCTA';
 import { profileApi } from '../../services/api/profile';
 import { UserSummary } from '../../types/profile';
 import {
@@ -155,6 +156,18 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
       Alert.alert('Impostazioni', 'Navigazione alle impostazioni non ancora configurata');
     }
   };
+
+  // Guest mode: the profile is entirely account-based → invite to register.
+  if (!user) {
+    return (
+      <View style={styles.centerContainer}>
+        <GuestCTA
+          title="Il tuo profilo Swipick"
+          message="Registrati per avere il tuo profilo, i punteggi, lo storico delle giornate e la classifica."
+        />
+      </View>
+    );
+  }
 
   // Loading state
   if (loading) {

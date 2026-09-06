@@ -15,7 +15,6 @@ import {
   Alert,
   Share,
   Animated,
-  Image,
   Dimensions,
   Vibration,
 } from "react-native";
@@ -43,8 +42,10 @@ import {
   WeeklyStats,
   FixtureWithResult,
 } from "../../types/game.types";
-import { getTeamLogo } from "../../utils/logoMapper";
+import { PixelPlayerLogo } from "../../components/game/PixelPlayerLogo";
+import { resolveTeamKey } from "../../utils/pixelPlayers";
 import { formatDateRange, getAdjacentWeekLabels } from "../../utils/dateRange";
+import GuestCTA from "../../components/common/GuestCTA";
 
 type RisultatiScreenProps = {
   mode?: "live" | "test";
@@ -52,8 +53,8 @@ type RisultatiScreenProps = {
 
 interface MatchResult {
   fixtureId: string;
-  home: { name: string; logo: any; score: number | null };
-  away: { name: string; logo: any; score: number | null };
+  home: { name: string; score: number | null };
+  away: { name: string; score: number | null };
   userPrediction: PredictionChoice | null;
   actualResult: "1" | "X" | "2" | null;
   isCorrect: boolean | null;
@@ -84,19 +85,36 @@ export default function RisultatiScreen({
   } | null>(null);
   const confettiRef = useRef<ConfettiCannon>(null);
 
-  // Open on the most recent giornata that has at least one played match.
-  // Backend handles the gap (shows the previous season until the new one starts).
+  // Regola "classica": aprire sulla giornata PRECEDENTE a quella da giocare,
+  // così durante una giornata in corso si vede l'ultima completata (non quella
+  // parzialmente giocata). La giornata da giocare è la "live week" (/fixtures/next);
+  // apriamo quindi su liveWeek - 1. La stagione è quella del last-played (durante
+  // il campionato coincide con quella della live week). A inizio stagione o nel
+  // gap tra stagioni (liveWeek <= 1) si torna al last-played come fallback sicuro.
   useEffect(() => {
     const initializeWeek = async () => {
       try {
-        const { season, week } = await fixturesApi.getLastPlayed();
-        console.log(
-          `[RisultatiScreen] Last played: season ${season}, week ${week}`
-        );
-        setSelectedSeason(season);
-        setSelectedWeek(week);
+        const [liveWeek, lastPlayed] = await Promise.all([
+          fixturesApi.getLiveWeek(),
+          fixturesApi.getLastPlayed(),
+        ]);
+
+        if (liveWeek > 1) {
+          const previousWeek = liveWeek - 1;
+          console.log(
+            `[RisultatiScreen] Live week ${liveWeek} -> apre su giornata ${previousWeek} (stagione ${lastPlayed.season})`
+          );
+          setSelectedSeason(lastPlayed.season);
+          setSelectedWeek(previousWeek);
+        } else {
+          console.log(
+            `[RisultatiScreen] Fallback last-played: stagione ${lastPlayed.season}, giornata ${lastPlayed.week}`
+          );
+          setSelectedSeason(lastPlayed.season);
+          setSelectedWeek(lastPlayed.week);
+        }
       } catch (error) {
-        console.error("[RisultatiScreen] Error fetching last played:", error);
+        console.error("[RisultatiScreen] Error initializing week:", error);
         setSelectedSeason(2025);
         setSelectedWeek(1);
       }
@@ -159,7 +177,7 @@ export default function RisultatiScreen({
   }, [selectedWeek, selectedSeason, user]);
 
   const loadWeekData = async () => {
-    if (!user || selectedWeek === null || selectedSeason === null) return;
+    if (selectedWeek === null || selectedSeason === null) return;
     const season = selectedSeason;
 
     // Only show full loading on initial load
@@ -172,7 +190,8 @@ export default function RisultatiScreen({
     try {
       console.log("[RisultatiScreen] Loading data for week", selectedWeek);
 
-      // Load fixtures with results for the week (season-scoped)
+      // Load fixtures with results for the week (season-scoped).
+      // Public data: available also in guest mode.
       const fixturesData = await fixturesApi.getFixturesWithResults(
         selectedWeek,
         season
@@ -183,21 +202,26 @@ export default function RisultatiScreen({
       );
       setFixturesWithResults(fixturesData);
 
-      // Load user's predictions for the week (season-scoped)
-      const stats = await predictionsApi.getWeeklyPredictions(
-        user.uid,
-        selectedWeek,
-        mode,
-        season
-      );
-      console.log(
-        "[RisultatiScreen] Predictions loaded:",
-        stats.predictions.length
-      );
-      setWeeklyStats(stats);
+      // Personal predictions are account-based: load only for authenticated users.
+      if (user) {
+        const stats = await predictionsApi.getWeeklyPredictions(
+          user.uid,
+          selectedWeek,
+          mode,
+          season
+        );
+        console.log(
+          "[RisultatiScreen] Predictions loaded:",
+          stats.predictions.length
+        );
+        setWeeklyStats(stats);
 
-      // Load revealed state from AsyncStorage
-      await loadRevealedState(selectedWeek, user.uid);
+        // Load revealed state from AsyncStorage
+        await loadRevealedState(selectedWeek, user.uid);
+      } else {
+        setWeeklyStats(null);
+        setRevealed({});
+      }
     } catch (error) {
       console.error("[RisultatiScreen] Error loading data:", error);
       Alert.alert("Errore", "Impossibile caricare i risultati");
@@ -209,15 +233,11 @@ export default function RisultatiScreen({
 
   // Calculate match results with predictions
   const matchResults = useMemo((): MatchResult[] => {
-    if (!fixturesWithResults.length || !weeklyStats) return [];
+    if (!fixturesWithResults.length) return [];
 
     console.log(
       "[RisultatiScreen] Mapping predictions. Total predictions:",
-      weeklyStats.predictions.length
-    );
-    console.log(
-      "[RisultatiScreen] First prediction:",
-      JSON.stringify(weeklyStats.predictions[0])
+      weeklyStats?.predictions.length ?? 0
     );
     console.log(
       "[RisultatiScreen] First fixture ID:",
@@ -225,7 +245,8 @@ export default function RisultatiScreen({
     );
 
     const results = fixturesWithResults.map((fixture) => {
-      const prediction = weeklyStats.predictions.find(
+      // In guest mode weeklyStats is null → no personal prediction badges.
+      const prediction = weeklyStats?.predictions.find(
         (p) => p.fixtureId === fixture.id
       );
 
@@ -242,12 +263,10 @@ export default function RisultatiScreen({
         fixtureId: fixture.id,
         home: {
           name: fixture.home_team,
-          logo: getTeamLogo(null, fixture.home_team),
           score: homeScore,
         },
         away: {
           name: fixture.away_team,
-          logo: getTeamLogo(null, fixture.away_team),
           score: awayScore,
         },
         userPrediction: prediction?.choice || null,
@@ -342,7 +361,7 @@ export default function RisultatiScreen({
     fixtureId: string,
     origin: { x: number; y: number }
   ) => {
-    if (!user || selectedWeek === null) return;
+    if (selectedWeek === null) return;
 
     const match = matchResults.find((m) => m.fixtureId === fixtureId);
 
@@ -359,8 +378,10 @@ export default function RisultatiScreen({
     const newRevealed = { ...revealed, [fixtureId]: true };
     setRevealed(newRevealed);
 
-    // Save to AsyncStorage
-    await saveRevealedState(selectedWeek, user.uid, newRevealed);
+    // Persist reveal state only for authenticated users (guest has no userId).
+    if (user) {
+      await saveRevealedState(selectedWeek, user.uid, newRevealed);
+    }
 
     // Set recently revealed with origin for confetti
     setRecentlyRevealed({ id: fixtureId, origin });
@@ -452,18 +473,27 @@ export default function RisultatiScreen({
             tint="light"
             style={styles.meterContainerWrapper}
           >
-            <View style={styles.meterContainer}>
-              <CircularMeter percent={meter.percent} />
+            {user ? (
+              <View style={styles.meterContainer}>
+                <CircularMeter percent={meter.percent} />
 
-              {/* Share Button */}
-              <TouchableOpacity
-                style={styles.shareButton}
-                onPress={handleShare}
-              >
-                <Ionicons name="share-outline" size={18} color="#fff" />
-                <Text style={styles.shareText}>Condividi risultato</Text>
-              </TouchableOpacity>
-            </View>
+                {/* Share Button */}
+                <TouchableOpacity
+                  style={styles.shareButton}
+                  onPress={handleShare}
+                >
+                  <Ionicons name="share-outline" size={18} color="#fff" />
+                  <Text style={styles.shareText}>Condividi risultato</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // Modalità ospite: niente statistiche personali, invito a registrarsi.
+              <GuestCTA
+                compact
+                title="Le tue statistiche, qui"
+                message="Registrati per pronosticare le partite e seguire la tua percentuale di risultati indovinati."
+              />
+            )}
           </BlurView>
         </View>
 
@@ -647,12 +677,10 @@ function MatchCard({
       <View style={styles.teamsColumn}>
         {/* Home Team */}
         <View style={styles.teamRow}>
-          {match.home.logo ? (
-            <Image
-              source={match.home.logo}
-              style={styles.teamLogoImage}
-              resizeMode="contain"
-            />
+          {resolveTeamKey(match.home.name) ? (
+            <View style={styles.teamLogoImage}>
+              <PixelPlayerLogo teamName={match.home.name} size={40} />
+            </View>
           ) : (
             <View style={styles.teamLogoFallback}>
               <Text style={styles.teamLogoText}>
@@ -667,12 +695,10 @@ function MatchCard({
 
         {/* Away Team */}
         <View style={styles.teamRow}>
-          {match.away.logo ? (
-            <Image
-              source={match.away.logo}
-              style={styles.teamLogoImage}
-              resizeMode="contain"
-            />
+          {resolveTeamKey(match.away.name) ? (
+            <View style={styles.teamLogoImage}>
+              <PixelPlayerLogo teamName={match.away.name} size={40} />
+            </View>
           ) : (
             <View style={styles.teamLogoFallback}>
               <Text style={styles.teamLogoText}>
@@ -943,6 +969,8 @@ const styles = StyleSheet.create({
   teamLogoImage: {
     width: isSmallScreen ? 32 : 48,
     height: isSmallScreen ? 32 : 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
   teamLogoFallback: {
     width: isSmallScreen ? 32 : 48,
