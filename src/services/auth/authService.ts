@@ -24,6 +24,37 @@ import { ENV } from '../../config/env';
 
 const EMAIL_KEY = '@swipick:emailForSignIn';
 
+/** Oltre questa lunghezza la sigla non sta piu' in un alert. */
+const MAX_HINT_LENGTH = 80;
+
+/**
+ * Sigla compatta dell'errore sottostante, da mettere in coda al messaggio
+ * quando non ne conosciamo uno specifico.
+ *
+ * Senza, ogni fallimento non mappato collassa nello stesso "riprova": un
+ * `keychain error` dell'SDK Google, un timeout di rete e una credenziale
+ * rifiutata si presentano identici, e chi segnala il problema non porta con
+ * se' nulla di utilizzabile. La console ha gia' l'errore intero — qui serve
+ * solo qualcosa di abbastanza corto da stare in un alert.
+ */
+export const describeAuthError = (error: unknown): string => {
+  const { code, message } = (error ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+  };
+
+  if (typeof code === 'string' && code.length > 0) return code;
+  if (typeof code === 'number') return String(code);
+
+  if (typeof message === 'string' && message.length > 0) {
+    return message.length > MAX_HINT_LENGTH
+      ? `${message.slice(0, MAX_HINT_LENGTH)}…`
+      : message;
+  }
+
+  return 'errore sconosciuto';
+};
+
 // RNGoogleSignin è un modulo NATIVO assente in Expo Go: l'import statico
 // crasherebbe l'app al bundle (TurboModuleRegistry.getEnforcing). Require
 // difensivo: in Expo Go l'app parte e solo il login Google è indisponibile;
@@ -171,8 +202,14 @@ class AuthService {
         throw new Error('Google Play Services not available');
       }
 
+      const known = AUTH_ERROR_MESSAGES[error?.code];
+      if (known) {
+        throw new Error(known);
+      }
+
       throw new Error(
-        AUTH_ERROR_MESSAGES[error.code] || 'Failed to sign in with Google. Please try again.'
+        `Accesso con Google non riuscito. Riprova. [${describeAuthError(error)}]`,
+        { cause: error },
       );
     }
   }
