@@ -13,7 +13,7 @@ import { useAuthStore } from '../store/stores/useAuthStore';
  */
 export default function AppNavigator() {
   const [initializing, setInitializing] = useState(true);
-  const { user, setUser } = useAuthStore();
+  const { user, isGuest, setUser } = useAuthStore();
 
   useEffect(() => {
     // Listen to Firebase auth state changes and sync with Zustand store
@@ -42,7 +42,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <MainNavigator /> : <AuthNavigator />}
+      {user || isGuest ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Modal,
   View,
   StyleSheet,
   ActivityIndicator,
@@ -15,6 +16,7 @@ import GameHeader from "../../components/game/GameHeader";
 import MatchCard from "../../components/game/MatchCard";
 import PredictionButtons from "../../components/game/PredictionButtons";
 import GameSummaryScreen from "../../components/game/GameSummaryScreen";
+import GuestCTA from "../../components/common/GuestCTA";
 import {
   getNextDeadline,
   getNextInDeck,
@@ -44,6 +46,7 @@ export default function GiocaScreen() {
   const [headerHeight, setHeaderHeight] = useState(160);
   // Card mostrata, identificata dal fixtureId e non da un indice: il mazzo si
   // accorcia da solo quando una partita scade, e un indice resterebbe appeso.
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
   // Il mazzo dipende dall'ora, quindi va ricalcolato mentre lo schermo e'
   // aperto: una partita puo' iniziare proprio mentre l'utente la guarda.
@@ -56,9 +59,11 @@ export default function GiocaScreen() {
 
   // Load fixtures on mount (only if not already loaded)
   useEffect(() => {
-    if (user && fixtures.length === 0) {
+    // In modalita' ospite non c'e' userId: le fixture pubbliche si caricano
+    // lo stesso, solo senza i pronostici personali.
+    if (fixtures.length === 0) {
       console.log("[GiocaScreen] Initial load - loading live week");
-      loadLiveWeek(user.uid);
+      loadLiveWeek(user?.uid ?? "");
     }
   }, [user]);
 
@@ -82,8 +87,14 @@ export default function GiocaScreen() {
 
   const canSwipe = !loading && !!currentFixture;
 
+  useEffect(() => {
+    if (roundOver && !user) {
+      setShowGuestPrompt(true);
+    }
+  }, [roundOver, user]);
+
   const handlePrediction = async (choice: PredictionChoice) => {
-    if (!user || !currentFixture) return;
+    if (!currentFixture) return;
 
     // Skip: rimanda dentro il mazzo, senza uscire dalle giocabili.
     if (choice === "SKIP") {
@@ -94,7 +105,7 @@ export default function GiocaScreen() {
     // Chi arriva qui e' per forza giocabile: le card iniziate non si mostrano.
     const target = currentFixture.fixtureId;
     setCurrentId(getNextInDeck(deck, target));
-    await makePrediction(choice, user.uid, target);
+    await makePrediction(choice, user?.uid ?? "", target);
   };
 
   const handleReset = async () => {
@@ -121,7 +132,7 @@ export default function GiocaScreen() {
         <Text style={styles.errorMessage}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => user && loadLiveWeek(user.uid)}
+          onPress={() => loadLiveWeek(user?.uid ?? "")}
         >
           <Text style={styles.retryText}>Riprova</Text>
         </TouchableOpacity>
@@ -230,11 +241,64 @@ export default function GiocaScreen() {
         )}
       </View>
 
+      {/* Guest mode: invito alla registrazione quando si prova a pronosticare */}
+      <Modal
+        visible={showGuestPrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGuestPrompt(false)}
+      >
+        <View style={styles.guestModalOverlay}>
+          <View style={styles.guestModalCard}>
+            <TouchableOpacity
+              style={styles.guestModalClose}
+              onPress={() => setShowGuestPrompt(false)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={styles.guestModalCloseText}>✕</Text>
+            </TouchableOpacity>
+            <GuestCTA
+              title="Hai completato la giornata!"
+              message="Registrati per salvare i tuoi pronostici, vedere il tuo punteggio e scalare la classifica."
+            />
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  guestModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(31, 17, 71, 0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  guestModalCard: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  guestModalClose: {
+    alignSelf: "flex-end",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  guestModalCloseText: {
+    fontSize: 18,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
   container: {
     flex: 1,
     backgroundColor: colors.backgroundSecondary,
