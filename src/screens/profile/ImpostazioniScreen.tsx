@@ -329,7 +329,7 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
               activeOpacity={0.7}
             >
               <Text style={styles.rowLabel}>
-                username <Text style={styles.comingSoon}>coming soon</Text>
+                username <Text style={styles.comingSoon}>(coming soon)</Text>
               </Text>
               <View style={styles.rowRight}>
                 <Text style={styles.rowValue}>{nickname || '—'}</Text>
