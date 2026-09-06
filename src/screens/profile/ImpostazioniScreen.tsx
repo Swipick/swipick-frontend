@@ -44,6 +44,7 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
   const [uploading, setUploading] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [sendingReset, setSendingReset] = useState<boolean>(false);
 
   // Load settings data
   useEffect(() => {
@@ -223,6 +224,45 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
     }
   };
 
+  /**
+   * Cambio password: si passa dalla stessa email di reset del "password
+   * dimenticata", quindi non serve chiedere qui la vecchia password ne'
+   * gestire una nuova schermata. Chiediamo conferma perche' l'azione manda
+   * una mail, che e' visibile fuori dall'app.
+   */
+  const handlePasswordReset = () => {
+    if (!email) {
+      showToast('Email non disponibile');
+      return;
+    }
+
+    Alert.alert(
+      'Cambiare password?',
+      `Ti inviamo un link per impostarne una nuova all'indirizzo ${email}.`,
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Invia',
+          onPress: async () => {
+            setSendingReset(true);
+            try {
+              await authService.resetPassword(email);
+              showToast('Ti abbiamo inviato il link via email', 2500);
+            } catch (err: any) {
+              console.error('[ImpostazioniScreen] Password reset failed:', err);
+              Alert.alert(
+                'Errore',
+                err?.message || 'Invio non riuscito. Riprova.',
+              );
+            } finally {
+              setSendingReset(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   // Show "prossimamente" toast for disabled features
   const showProssimamente = () => {
     showToast('prossimamente', 1500);
@@ -281,22 +321,37 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
               <Text style={styles.rowValue}>{email}</Text>
             </View>
 
-            {/* Username (disabled) */}
-            <View style={[styles.row, styles.disabledRow]}>
-              <Text style={styles.rowLabel}>username</Text>
+            {/* Username: non ancora modificabile, ma risponde — la freccia
+                prometteva una destinazione e non succedeva nulla. */}
+            <TouchableOpacity
+              style={[styles.row, styles.disabledRow]}
+              onPress={showProssimamente}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.rowLabel}>
+                username <Text style={styles.comingSoon}>(coming soon)</Text>
+              </Text>
               <View style={styles.rowRight}>
                 <Text style={styles.rowValue}>{nickname || '—'}</Text>
                 <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
               </View>
-            </View>
+            </TouchableOpacity>
 
-            {/* Password (disabled) */}
-            <View style={[styles.row, styles.disabledRow]}>
+            {/* Password: invia il link di reset alla mail dell'account */}
+            <TouchableOpacity
+              style={[styles.row, sendingReset && styles.disabledRow]}
+              onPress={handlePasswordReset}
+              disabled={sendingReset}
+              activeOpacity={0.7}
+            >
               <Text style={styles.rowLabel}>password</Text>
               <View style={styles.rowRight}>
+                <Text style={styles.rowValue}>
+                  {sendingReset ? 'invio…' : 'cambia'}
+                </Text>
                 <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
               </View>
-            </View>
+            </TouchableOpacity>
 
             {/* Avatar Upload (active) */}
             <TouchableOpacity
@@ -332,7 +387,11 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
                 </Text>
               </View>
               <Switch
-                value={notifResults}
+                // Mostrato spento come Partite e Goal: la notifica non viene
+                // ancora inviata, quindi esporre la preferenza salvata farebbe
+                // credere attivo un avviso che non arrivera'. Il gestore resta
+                // agganciato, pronto per quando la funzione sara' attiva.
+                value={false}
                 onValueChange={(value) => optimisticUpdate({ results: value })}
                 disabled={true}
                 trackColor={{ false: '#e5e7eb', true: '#9333ea' }}
@@ -357,13 +416,13 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
               />
             </TouchableOpacity>
 
-            {/* Gol (Disabled) */}
+            {/* Goal (Disabled) */}
             <TouchableOpacity
               style={[styles.toggleRow, styles.disabledRow]}
               onPress={showProssimamente}
             >
               <View style={styles.toggleLeft}>
-                <Text style={styles.toggleTitle}>Gol</Text>
+                <Text style={styles.toggleTitle}>Goal</Text>
                 <Text style={styles.toggleDescription}>
                   Ad ogni marcatura sarai il primo a saperlo
                 </Text>
