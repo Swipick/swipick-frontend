@@ -21,6 +21,9 @@ export interface UserResponseDto {
   profileCompleted: boolean;
   authProvider: string;
   verificationLink?: string; // Dev mode only
+  // Il backend non fa fallire la registrazione se l'email non parte: lo
+  // segnala qui, così la schermata di verifica può dire la verità.
+  verificationEmailSent?: boolean;
 }
 
 export interface SyncGoogleUserResponse {

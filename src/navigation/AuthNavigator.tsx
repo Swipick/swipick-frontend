@@ -17,6 +17,7 @@ type AuthScreen = 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerificat
 export interface AuthNavParams {
   email?: string;
   verificationLink?: string;
+  verificationEmailSent?: boolean;
 }
 
 interface NavigationState {
@@ -48,6 +49,8 @@ export default function AuthNavigator() {
             params: {
               email: navigationState.params?.email ?? '',
               verificationLink: navigationState.params?.verificationLink,
+              verificationEmailSent:
+                navigationState.params?.verificationEmailSent,
             },
           }}
           onNavigate={navigate}

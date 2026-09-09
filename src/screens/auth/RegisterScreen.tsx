@@ -167,7 +167,8 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       // Pass verification link if available (dev mode)
       onNavigate('EmailVerification', {
         email: formData.email,
-        verificationLink: response.verificationLink
+        verificationLink: response.verificationLink,
+        verificationEmailSent: response.verificationEmailSent,
       });
     } catch (error: any) {
       console.error('[RegisterScreen] Registration failed:', error);

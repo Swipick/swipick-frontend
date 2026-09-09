@@ -20,6 +20,7 @@ interface EmailVerificationScreenProps {
     params: {
       email: string;
       verificationLink?: string;
+      verificationEmailSent?: boolean;
     };
   };
   onNavigate: (screen: 'Landing' | 'Welcome' | 'Login' | 'Register' | 'LoginVerified', params?: any) => void;
@@ -29,7 +30,10 @@ export default function EmailVerificationScreen({
   route,
   onNavigate
 }: EmailVerificationScreenProps) {
-  const { email, verificationLink } = route.params;
+  const { email, verificationLink, verificationEmailSent } = route.params;
+  // Il backend distingue "email inviata" da "account creato ma invio fallito".
+  // `undefined` vale come inviata: e' quel che rispondeva prima del campo.
+  const [sendFailed, setSendFailed] = useState(verificationEmailSent === false);
   const [resending, setResending] = useState(false);
   // Cooldown to avoid rapid re-clicks that trip Firebase's per-IP throttle.
   const [cooldown, setCooldown] = useState(0);
@@ -50,6 +54,7 @@ export default function EmailVerificationScreen({
 
       console.log('[EmailVerification] Verification email resent successfully');
 
+      setSendFailed(false);
       setCooldown(60);
       Alert.alert('Email inviata', 'Controlla la tua casella di posta');
     } catch (error: any) {
@@ -71,31 +76,54 @@ export default function EmailVerificationScreen({
         <View style={styles.card}>
           {/* Icon */}
           <View style={styles.iconContainer}>
-            <Text style={styles.iconText}>📧</Text>
+            <Text style={styles.iconText}>{sendFailed ? '⚠️' : '📧'}</Text>
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Controlla la tua email</Text>
+          <Text style={styles.title}>
+            {sendFailed
+              ? "Non siamo riusciti a inviare l'email"
+              : 'Controlla la tua email'}
+          </Text>
 
           {/* Message */}
-          <Text style={styles.message}>
-            Ti abbiamo inviato un'email di verifica all'indirizzo{' '}
-            <Text style={styles.emailText}>{email}</Text>
-          </Text>
+          {sendFailed ? (
+            <>
+              <Text style={styles.message}>
+                Il tuo account è stato creato, ma l'email di verifica per{' '}
+                <Text style={styles.emailText}>{email}</Text> non è partita.
+              </Text>
 
-          <Text style={styles.message}>
-            Apri l'email e clicca sul link per verificare il tuo account.
-            Dopo la verifica potrai accedere con email e password.
-          </Text>
+              <Text style={styles.message}>
+                Non registrarti di nuovo: tocca "Invia di nuovo" qui sotto per
+                ricevere il link di verifica.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.message}>
+                Ti abbiamo inviato un'email di verifica all'indirizzo{' '}
+                <Text style={styles.emailText}>{email}</Text>
+              </Text>
+
+              <Text style={styles.message}>
+                Apri l'email e clicca sul link per verificare il tuo account.
+                Dopo la verifica potrai accedere con email e password.
+              </Text>
+            </>
+          )}
 
           {/* Info Box */}
           <View style={styles.infoBox}>
-            <Text style={styles.infoIcon}>💡</Text>
+            <Text style={styles.infoIcon}>{sendFailed ? '⚠️' : '💡'}</Text>
             <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>Non vedi l'email?</Text>
+              <Text style={styles.infoTitle}>
+                {sendFailed ? 'Cosa è successo?' : "Non vedi l'email?"}
+              </Text>
               <Text style={styles.infoText}>
-                Controlla la cartella spam o posta indesiderata.
-                Può richiedere alcuni minuti per arrivare.
+                {sendFailed
+                  ? "L'invio non è riuscito per un problema temporaneo del servizio di posta. Il tuo account è al sicuro: riprova tra qualche istante."
+                  : 'Controlla la cartella spam o posta indesiderata. Può richiedere alcuni minuti per arrivare.'}
               </Text>
             </View>
           </View>
