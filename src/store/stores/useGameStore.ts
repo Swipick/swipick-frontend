@@ -19,11 +19,12 @@ interface GameActions {
   loadLiveWeek: (userId: string) => Promise<void>;
 
   // Predictions
+  /** Restituisce true se il pronostico e' stato salvato. */
   makePrediction: (
     choice: PredictionChoice,
     userId: string,
     fixtureId?: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   skipCurrent: () => void;
 
   // Navigation
@@ -33,6 +34,8 @@ interface GameActions {
 
   // Game control
   resetGame: (userId: string) => Promise<void>;
+  /** Azzera lo stato locale senza toccare il server (usato al logout). */
+  clearSession: () => void;
   toggleSummary: () => void;
 
   // State setters
@@ -53,6 +56,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentIndex: 0,
   loading: false,
   error: null,
+  predictionError: null,
   isComplete: false,
   showSummary: false,
 
@@ -168,16 +172,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (!currentFixture) {
       console.error('[GameStore] No current fixture');
-      return;
+      return false;
     }
 
     // Skip action
     if (choice === 'SKIP') {
       get().skipCurrent();
-      return;
+      return true;
     }
 
-    set({ loading: true, error: null });
+    // Stessa scelta gia' registrata su questa card: non c'e' niente da salvare.
+    // E' la rete di sicurezza contro il doppio invio, oltre alla guardia che
+    // GiocaScreen tiene sul tocco.
+    if (predictions.get(currentFixture.fixtureId) === choice) {
+      return true;
+    }
+
+    set({ loading: true, predictionError: null });
 
     try {
       // Save prediction to API only for authenticated users. In guest mode
@@ -200,7 +211,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const newPredictions = new Map(predictions);
       newPredictions.set(currentFixture.fixtureId, choice);
 
-      set({ predictions: newPredictions, loading: false });
+      set({ predictions: newPredictions, loading: false, predictionError: null });
 
       console.log(`[GameStore] Prediction saved: ${choice} for ${currentFixture.fixtureId}`);
 
@@ -211,9 +222,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
           get().nextCard();
         }, 300);
       }
+
+      return true;
     } catch (error: any) {
       console.error('[GameStore] Error saving prediction:', error);
-      set({ loading: false, error: error.message });
+      // Niente `error`: quello svuota la schermata. Qui e' fallita una card
+      // sola, e l'utente deve poter continuare a giocare le altre.
+      set({
+        loading: false,
+        predictionError: { fixtureId: currentFixture.fixtureId, choice },
+      });
+      return false;
     }
   },
 
@@ -317,6 +336,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
       console.error('[GameStore] Error resetting game:', error);
       set({ loading: false, error: error.message });
     }
+  },
+
+  // Ripulisce lo stato locale al logout. Da non confondere con resetGame, che
+  // cancella i pronostici SUL SERVER: qui non parte nessuna chiamata.
+  clearSession: () => {
+    set({
+      fixtures: [],
+      predictions: new Map(),
+      skippedFixtures: [],
+      currentIndex: 0,
+      loading: false,
+      error: null,
+      predictionError: null,
+      isComplete: false,
+      showSummary: false,
+    });
+    console.log('[GameStore] Sessione di gioco azzerata');
   },
 
   // Toggle summary screen
