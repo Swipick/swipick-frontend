@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   View,
@@ -39,6 +39,7 @@ export default function GiocaScreen() {
   const predictions = useGameStore((s) => s.predictions);
   const loading = useGameStore((s) => s.loading);
   const error = useGameStore((s) => s.error);
+  const predictionError = useGameStore((s) => s.predictionError);
   const loadLiveWeek = useGameStore((s) => s.loadLiveWeek);
   const makePrediction = useGameStore((s) => s.makePrediction);
   const resetGame = useGameStore((s) => s.resetGame);
@@ -48,6 +49,10 @@ export default function GiocaScreen() {
   // accorcia da solo quando una partita scade, e un indice resterebbe appeso.
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+  // Guardia sul doppio tocco. Un ref e non uno stato: lo stato React si applica
+  // al render successivo, il ref subito — ed e' proprio quell'istante la
+  // finestra in cui il secondo tocco passava.
+  const inFlightRef = useRef<string | null>(null);
   // Il mazzo dipende dall'ora, quindi va ricalcolato mentre lo schermo e'
   // aperto: una partita puo' iniziare proprio mentre l'utente la guarda.
   const [now, setNow] = useState(() => new Date());
@@ -104,8 +109,28 @@ export default function GiocaScreen() {
 
     // Chi arriva qui e' per forza giocabile: le card iniziate non si mostrano.
     const target = currentFixture.fixtureId;
+    if (inFlightRef.current === target) return;
+    inFlightRef.current = target;
+
+    // L'avanzamento resta ottimistico — il caso normale e' che il salvataggio
+    // riesca e l'attesa si vedrebbe — ma ora ha una via di ritorno.
     setCurrentId(getNextInDeck(deck, target));
-    await makePrediction(choice, user?.uid ?? "", target);
+
+    const saved = await makePrediction(choice, user?.uid ?? "", target);
+    inFlightRef.current = null;
+
+    if (!saved) {
+      // Riporta l'utente sulla card che stava votando: prima restava due avanti
+      // con il pronostico perso e nessun modo di accorgersene.
+      setCurrentId(target);
+    }
+  };
+
+  const handleRetryPrediction = async () => {
+    if (!predictionError) return;
+    const { fixtureId, choice } = predictionError;
+    setCurrentId(fixtureId);
+    await makePrediction(choice, user?.uid ?? "", fixtureId);
   };
 
   const handleReset = async () => {
@@ -178,6 +203,21 @@ export default function GiocaScreen() {
           />
         ) : (
           <>
+            {/* Un pronostico non salvato non svuota la schermata: lo dice qui e
+                si ritenta, mentre il resto della giornata resta giocabile. */}
+            {predictionError && (
+              <TouchableOpacity
+                style={styles.predictionErrorBanner}
+                onPress={handleRetryPrediction}
+                accessibilityRole="button"
+                accessibilityLabel="Pronostico non salvato, tocca per riprovare"
+              >
+                <Text style={styles.predictionErrorText}>
+                  Pronostico non salvato. Tocca per riprovare.
+                </Text>
+              </TouchableOpacity>
+            )}
+
             {/* Main Card Area */}
             <View style={styles.cardContainer}>
               {currentFixture ? (
@@ -269,6 +309,22 @@ export default function GiocaScreen() {
 }
 
 const styles = StyleSheet.create({
+  predictionErrorBanner: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#fee2e2",
+    borderWidth: 1,
+    borderColor: "#fca5a5",
+  },
+  predictionErrorText: {
+    color: "#991b1b",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
   guestModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(31, 17, 71, 0.55)",

@@ -43,8 +43,11 @@ export default function PredictionButtons({
       {/* X Button - Top Center */}
       <View style={styles.topRow}>
         <TouchableOpacity
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onPress={() => {
+            // L'aptica non si attende: era quel round-trip nativo a tenere il
+            // tasto ancora premibile mentre il commit non era partito, e due
+            // tocchi rapidi mandavano due POST per la stessa partita.
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onAnimateAndCommit("up");
           }}
           disabled={isPredictionDisabled}
@@ -68,8 +71,11 @@ export default function PredictionButtons({
       {/* 1 and 2 Buttons - Middle Row */}
       <View style={styles.middleRow}>
         <TouchableOpacity
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onPress={() => {
+            // L'aptica non si attende: era quel round-trip nativo a tenere il
+            // tasto ancora premibile mentre il commit non era partito, e due
+            // tocchi rapidi mandavano due POST per la stessa partita.
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onAnimateAndCommit("left");
           }}
           disabled={isPredictionDisabled}
@@ -90,8 +96,11 @@ export default function PredictionButtons({
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onPress={() => {
+            // L'aptica non si attende: era quel round-trip nativo a tenere il
+            // tasto ancora premibile mentre il commit non era partito, e due
+            // tocchi rapidi mandavano due POST per la stessa partita.
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onAnimateAndCommit("right");
           }}
           disabled={isPredictionDisabled}
@@ -115,8 +124,11 @@ export default function PredictionButtons({
       {/* Skip Button - Bottom Center */}
       <View style={styles.bottomRow}>
         <TouchableOpacity
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress={() => {
+            // L'aptica non si attende: era quel round-trip nativo a tenere il
+            // tasto ancora premibile mentre il commit non era partito, e due
+            // tocchi rapidi mandavano due POST per la stessa partita.
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onAnimateAndCommit("down");
           }}
           disabled={isSkipDisabled}

@@ -96,7 +96,14 @@ export interface GameState {
   skippedFixtures: string[]; // fixtureIds (UUID strings)
   currentIndex: number;
   loading: boolean;
+  /** Fallimento nel CARICARE la giornata: giustifica una pagina d'errore. */
   error: string | null;
+  /**
+   * Fallimento nel SALVARE un pronostico. Tenuto separato da `error` perche'
+   * riguarda una sola card: far sparire l'intero mazzo per un voto non salvato
+   * toglie all'utente anche quello che funzionava.
+   */
+  predictionError: { fixtureId: string; choice: PredictionChoice } | null;
   isComplete: boolean;
   showSummary: boolean;
 }

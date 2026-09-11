@@ -7,6 +7,7 @@ import {
   RegisterCredentials,
 } from '../../types/auth.types';
 import { authService } from '../../services/auth/authService';
+import { useGameStore } from './useGameStore';
 import { setUnauthorizedHandler } from '../../services/api/unauthorizedHandler';
 
 /**
@@ -65,6 +66,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({ loading: true, error: null });
       await authService.signOut();
       set({ user: null, firebaseUser: null, isGuest: false, loading: false });
+      // useGameStore vive a livello di modulo e sopravvive allo smontaggio:
+      // senza questo, chi accede dopo nella stessa sessione si trova in
+      // memoria i pronostici dell'utente precedente.
+      useGameStore.getState().clearSession();
     } catch (error: any) {
       set({ error: error.message, loading: false });
       throw error;
