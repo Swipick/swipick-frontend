@@ -37,6 +37,8 @@ import { useAuthStore } from "../../store/stores/useAuthStore";
 import { predictionsApi } from "../../services/api/predictions";
 import { fixturesApi } from "../../services/api/fixtures";
 import { colors, spacing } from "../../theme";
+import { formatKickoffTime } from "../../utils/formatters";
+import { computeWeekMeter, hasKickedOff } from "../../utils/weekMeter";
 import {
   PredictionChoice,
   WeeklyStats,
@@ -100,12 +102,25 @@ export default function RisultatiScreen({
         ]);
 
         if (liveWeek > 1) {
-          const previousWeek = liveWeek - 1;
+          // Si apre sulla giornata viva, la stessa che mostra Gioca — ma solo
+          // DOPO il primo fischio d'inizio. getLiveWeek deriva da /fixtures/next
+          // e restituisce la giornata successiva, che diventa "corrente" giorni
+          // prima che si giochi: senza questo controllo Risultati mostrerebbe
+          // 0% e dieci card spente mentre la giornata precedente, completa,
+          // finirebbe a un tocco di distanza.
+          const liveFixtures = await fixturesApi.getFixturesWithResults(
+            liveWeek,
+            lastPlayed.season
+          );
+          const weekStarted = liveFixtures.some((fixture) =>
+            hasKickedOff(fixture.status, fixture.match_date)
+          );
+          const weekToShow = weekStarted ? liveWeek : liveWeek - 1;
           console.log(
-            `[RisultatiScreen] Live week ${liveWeek} -> apre su giornata ${previousWeek} (stagione ${lastPlayed.season})`
+            `[RisultatiScreen] Live week ${liveWeek} ${weekStarted ? "gia' iniziata" : "non ancora iniziata"} -> apre su giornata ${weekToShow} (stagione ${lastPlayed.season})`
           );
           setSelectedSeason(lastPlayed.season);
-          setSelectedWeek(previousWeek);
+          setSelectedWeek(weekToShow);
         } else {
           console.log(
             `[RisultatiScreen] Fallback last-played: stagione ${lastPlayed.season}, giornata ${lastPlayed.week}`
@@ -286,26 +301,21 @@ export default function RisultatiScreen({
     return results;
   }, [fixturesWithResults, weeklyStats]);
 
-  // Calculate success percentage (only from revealed matches)
-  const meter = useMemo(() => {
-    if (matchResults.length === 0)
-      return { revealed: 0, correct: 0, percent: 0 };
-
-    let revealedCount = 0;
-    let correctCount = 0;
-
-    for (const m of matchResults) {
-      if (!revealed[m.fixtureId]) continue;
-      revealedCount += 1;
-
-      if (m.isCorrect === true) correctCount += 1;
-    }
-
-    const percent =
-      revealedCount > 0 ? Math.round((correctCount / revealedCount) * 100) : 0;
-
-    return { revealed: revealedCount, correct: correctCount, percent };
-  }, [matchResults, revealed]);
+  // Il calcolo vive in utils/weekMeter, dove e' coperto da test: qui resta
+  // solo l'adattamento della forma dei dati.
+  const meter = useMemo(
+    () =>
+      computeWeekMeter(
+        matchResults.map((m) => ({
+          status: m.status,
+          kickoff: m.kickoff,
+          actualResult: m.actualResult,
+          isCorrect: m.isCorrect,
+          revealed: !!revealed[m.fixtureId],
+        }))
+      ),
+    [matchResults, revealed]
+  );
 
   // Fire confetti when a match is recently revealed
   useEffect(() => {
@@ -439,9 +449,16 @@ export default function RisultatiScreen({
               </TouchableOpacity>
 
               <View style={styles.centerWeek}>
-                <Text style={styles.currentWeekTitle}>
-                  Giornata {selectedWeek}
-                </Text>
+                <View style={styles.weekTitleRow}>
+                  <Text style={styles.currentWeekTitle}>
+                    Giornata {selectedWeek}
+                  </Text>
+                  {meter.isLive && (
+                    <View style={styles.liveBadge}>
+                      <Text style={styles.liveBadgeText}>IN CORSO</Text>
+                    </View>
+                  )}
+                </View>
                 {dateRange !== null && (
                   <Text style={styles.dateRangeText}>{dateRange}</Text>
                 )}
@@ -477,14 +494,37 @@ export default function RisultatiScreen({
               <View style={styles.meterContainer}>
                 <CircularMeter percent={meter.percent} />
 
-                {/* Share Button */}
-                <TouchableOpacity
-                  style={styles.shareButton}
-                  onPress={handleShare}
-                >
-                  <Ionicons name="share-outline" size={18} color="#fff" />
-                  <Text style={styles.shareText}>Condividi risultato</Text>
-                </TouchableOpacity>
+                {/* Cosa manca al numero finale: prima le partite da giocare,
+                    poi i risultati da scoprire, poi piu' niente. */}
+                {meter.toPlay > 0 ? (
+                  <Text style={styles.meterHint}>
+                    <Text style={styles.meterHintStrong}>
+                      {meter.toPlay} {meter.toPlay === 1 ? "partita" : "partite"}
+                    </Text>
+                    {" ancora da giocare"}
+                  </Text>
+                ) : meter.toReveal > 0 ? (
+                  <Text style={styles.meterHint}>
+                    <Text style={styles.meterHintStrong}>
+                      {meter.toReveal}{" "}
+                      {meter.toReveal === 1 ? "risultato" : "risultati"}
+                    </Text>
+                    {" da scoprire"}
+                  </Text>
+                ) : null}
+
+                {/* La condivisione compare quando il numero e' definitivo, non
+                    quando la giornata e' conclusa: chi tiene i risultati per il
+                    lunedi' altrimenti condividerebbe uno 0% che non merita. */}
+                {meter.isFinal && (
+                  <TouchableOpacity
+                    style={styles.shareButton}
+                    onPress={handleShare}
+                  >
+                    <Ionicons name="share-outline" size={18} color="#fff" />
+                    <Text style={styles.shareText}>Condividi risultato</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               // Modalità ospite: niente statistiche personali, invito a registrarsi.
@@ -625,6 +665,15 @@ function MatchCard({
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const buttonRef = useRef<View>(null);
 
+  const isPlayable = match.status === "FINISHED" && !!match.actualResult;
+  // formatKickoffTime rende "lun, 14/09, 18:30": la card lo mostra su due righe.
+  const [kickoffDay, kickoffHour] = (() => {
+    const parts = formatKickoffTime(match.kickoff).split(", ");
+    return parts.length >= 3
+      ? [`${parts[0]}, ${parts[1]}`, parts[2]]
+      : [parts[0] ?? "", parts[1] ?? ""];
+  })();
+
   const handleRevealPress = async () => {
     // Trigger haptic feedback for button press
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -739,14 +788,24 @@ function MatchCard({
         ]}
       >
         {!isRevealed ? (
-          <TouchableOpacity
-            style={styles.revealButton}
-            onPress={handleRevealPress}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.revealButtonText}>MOSTRA</Text>
-            <Text style={styles.revealButtonText}>RISULTATO</Text>
-          </TouchableOpacity>
+          isPlayable ? (
+            <TouchableOpacity
+              style={styles.revealButton}
+              onPress={handleRevealPress}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.revealButtonText}>MOSTRA</Text>
+              <Text style={styles.revealButtonText}>RISULTATO</Text>
+            </TouchableOpacity>
+          ) : (
+            // Partita non ancora giocata: senza pulsante non c'e' niente da
+            // premere invano, e l'orario dice da solo perche' il risultato
+            // non c'e'. Prima la card era identica a una conclusa da scoprire.
+            <View style={styles.kickoffBox} pointerEvents="none">
+              <Text style={styles.kickoffDay}>{kickoffDay}</Text>
+              <Text style={styles.kickoffHour}>{kickoffHour}</Text>
+            </View>
+          )
         ) : (
           <View style={styles.finishedButton} pointerEvents="none">
             <Text style={styles.finishedButtonText}>FINE</Text>
@@ -881,6 +940,54 @@ const styles = StyleSheet.create({
   },
 
   // Success Meter
+  meterHint: {
+    fontSize: isSmallScreen ? 12 : 13,
+    color: "#4b5563",
+    marginTop: isSmallScreen ? 2 : 4,
+    textAlign: "center",
+  },
+  meterHintStrong: {
+    fontWeight: "600",
+    color: "#111827",
+  },
+  weekTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  liveBadge: {
+    backgroundColor: "#f7c948",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  liveBadgeText: {
+    fontSize: isSmallScreen ? 10 : 11,
+    fontWeight: "600",
+    color: "#3d2d73",
+    letterSpacing: 0.3,
+  },
+  kickoffBox: {
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    paddingHorizontal: isSmallScreen ? 6 : 8,
+    paddingVertical: isSmallScreen ? 6 : 8,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  kickoffDay: {
+    fontSize: isSmallScreen ? 9 : 11,
+    fontWeight: "600",
+    color: "#9ca3af",
+    lineHeight: isSmallScreen ? 12 : 14,
+  },
+  kickoffHour: {
+    fontSize: isSmallScreen ? 9 : 11,
+    fontWeight: "700",
+    color: "#6B7280",
+    lineHeight: isSmallScreen ? 12 : 14,
+  },
   meterContainer: {
     alignItems: "center",
     paddingVertical: isSmallScreen ? 6 : 12,
