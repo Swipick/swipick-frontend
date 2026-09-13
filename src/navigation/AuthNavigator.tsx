@@ -4,6 +4,7 @@ import WelcomeScreen from '../screens/auth/WelcomeScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
+import NicknameScreen from '../screens/auth/NicknameScreen';
 import LoginVerifiedScreen from '../screens/auth/LoginVerifiedScreen';
 
 /**
@@ -11,13 +12,22 @@ import LoginVerifiedScreen from '../screens/auth/LoginVerifiedScreen';
  * Uses simple conditional rendering instead
  */
 
-type AuthScreen = 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerification' | 'LoginVerified';
+type AuthScreen =
+  | 'Landing'
+  | 'Welcome'
+  | 'Login'
+  | 'Register'
+  | 'Nickname'
+  | 'EmailVerification'
+  | 'LoginVerified';
 
-/** Parametri passati tra le schermate auth (oggi usati solo da EmailVerification). */
+/** Parametri passati tra le schermate auth. */
 export interface AuthNavParams {
   email?: string;
   verificationLink?: string;
   verificationEmailSent?: boolean;
+  /** Id backend dell'utente appena registrato: serve al passo 2 (nickname). */
+  userId?: string;
 }
 
 interface NavigationState {
@@ -42,6 +52,23 @@ export default function AuthNavigator() {
       return <LoginScreen onNavigate={navigate} />;
     case 'Register':
       return <RegisterScreen onNavigate={navigate} />;
+    case 'Nickname':
+      // Passo 2 della registrazione via email. L'utente non ha ancora una
+      // sessione Firebase, quindi l'id backend arriva dalla registrazione e i
+      // dati della verifica viaggiano con lui fino alla schermata successiva.
+      return (
+        <NicknameScreen
+          userId={navigationState.params?.userId ?? ''}
+          onDone={() =>
+            navigate('EmailVerification', {
+              email: navigationState.params?.email,
+              verificationLink: navigationState.params?.verificationLink,
+              verificationEmailSent:
+                navigationState.params?.verificationEmailSent,
+            })
+          }
+        />
+      );
     case 'EmailVerification':
       return (
         <EmailVerificationScreen
