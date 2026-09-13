@@ -450,7 +450,7 @@ export default function RisultatiScreen({
 
               <View style={styles.centerWeek}>
                 <View style={styles.weekTitleRow}>
-                  <Text style={styles.currentWeekTitle}>
+                  <Text style={styles.currentWeekTitle} numberOfLines={1}>
                     Giornata {selectedWeek}
                   </Text>
                   {meter.isLive && (
@@ -467,7 +467,7 @@ export default function RisultatiScreen({
               <TouchableOpacity
                 onPress={handleNextWeek}
                 disabled={selectedWeek === 38 || contentLoading}
-                style={styles.sideWeek}
+                style={[styles.sideWeek, styles.sideWeekRight]}
               >
                 <Text
                   style={[
@@ -917,7 +917,16 @@ const styles = StyleSheet.create({
     minHeight: isSmallScreen ? 40 : 60,
   },
   sideWeek: {
-    flex: 1,
+    // Larghezza fissa invece di flex: 1. Le frecce contengono un numero di due
+    // cifre al massimo, mentre il titolo con la pastiglia ha bisogno di spazio:
+    // con la ripartizione 1|2|1 il centro ne riceveva 179pt su 390 e la
+    // pastiglia finiva sopra i numeri laterali. 48 resta sopra i 44pt di
+    // bersaglio tattile.
+    width: 48,
+    justifyContent: "center",
+  },
+  sideWeekRight: {
+    alignItems: "flex-end",
   },
   sideWeekText: {
     fontSize: isSmallScreen ? 12 : 14,
@@ -925,13 +934,14 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   centerWeek: {
-    flex: 2,
+    flex: 1,
     alignItems: "center",
   },
   currentWeekTitle: {
     fontSize: isSmallScreen ? 18 : 24,
     fontWeight: "bold",
     color: "#fff",
+    flexShrink: 1,
   },
   dateRangeText: {
     fontSize: isSmallScreen ? 12 : 14,
@@ -954,8 +964,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    // Se anche cosi' non bastasse (titoli lunghi, corpi accessibilita'), a
+    // cedere e' il titolo: la pastiglia non si deforma e niente straborda.
+    maxWidth: "100%",
   },
   liveBadge: {
+    flexShrink: 0,
     backgroundColor: "#f7c948",
     borderRadius: 999,
     paddingHorizontal: 8,
