@@ -7,9 +7,11 @@ import { apiClient } from './client';
 
 export interface RegisterUserDto {
   email: string;
-  name: string;
-  nickname: string;
   password: string;
+  /** Facoltativi: la registrazione chiede solo email e password, il nickname
+   *  arriva al passo successivo (POST /users/complete-profile/:id). */
+  name?: string;
+  nickname?: string;
 }
 
 export interface UserResponseDto {
@@ -86,6 +88,46 @@ export const usersApi = {
       }
 
       throw new Error('Registrazione non riuscita. Riprova più tardi.');
+    }
+  },
+
+  /**
+   * Il nickname e' libero? Usato dal passo 2 mentre l'utente scrive.
+   * In caso di errore di rete torna `true`: il controllo definitivo resta
+   * quello del server al salvataggio, qui non dobbiamo bloccare nessuno.
+   */
+  async isNicknameAvailable(nickname: string): Promise<boolean> {
+    try {
+      const response = await apiClient.get<{ available: boolean }>(
+        `/users/nickname-available/${encodeURIComponent(nickname)}`
+      );
+      return response.available;
+    } catch (error: any) {
+      console.warn('[UsersAPI] Nickname availability check failed:', error);
+      return true;
+    }
+  },
+
+  /**
+   * Completa il profilo scegliendo il nickname (passo 2 della registrazione).
+   * Vale per tutti: chi arriva dall'email e chi arriva da Google o Apple.
+   */
+  async completeProfile(userId: string, nickname: string): Promise<void> {
+    try {
+      console.log('[UsersAPI] Completing profile for:', userId);
+
+      await apiClient.post(`/users/complete-profile/${userId}`, { nickname });
+
+      console.log('[UsersAPI] Profile completed');
+    } catch (error: any) {
+      console.error('[UsersAPI] Complete profile error:', error);
+      console.error('[UsersAPI] Error response:', error.response?.data);
+
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+
+      throw new Error('Non siamo riusciti a salvare il nickname. Riprova.');
     }
   },
 

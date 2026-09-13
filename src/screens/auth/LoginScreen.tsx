@@ -17,6 +17,8 @@ import * as Haptics from "expo-haptics";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { authService } from "../../services/auth/authService";
 import { usersApi } from "../../services/api/users";
+import { profileApi } from "../../services/api/profile";
+import { useAuthStore } from "../../store/stores/useAuthStore";
 import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
 
 type LoginScreenProps = {
@@ -31,6 +33,8 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const setPendingNicknameUserId = useAuthStore((s) => s.setPendingNicknameUserId);
 
   const handleLogin = async () => {
     // Validate inputs
@@ -118,7 +122,11 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       console.log("[LoginScreen] User synced to backend:", syncResult);
 
       // Utenti Google già verificati: la transizione alla home la fa
-      // AppNavigator via onAuthStateChanged.
+      // AppNavigator via onAuthStateChanged. Chi non ha ancora un nickname
+      // (iscritto prima del passo 2, o uscito a metà) vede prima quello.
+      if (syncResult.needsProfileCompletion) {
+        setPendingNicknameUserId(syncResult.id);
+      }
     } catch (error: any) {
       console.error("[LoginScreen] Google login error:", error);
 
@@ -139,9 +147,15 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       setLoading(true);
       console.log("[LoginScreen] Apple login initiated");
 
-      await authService.signInWithApple();
+      // signInWithApple sincronizza l'utente sul backend e lo attende: qui il
+      // profilo esiste, e possiamo chiedergli se manca il nickname.
+      const user = await authService.signInWithApple();
+      const profile = await profileApi.getUserByFirebaseUid(user.uid);
 
       // Transizione alla home gestita da AppNavigator via onAuthStateChanged.
+      if (profile.data?.needsProfileCompletion) {
+        setPendingNicknameUserId(profile.data.id);
+      }
     } catch (error: any) {
       console.error("[LoginScreen] Apple login error:", error);
 
@@ -217,6 +231,12 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        // iOS non sposta nulla da solo: senza questo la tastiera copre il campo
+        // su cui l'utente ha appena toccato, e per rivederlo deve scorrere a
+        // mano con la tastiera gia' aperta. Android lo fa da se' (Expo usa
+        // softwareKeyboardLayoutMode "resize" per impostazione predefinita).
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
       >
         {/* Swipick Logo/Title */}
         <Text style={styles.title}>swipick</Text>

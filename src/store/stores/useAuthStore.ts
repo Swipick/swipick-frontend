@@ -21,6 +21,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isGuest: false,
   loading: false,
   error: null,
+  pendingNicknameUserId: null,
 
   // Actions
   signIn: async (credentials: LoginCredentials) => {
@@ -65,7 +66,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       set({ loading: true, error: null });
       await authService.signOut();
-      set({ user: null, firebaseUser: null, isGuest: false, loading: false });
+      set({
+        user: null,
+        firebaseUser: null,
+        isGuest: false,
+        loading: false,
+        pendingNicknameUserId: null,
+      });
       // useGameStore vive a livello di modulo e sopravvive allo smontaggio:
       // senza questo, chi accede dopo nella stessa sessione si trova in
       // memoria i pronostici dell'utente precedente.
@@ -112,6 +119,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({ user: null, firebaseUser: null });
     }
   },
+
+  setPendingNicknameUserId: (userId: string | null) =>
+    set({ pendingNicknameUserId: userId }),
 
   setGuest: (isGuest: boolean) => set({ isGuest }),
 

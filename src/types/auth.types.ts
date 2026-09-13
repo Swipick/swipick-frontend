@@ -29,6 +29,12 @@ export interface AuthState {
   isGuest: boolean;
   loading: boolean;
   error: string | null;
+  /**
+   * Id backend dell'utente che ha l'accesso fatto ma non ancora il nickname.
+   * Finché è valorizzato, l'app mostra il passo 2 al posto dell'area di gioco:
+   * con Google e Apple l'accesso riesce prima che il profilo sia completo.
+   */
+  pendingNicknameUserId: string | null;
 }
 
 export interface AuthActions {
@@ -38,6 +44,7 @@ export interface AuthActions {
   resetPassword: (email: string) => Promise<void>;
   signInWithApple: () => Promise<void>;
   setUser: (user: User | null) => void;
+  setPendingNicknameUserId: (userId: string | null) => void;
   setGuest: (isGuest: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;

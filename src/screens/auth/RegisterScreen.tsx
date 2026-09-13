@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,177 +8,96 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Animated,
   Linking,
   Platform,
   Image,
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { LinearGradient } from 'expo-linear-gradient';
-import CheckBox from 'expo-checkbox';
 import * as Haptics from 'expo-haptics';
 import { usersApi } from '../../services/api/users';
+import { profileApi } from '../../services/api/profile';
 import { authService } from '../../services/auth/authService';
+import { useAuthStore } from '../../store/stores/useAuthStore';
 
 type RegisterScreenProps = {
-  onNavigate: (screen: 'Landing' | 'Welcome' | 'Login' | 'Register' | 'EmailVerification', params?: any) => void;
+  onNavigate: (
+    screen: 'Landing' | 'Welcome' | 'Login' | 'Register' | 'Nickname' | 'EmailVerification',
+    params?: any
+  ) => void;
 };
 
 const TERMS_URL = "https://www.swipick.com/termini-e-condizioni.html";
 const PRIVACY_URL = "https://www.swipick.com/privacy-e-cookie.html";
 
-// Single live rule row: red ✗ while unmet, green ✓ once satisfied.
-const RuleRow = ({ ok, label }: { ok: boolean; label: string }) => (
-  <View style={styles.ruleRow}>
-    <Text style={[styles.ruleIcon, ok ? styles.ruleOk : styles.ruleBad]}>
-      {ok ? '✓' : '✗'}
-    </Text>
-    <Text style={[styles.ruleText, ok ? styles.ruleOk : styles.ruleBad]}>
-      {label}
-    </Text>
-  </View>
-);
-
+/**
+ * Passo 1 di 2: email e password, oppure Google/Apple.
+ * Nome e nickname non si chiedono qui — il nickname arriva al passo 2, il nome
+ * non serve a nulla nel gioco. L'accettazione dei termini è implicita nell'atto
+ * di iscriversi (consenso passivo), quindi niente casella da spuntare.
+ */
 export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
-  const [formData, setFormData] = useState({
-    nome: '',
-    sopranome: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    agreeToTerms: false,
-  });
-
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<null | 'google' | 'apple'>(null);
 
-  const shakeAnimation = useRef(new Animated.Value(0)).current;
+  const setPendingNicknameUserId = useAuthStore((s) => s.setPendingNicknameUserId);
 
-  // Real-time password validation
-  useEffect(() => {
-    if (formData.password && formData.confirmPassword) {
-      if (formData.password !== formData.confirmPassword) {
-        setErrors(prev => ({
-          ...prev,
-          confirmPassword: 'Le password non corrispondono'
-        }));
-      } else {
-        setErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors.confirmPassword;
-          return newErrors;
-        });
-      }
-    }
-  }, [formData.password, formData.confirmPassword]);
+  const busy = loading || socialLoading !== null;
 
-  const triggerShake = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnimation, { toValue: -6, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnimation, { toValue: 6, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnimation, { toValue: -4, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnimation, { toValue: 4, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnimation, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  };
+  const validate = (): boolean => {
+    const next: Record<string, string> = {};
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    // Nome validation
-    if (!formData.nome.trim()) {
-      newErrors.nome = 'Nome è richiesto';
-    } else if (formData.nome.length < 2) {
-      newErrors.nome = 'Nome deve avere almeno 2 caratteri';
-    } else if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(formData.nome)) {
-      newErrors.nome = 'Solo lettere e spazi sono consentiti';
+    if (!email.trim()) {
+      next.email = 'Inserisci la tua email';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      next.email = 'Formato email non valido';
     }
 
-    // Nickname validation — must match backend rules: ^[a-z0-9_]+$, length 3-50
-    if (!formData.sopranome.trim()) {
-      newErrors.sopranome = 'Nickname è richiesto';
-    } else if (formData.sopranome.length < 3 || formData.sopranome.length > 50) {
-      newErrors.sopranome = 'Il nickname deve avere tra 3 e 50 caratteri';
-    } else if (!/^[a-z0-9_]+$/.test(formData.sopranome)) {
-      newErrors.sopranome = 'Solo minuscole, numeri e underscore (_)';
+    // Nessuna regola di composizione, come sul backend: conta la lunghezza.
+    if (!password) {
+      next.password = 'Scegli una password';
+    } else if (password.length < 8) {
+      next.password = 'La password deve avere almeno 8 caratteri';
     }
 
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email è richiesta';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Formato email non valido';
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password è richiesta';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password deve avere almeno 8 caratteri';
-    } else if (!/(?=.*[a-z])/.test(formData.password)) {
-      newErrors.password = 'Password deve contenere almeno una lettera minuscola';
-    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
-      newErrors.password = 'Password deve contenere almeno una lettera maiuscola';
-    } else if (!/(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password deve contenere almeno un numero';
-    }
-
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Conferma password è richiesta';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Le password non corrispondono';
-    }
-
-    // Terms validation
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = 'Devi accettare i termini di servizio';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validate()) return;
 
     try {
       setLoading(true);
 
-      // Call backend API to register user
-      // Backend will:
-      // 1. Create Firebase user
-      // 2. Create database record
-      // 3. Generate verification link
-      // 4. Send email via Aruba SMTP (noreply@swipick.com)
+      // Il backend crea l'utente Firebase, salva il record e manda la verifica.
+      // Senza nickname il profilo nasce da completare: è il passo 2.
       const response = await usersApi.registerUser({
-        email: formData.email.toLowerCase(),
-        name: formData.nome,
-        nickname: formData.sopranome,
-        password: formData.password,
+        email: email.trim().toLowerCase(),
+        password,
       });
 
       console.log('[RegisterScreen] User registered successfully');
 
-      // Navigate to email verification screen
-      // Pass verification link if available (dev mode)
-      onNavigate('EmailVerification', {
-        email: formData.email,
+      onNavigate('Nickname', {
+        userId: response.id,
+        email: email.trim().toLowerCase(),
         verificationLink: response.verificationLink,
         verificationEmailSent: response.verificationEmailSent,
       });
     } catch (error: any) {
       console.error('[RegisterScreen] Registration failed:', error);
       const msg: string = error?.message || 'Registrazione non riuscita';
-      // Map backend conflicts/validation to the relevant field so the user can
-      // fix it inline without the form getting "stuck".
-      if (/nickname/i.test(msg)) {
-        setErrors((prev) => ({ ...prev, sopranome: msg }));
-      } else if (/email/i.test(msg)) {
+      // Conflitti e validazioni del backend vanno sotto al campo giusto, così
+      // l'utente può correggere senza uscire dal modulo.
+      if (/email/i.test(msg)) {
         setErrors((prev) => ({ ...prev, email: msg }));
+      } else if (/password/i.test(msg)) {
+        setErrors((prev) => ({ ...prev, password: msg }));
       } else {
         Alert.alert('Errore', msg);
       }
@@ -188,406 +107,252 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!formData.agreeToTerms) {
-      triggerShake();
-      Alert.alert('Attenzione', 'Devi accettare i termini di servizio prima di continuare');
-      return;
-    }
-
     try {
-      setGoogleLoading(true);
+      setSocialLoading('google');
       console.log('[RegisterScreen] Google sign-in initiated');
 
-      // Sign in with Google via Firebase
       const user = await authService.signInWithGoogle();
-
-      console.log('[RegisterScreen] Google sign-in successful:', {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      });
-
-      // Get Firebase ID token to sync with backend
       const idToken = await user.getIdToken();
-      console.log('[RegisterScreen] Got Firebase ID token, syncing with backend...');
-
-      // Sync user to NeonDB via backend
       const syncResult = await usersApi.syncGoogleUser(idToken);
+
       console.log('[RegisterScreen] User synced to backend:', syncResult);
 
-      // Google users are automatically verified
-      // Navigate to email verification screen (which handles the mode selection flow)
-      onNavigate('EmailVerification', {
-        email: user.email,
-        isGoogleSignIn: true
-      });
+      // L'accesso è già riuscito e AppNavigator è passato all'area di gioco:
+      // il passo 2 non può vivere qui dentro, lo alza il gate in AppNavigator.
+      if (syncResult.needsProfileCompletion) {
+        setPendingNicknameUserId(syncResult.id);
+      }
     } catch (error: any) {
       console.error('[RegisterScreen] Google sign-in error:', error);
-
-      // Check if user cancelled
-      if (error.message === 'Google sign-in was cancelled') {
-        // Don't show error for cancellation
-        return;
-      }
-
+      if (error.message === 'Google sign-in was cancelled') return;
       Alert.alert('Errore', error.message || 'Accesso con Google non riuscito');
     } finally {
-      setGoogleLoading(false);
+      setSocialLoading(null);
     }
   };
 
   const handleAppleSignIn = async () => {
-    if (!formData.agreeToTerms) {
-      triggerShake();
-      Alert.alert('Attenzione', 'Devi accettare i termini di servizio prima di continuare');
-      return;
-    }
-
     try {
-      setGoogleLoading(true);
+      setSocialLoading('apple');
       console.log('[RegisterScreen] Apple sign-in initiated');
 
-      await authService.signInWithApple();
+      // signInWithApple sincronizza già l'utente sul backend e lo attende,
+      // quindi qui il profilo esiste di sicuro.
+      const user = await authService.signInWithApple();
+      const profile = await profileApi.getUserByFirebaseUid(user.uid);
 
-      onNavigate('EmailVerification', {
-        email: null,
-        isAppleSignIn: true,
-      });
+      if (profile.data?.needsProfileCompletion) {
+        setPendingNicknameUserId(profile.data.id);
+      }
     } catch (error: any) {
       console.error('[RegisterScreen] Apple sign-in error:', error);
-
-      if (error.code === 'ERR_REQUEST_CANCELED' || error.message === 'apple-sign-in-cancelled') {
+      if (
+        error.code === 'ERR_REQUEST_CANCELED' ||
+        error.message === 'apple-sign-in-cancelled'
+      ) {
         return;
       }
-
       Alert.alert('Errore', error.message || 'Accesso con Apple non riuscito');
     } finally {
-      setGoogleLoading(false);
+      setSocialLoading(null);
     }
   };
 
-  const isFormValid = () => {
-    return (
-      formData.nome.trim() &&
-      formData.sopranome.trim() &&
-      formData.email.trim() &&
-      formData.password &&
-      formData.confirmPassword &&
-      formData.agreeToTerms &&
-      Object.keys(errors).length === 0
-    );
-  };
+  const openTerms = () => Linking.openURL(TERMS_URL);
+  const openPrivacy = () => Linking.openURL(PRIVACY_URL);
 
-  const openTerms = () => {
-    Linking.openURL(TERMS_URL);
-  };
-
-  const openPrivacy = () => {
-    Linking.openURL(PRIVACY_URL);
-  };
-
-  // Live validation state for the inline rule checklists
-  const pw = formData.password;
-  const passwordRules = {
-    length: pw.length >= 8,
-    lower: /[a-z]/.test(pw),
-    upper: /[A-Z]/.test(pw),
-    digit: /\d/.test(pw),
-  };
-  const nick = formData.sopranome;
-  const nicknameRules = {
-    length: nick.length >= 3 && nick.length <= 50,
-    charset: /^[a-z0-9_]+$/.test(nick),
-  };
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !busy;
 
   return (
     <LinearGradient colors={['#52418d', '#7a57f6']} style={styles.gradient}>
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={async () => {
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onNavigate("Landing");
-        }}
-      >
-        <Text style={styles.backButtonText}>← Indietro</Text>
-      </TouchableOpacity>
-
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
+        {/* Intestazione: indietro, marchio, passo */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.headerSide}
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onNavigate('Landing');
+            }}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.wordmark}>SWIPICK</Text>
+          <Text style={[styles.headerSide, styles.stepLabel]}>Passo 1 di 2</Text>
+        </View>
+
         <View style={styles.card}>
-          {/* Header */}
-          <Text style={styles.title}>Crea Account</Text>
-          <Text style={styles.subtitle}>
-            Unisciti a Swipick e inizia a giocare
+          <Text style={styles.title}>Crea account</Text>
+          <Text style={styles.subtitle}>Bastano dieci secondi</Text>
+
+          {/* Apple per primo: su iOS è il percorso più breve e la 4.8 lo richiede */}
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={8}
+              style={styles.appleButton}
+              onPress={() => {
+                if (busy) return;
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleAppleSignIn();
+              }}
+            />
+          )}
+
+          <TouchableOpacity
+            style={[styles.googleButton, busy && styles.buttonDisabled]}
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleGoogleSignIn();
+            }}
+            disabled={busy}
+          >
+            {socialLoading === 'google' ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color="#374151" size="small" />
+                <Text style={styles.googleButtonText}>Accesso con Google…</Text>
+              </View>
+            ) : (
+              <>
+                <Image
+                  source={require('../../assets/images/icons/google-logo-icon.png')}
+                  style={styles.googleLogoImage}
+                  resizeMode="contain"
+                />
+                <Text style={styles.googleButtonText}>Continua con Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Consenso passivo: nessuna casella, l'atto di iscriversi è l'assenso */}
+          <Text style={styles.consent}>
+            Continuando accetti i{' '}
+            <Text style={styles.link} onPress={openTerms}>
+              Termini di servizio
+            </Text>
+            {' '}e la{' '}
+            <Text style={styles.link} onPress={openPrivacy}>
+              Privacy Policy
+            </Text>
+            .
           </Text>
 
-          {/* Form Fields */}
-          <View style={styles.formContainer}>
-            {/* Nome */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[styles.input, errors.nome && styles.inputError]}
-                placeholder="Nome"
-                placeholderTextColor="#9ca3af"
-                value={formData.nome}
-                onChangeText={(text) => setFormData({ ...formData, nome: text })}
-                autoCapitalize="words"
-                editable={!loading}
-              />
-              {errors.nome && (
-                <Text style={styles.errorText}>{errors.nome}</Text>
-              )}
-            </View>
-
-            {/* Nickname (unique username) */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[styles.input, errors.sopranome && styles.inputError]}
-                placeholder="Nickname (es. mario_rossi)"
-                placeholderTextColor="#9ca3af"
-                value={formData.sopranome}
-                onChangeText={(text) => {
-                  setFormData({ ...formData, sopranome: text.toLowerCase() });
-                  if (errors.sopranome) {
-                    setErrors((prev) => {
-                      const next = { ...prev };
-                      delete next.sopranome;
-                      return next;
-                    });
-                  }
-                }}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loading}
-              />
-              {nick.length > 0 && (
-                <View style={styles.rulesContainer}>
-                  <RuleRow ok={nicknameRules.length} label="Tra 3 e 50 caratteri" />
-                  <RuleRow ok={nicknameRules.charset} label="Solo minuscole, numeri e underscore (_)" />
-                </View>
-              )}
-              {errors.sopranome && (
-                <Text style={styles.errorText}>{errors.sopranome}</Text>
-              )}
-            </View>
-
-            {/* Email */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[styles.input, errors.email && styles.inputError]}
-                placeholder="email@example.com"
-                placeholderTextColor="#9ca3af"
-                value={formData.email}
-                onChangeText={(text) => setFormData({ ...formData, email: text.toLowerCase() })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loading}
-              />
-              {errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
-              )}
-            </View>
-
-            {/* Password */}
-            <View style={styles.inputContainer}>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="Password"
-                  placeholderTextColor="#9ca3af"
-                  value={formData.password}
-                  onChangeText={(text) => setFormData({ ...formData, password: text })}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                </TouchableOpacity>
-              </View>
-              {pw.length > 0 && (
-                <View style={styles.rulesContainer}>
-                  <RuleRow ok={passwordRules.length} label="Almeno 8 caratteri" />
-                  <RuleRow ok={passwordRules.lower} label="Una lettera minuscola" />
-                  <RuleRow ok={passwordRules.upper} label="Una lettera maiuscola" />
-                  <RuleRow ok={passwordRules.digit} label="Un numero" />
-                </View>
-              )}
-              {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
-            </View>
-
-            {/* Confirm Password */}
-            <View style={styles.inputContainer}>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={[styles.input, errors.confirmPassword && styles.inputError]}
-                  placeholder="Conferma Password"
-                  placeholderTextColor="#9ca3af"
-                  value={formData.confirmPassword}
-                  onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  <Text style={styles.eyeText}>{showConfirmPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                </TouchableOpacity>
-              </View>
-              {errors.confirmPassword && (
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-              )}
-            </View>
-
-            {/* Terms Checkbox */}
-            <Animated.View
-              style={[
-                styles.checkboxContainer,
-                { transform: [{ translateX: shakeAnimation }] }
-              ]}
-            >
-              <CheckBox
-                value={formData.agreeToTerms}
-                onValueChange={(value: boolean) => setFormData({ ...formData, agreeToTerms: value })}
-                color={formData.agreeToTerms ? '#9333EA' : undefined}
-                style={styles.checkbox}
-              />
-              <Text style={styles.checkboxLabel}>
-                Accetto i{' '}
-                <Text style={styles.link} onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  openTerms();
-                }}>
-                  termini di servizio
-                </Text>
-                {' '}di Swipick
-              </Text>
-            </Animated.View>
-            {errors.agreeToTerms && (
-              <Text style={styles.errorText}>{errors.agreeToTerms}</Text>
-            )}
-
-            {/* Submit Button */}
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                (!isFormValid() || loading) && styles.buttonDisabled
-              ]}
-              onPress={async () => {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                handleSubmit();
-              }}
-              disabled={!isFormValid() || loading}
-            >
-              {loading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                  <Text style={styles.primaryButtonText}>Creazione account...</Text>
-                </View>
-              ) : (
-                <Text style={styles.primaryButtonText}>Crea Account</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Loading Note */}
-            {loading && (
-              <Text style={styles.loadingNote}>
-                Il server potrebbe richiedere fino a 2 minuti per rispondere.
-                Attendi per favore...
-              </Text>
-            )}
-
-            {/* Divider */}
-            <Text style={styles.divider}>oppure</Text>
-
-            {/* Google Button */}
-            <TouchableOpacity
-              style={[
-                styles.googleButton,
-                googleLoading && styles.buttonDisabled
-              ]}
-              onPress={async () => {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                handleGoogleSignIn();
-              }}
-              disabled={googleLoading}
-            >
-              {googleLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator color="#374151" size="small" />
-                  <Text style={styles.googleButtonText}>Accesso con Google...</Text>
-                </View>
-              ) : (
-                <>
-                  <Image
-                    source={require('../../assets/images/icons/google-logo-icon.png')}
-                    style={styles.googleLogoImage}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.googleButtonText}>Accedi con Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Apple Sign-In Button — iOS only (required by App Store guideline 4.8) */}
-            {Platform.OS === 'ios' && (
-              <AppleAuthentication.AppleAuthenticationButton
-                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                cornerRadius={8}
-                style={styles.appleButton}
-                onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  handleAppleSignIn();
-                }}
-              />
-            )}
-
-            {/* Login Link */}
-            <View style={styles.loginLinkContainer}>
-              <Text style={styles.loginText}>
-                Hai già un account?{' '}
-                <Text style={styles.link} onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onNavigate('Login');
-                }}>
-                  Accedi
-                </Text>
-              </Text>
-            </View>
-
-            {/* Footer Links */}
-            <Text style={styles.footer}>
-              Creando un account accetti i nostri{' '}
-              <Text style={styles.smallLink} onPress={async () => {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                openTerms();
-              }}>
-                Termini di Servizio
-              </Text>
-              {' '}e la{' '}
-              <Text style={styles.smallLink} onPress={async () => {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                openPrivacy();
-              }}>
-                Privacy Policy
-              </Text>
-            </Text>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>oppure</Text>
+            <View style={styles.dividerLine} />
           </View>
+
+          {/* Email */}
+          <TextInput
+            style={[styles.input, errors.email && styles.inputError]}
+            placeholder="La tua email"
+            placeholderTextColor="#9ca3af"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text.toLowerCase());
+              if (errors.email) {
+                setErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.email;
+                  return next;
+                });
+              }
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            textContentType="emailAddress"
+            editable={!busy}
+          />
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+
+          {/* Password */}
+          <View style={[styles.passwordRow, errors.password && styles.inputError]}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Password"
+              placeholderTextColor="#9ca3af"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) {
+                  setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.password;
+                    return next;
+                  });
+                }
+              }}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="password-new"
+              textContentType="newPassword"
+              editable={!busy}
+              returnKeyType="go"
+              onSubmitEditing={handleSubmit}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
+          {errors.password ? (
+            <Text style={styles.errorText}>{errors.password}</Text>
+          ) : (
+            <Text style={styles.passwordHint}>
+              Almeno 8 caratteri. Più è lunga, meglio è.
+            </Text>
+          )}
+
+          <TouchableOpacity
+            style={[styles.primaryButton, !canSubmit && styles.buttonDisabled]}
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleSubmit();
+            }}
+            disabled={!canSubmit}
+          >
+            {loading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color="#FFFFFF" size="small" />
+                <Text style={styles.primaryButtonText}>Creazione account…</Text>
+              </View>
+            ) : (
+              <Text style={styles.primaryButtonText}>Continua</Text>
+            )}
+          </TouchableOpacity>
+
+          {loading && (
+            <Text style={styles.loadingNote}>
+              Il server potrebbe metterci qualche istante. Attendi per favore…
+            </Text>
+          )}
+
+          <Text style={styles.loginText}>
+            Hai già un account?{' '}
+            <Text
+              style={styles.link}
+              onPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onNavigate('Login');
+              }}
+            >
+              Accedi
+            </Text>
+          </Text>
         </View>
       </ScrollView>
     </LinearGradient>
@@ -598,48 +363,52 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  backButton: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 10,
-    padding: 10,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
   scrollContainer: {
     flexGrow: 1,
-    padding: 16,
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 24,
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  headerSide: {
+    width: 80,
+  },
+  backButtonText: {
+    fontSize: 22,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  wordmark: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 2.5,
+  },
+  stepLabel: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'right',
   },
   card: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 24,
-    width: '100%',
-    maxWidth: 448,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 25 },
-        shadowOpacity: 0.25,
-        shadowRadius: 50,
-      },
-      android: {
-        elevation: 10,
-      },
-    }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 30,
+    elevation: 6,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 4,
     textAlign: 'center',
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
@@ -647,164 +416,132 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
-  formContainer: {
+  appleButton: {
+    height: 48,
     width: '100%',
+    marginBottom: 12,
   },
-  inputContainer: {
-    marginBottom: 16,
+  googleButton: {
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
-  passwordContainer: {
-    position: 'relative',
+  googleLogoImage: {
+    width: 18,
+    height: 18,
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  consent: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
   input: {
-    width: '100%',
     height: 48,
     borderWidth: 1,
     borderColor: '#D1D5DB',
     borderRadius: 8,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#111827',
-    backgroundColor: '#FFFFFF',
-  },
-  inputError: {
-    borderColor: '#DC2626',
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    padding: 4,
-  },
-  eyeText: {
-    fontSize: 20,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#DC2626',
-    marginTop: 4,
-  },
-  rulesContainer: {
-    marginTop: 8,
-    marginBottom: 2,
-  },
-  ruleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  ruleIcon: {
-    width: 16,
-    fontSize: 13,
-    fontWeight: '700',
-    marginRight: 6,
-  },
-  ruleText: {
-    fontSize: 13,
-  },
-  ruleOk: {
-    color: '#16A34A',
-  },
-  ruleBad: {
-    color: '#DC2626',
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 16,
   },
-  checkbox: {
-    width: 16,
-    height: 16,
-    marginRight: 8,
+  inputError: {
+    borderColor: '#ef4444',
   },
-  checkboxLabel: {
-    fontSize: 14,
-    color: '#374151',
+  passwordRow: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
     flex: 1,
+    fontSize: 16,
+    color: '#111827',
+    paddingVertical: 0,
   },
-  link: {
-    color: '#9333EA',
-    textDecorationLine: 'underline',
+  eyeText: {
+    fontSize: 18,
+  },
+  passwordHint: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 6,
+    marginBottom: 18,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#ef4444',
+    marginTop: 6,
+    marginBottom: 12,
   },
   primaryButton: {
-    width: '100%',
     height: 48,
     backgroundColor: '#9333EA',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   primaryButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
-  loadingContainer: {
+  loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  divider: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginVertical: 16,
-  },
-  googleButton: {
-    width: '100%',
-    height: 48,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  appleButton: {
-    width: '100%' as any,
-    height: 48,
-    marginBottom: 16,
-  },
-  googleLogoImage: {
-    width: 20,
-    height: 20,
-    marginRight: 8,
-  },
-  googleButtonText: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  loginLinkContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  loginText: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  footer: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  smallLink: {
-    color: '#9333EA',
-    textDecorationLine: 'underline',
   },
   loadingNote: {
     fontSize: 12,
     color: '#6B7280',
     textAlign: 'center',
-    marginTop: 8,
-    fontStyle: 'italic',
+    marginTop: 10,
+  },
+  link: {
+    color: '#7a57f6',
+    textDecorationLine: 'underline',
+  },
+  loginText: {
+    textAlign: 'center',
+    marginTop: 18,
+    fontSize: 14,
+    color: '#4B5563',
   },
 });
