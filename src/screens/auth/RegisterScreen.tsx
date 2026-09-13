@@ -317,6 +317,12 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        // iOS non sposta nulla da solo: senza questo la tastiera copre il campo
+        // su cui l'utente ha appena toccato, e per rivederlo deve scorrere a
+        // mano con la tastiera gia' aperta. Android lo fa da se' (Expo usa
+        // softwareKeyboardLayoutMode "resize" per impostazione predefinita).
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
       >
         <View style={styles.card}>
           {/* Header */}
