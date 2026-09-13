@@ -5,48 +5,107 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   ActivityIndicator,
   Alert,
-  Modal,
+  Linking,
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../theme';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 import { authService } from '../../services/auth/authService';
 import { profileApi } from '../../services/api/profile';
-import { UserPreferences, PreferencesUpdate } from '../../types/settings';
+import { describeProviders } from '../../utils/authProviders';
+import { PRIVACY_URL, TERMS_URL } from '../../config/links';
 
 type ImpostazioniScreenProps = {
-  navigation?: any;
+  navigation?: { navigate: (screen: any) => void; goBack: () => void };
+  /** Nickname corrente, tenuto dal navigatore così sopravvive al cambio schermata. */
+  nickname: string | null;
+  onProfileLoaded: (info: { userId: string; email: string; nickname: string | null }) => void;
 };
 
-export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenProps) {
-  // Selettore: re-render solo quando cambia user (non loading/error auth)
-  const user = useAuthStore((s) => s.user);
+/**
+ * Lato dell'avatar dopo il ritaglio, in pixel: lo decide il server, che
+ * ritaglia al centro e riduce a questa misura in webp.
+ * L'avatar più grande nell'app è 72 punti, cioè 216 pixel su uno schermo a
+ * tripla densità: 256 li copre, e oltre si pagherebbero pixel che nessuno
+ * vedrà. Il numero è qui solo per dirlo all'utente.
+ */
+const AVATAR_PX = 256;
 
-  // User info state
+/** Oltre questa dimensione non ha senso spedire: il server ridurrebbe comunque. */
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+/** Una riga della lista: etichetta, eventuale nota, valore e freccia. */
+function Riga({
+  label,
+  note,
+  value,
+  valueStyle,
+  onPress,
+  busy,
+  last,
+}: {
+  label: string;
+  note?: string;
+  value?: string;
+  valueStyle?: any;
+  onPress?: () => void;
+  busy?: boolean;
+  last?: boolean;
+}) {
+  const content = (
+    <View style={[styles.row, last && styles.rowLast]}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {note ? <Text style={styles.rowNote}>{note}</Text> : null}
+      </View>
+      {busy ? <ActivityIndicator size="small" color={colors.primary} /> : null}
+      {value ? (
+        <Text
+          style={[styles.rowValue, valueStyle]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {value}
+        </Text>
+      ) : null}
+      {onPress ? (
+        <Ionicons name="chevron-forward" size={18} color="#c4c4cc" />
+      ) : null}
+    </View>
+  );
+
+  if (!onPress) return content;
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.6} disabled={busy}>
+      {content}
+    </TouchableOpacity>
+  );
+}
+
+export default function ImpostazioniScreen({
+  navigation,
+  nickname,
+  onProfileLoaded,
+}: ImpostazioniScreenProps) {
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
+
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>('');
-  const [nickname, setNickname] = useState<string | null>(null);
 
-  // Preference state
-  const [notifResults, setNotifResults] = useState<boolean>(true);
-  const [notifMatches, setNotifMatches] = useState<boolean>(true);
-  const [notifGoals, setNotifGoals] = useState<boolean>(true);
-
-  // UI state
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
-  const [deleting, setDeleting] = useState<boolean>(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-  const [sendingReset, setSendingReset] = useState<boolean>(false);
 
-  // Load settings data
+  const providers = describeProviders(authService.getLinkedProviders());
+
   useEffect(() => {
     loadSettingsData();
   }, [user]);
@@ -62,23 +121,16 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
       setLoading(true);
       setError(null);
 
-      // Step 1: Get user profile
-      console.log('[ImpostazioniScreen] Loading profile for Firebase UID:', user.uid);
       const profileResponse = await profileApi.getUserByFirebaseUid(user.uid);
       const profile = profileResponse.data;
 
       setUserId(profile.id);
       setEmail(profile.email);
-      setNickname(profile.sopranome);
-
-      // Step 2: Get user preferences
-      console.log('[ImpostazioniScreen] Loading preferences for user ID:', profile.id);
-      const prefsResponse = await profileApi.getUserPreferences(profile.id);
-      const prefs = prefsResponse.data;
-
-      setNotifResults(prefs.results);
-      setNotifMatches(prefs.matches);
-      setNotifGoals(prefs.goals);
+      onProfileLoaded({
+        userId: profile.id,
+        email: profile.email,
+        nickname: profile.sopranome,
+      });
 
       setLoading(false);
     } catch (err: any) {
@@ -88,52 +140,21 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
     }
   };
 
-  // Optimistic UI update for preferences
-  const optimisticUpdate = async (patch: PreferencesUpdate) => {
-    if (!userId) return;
-
-    // Save previous state for rollback
-    const prev = {
-      results: notifResults,
-      matches: notifMatches,
-      goals: notifGoals,
-    };
-
-    // Apply optimistic state IMMEDIATELY
-    if (patch.results !== undefined) setNotifResults(patch.results);
-    if (patch.matches !== undefined) setNotifMatches(patch.matches);
-    if (patch.goals !== undefined) setNotifGoals(patch.goals);
-
-    try {
-      // Send to server
-      await profileApi.updateUserPreferences(userId, patch);
-
-      // Success: Show confirmation
-      showToast('Preferenze aggiornate');
-    } catch (error: any) {
-      console.error('[ImpostazioniScreen] Update failed:', error);
-
-      // ROLLBACK on error
-      setNotifResults(prev.results);
-      setNotifMatches(prev.matches);
-      setNotifGoals(prev.goals);
-
-      Alert.alert('Errore', 'Impossibile aggiornare le preferenze');
-    }
+  const showToast = (message: string, duration: number = 1800) => {
+    setToast(message);
+    setTimeout(() => setToast(null), duration);
   };
 
-  // Handle avatar upload
   const handleAvatarUpload = async () => {
     if (!userId) return;
 
     try {
-      // Request permission first
       if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert(
             'Permesso richiesto',
-            'Swipick necessita l\'accesso alla tua libreria fotografica per caricare un\'immagine del profilo.'
+            "Swipick ha bisogno di accedere alle tue foto per cambiare l'immagine del profilo."
           );
           return;
         }
@@ -144,30 +165,27 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.9,
-        base64: false,
       });
 
-      if (result.canceled) {
-        return;
-      }
+      if (result.canceled) return;
 
       const asset = result.assets[0];
 
-      // Client-side validation
-      if (!asset.mimeType || !['image/jpeg', 'image/png', 'image/webp'].includes(asset.mimeType)) {
-        Alert.alert('Errore', 'Formato immagine non supportato. Usa JPEG, PNG o WebP.');
+      if (
+        asset.mimeType &&
+        !['image/jpeg', 'image/png', 'image/webp'].includes(asset.mimeType)
+      ) {
+        Alert.alert('Formato non supportato', 'Usa una foto JPEG, PNG o WebP.');
         return;
       }
 
-      // Check file size (5MB max)
-      if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
-        Alert.alert('Errore', 'Immagine troppo grande (max 5MB)');
+      if (asset.fileSize && asset.fileSize > MAX_UPLOAD_BYTES) {
+        Alert.alert('Foto troppo grande', 'Scegline una sotto i 5 MB.');
         return;
       }
 
       setUploading(true);
 
-      // Create FormData
       const formData = new FormData();
       formData.append('file', {
         uri: asset.uri,
@@ -175,116 +193,49 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
         name: 'avatar.jpg',
       } as any);
 
-      // Upload
       await profileApi.uploadUserAvatar(userId, formData);
-
-      // Success feedback
-      showToast('Avatar aggiornato');
-    } catch (error: any) {
-      console.error('[ImpostazioniScreen] Avatar upload failed:', error);
-      Alert.alert('Errore', 'Caricamento avatar fallito');
+      showToast('Foto aggiornata');
+    } catch (err: any) {
+      console.error('[ImpostazioniScreen] Avatar upload failed:', err);
+      Alert.alert('Errore', 'Caricamento della foto non riuscito');
     } finally {
       setUploading(false);
     }
   };
 
-  // Handle account deletion
-  const handleDeleteAccount = () => {
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!userId) return;
-
-    try {
-      setDeleting(true);
-
-      // Get fresh Firebase ID token
-      const token = await authService.getIdToken();
-      if (!token) {
-        Alert.alert('Errore', 'Autenticazione richiesta per eliminare l\'account');
-        setDeleting(false);
-        return;
-      }
-
-      // Delete account
-      await profileApi.deleteAccount(userId, token);
-
-      // Logout locally
-      await authService.signOut();
-
-      // Close modal
-      setShowDeleteModal(false);
-
-      // Navigate to welcome (handled by auth flow)
-    } catch (error: any) {
-      console.error('[ImpostazioniScreen] Delete account failed:', error);
-      Alert.alert('Errore', error.message || 'Eliminazione account fallita');
-      setDeleting(false);
-    }
-  };
-
-  /**
-   * Cambio password: si passa dalla stessa email di reset del "password
-   * dimenticata", quindi non serve chiedere qui la vecchia password ne'
-   * gestire una nuova schermata. Chiediamo conferma perche' l'azione manda
-   * una mail, che e' visibile fuori dall'app.
-   */
-  const handlePasswordReset = () => {
-    if (!email) {
-      showToast('Email non disponibile');
-      return;
-    }
-
-    Alert.alert(
-      'Cambiare password?',
-      `Ti inviamo un link per impostarne una nuova all'indirizzo ${email}.`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Invia',
-          onPress: async () => {
-            setSendingReset(true);
-            try {
-              await authService.resetPassword(email);
-              showToast('Ti abbiamo inviato il link via email', 2500);
-            } catch (err: any) {
-              console.error('[ImpostazioniScreen] Password reset failed:', err);
-              Alert.alert(
-                'Errore',
-                err?.message || 'Invio non riuscito. Riprova.',
-              );
-            } finally {
-              setSendingReset(false);
-            }
-          },
+  const handleLogout = () => {
+    Alert.alert('Disconnetti', 'Vuoi uscire dal tuo account?', [
+      { text: 'Annulla', style: 'cancel' },
+      {
+        text: 'Disconnetti',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+          } catch (err: any) {
+            console.error('[ImpostazioniScreen] Logout error:', err);
+            Alert.alert('Errore', err?.message || 'Uscita non riuscita');
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
-  // Show "prossimamente" toast for disabled features
-  const showProssimamente = () => {
-    showToast('prossimamente', 1500);
-  };
+  const versione = `${Constants.expoConfig?.version ?? '—'} (${
+    Platform.OS === 'ios'
+      ? (Constants.expoConfig?.ios?.buildNumber ?? '—')
+      : (Constants.expoConfig?.android?.versionCode ?? '—')
+  })`;
 
-  // Toast helper
-  const showToast = (message: string, duration: number = 1800) => {
-    setToast(message);
-    setTimeout(() => setToast(null), duration);
-  };
-
-  // Loading state
   if (loading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Caricamento impostazioni...</Text>
+        <Text style={styles.loadingText}>Caricamento impostazioni…</Text>
       </View>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -299,164 +250,71 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
 
   return (
     <View style={styles.container}>
-      {/* Fixed Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
           onPress={() => navigation?.goBack()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="chevron-back" size={24} color="#000" />
+          <Ionicons name="chevron-back" size={26} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Impostazioni</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Account Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.sectionContent}>
-            {/* Email (read-only) */}
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>email</Text>
-              <Text style={styles.rowValue}>{email}</Text>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Le prime due righe sono come appari, le ultime due come entri. */}
+        <Text style={styles.sectionTitle}>Account</Text>
+        <View style={styles.card}>
+          <Riga
+            label="Nickname"
+            value={nickname ? `@${nickname}` : '—'}
+            onPress={() => navigation?.navigate('nickname')}
+          />
+          <Riga
+            label="Foto profilo"
+            note={`Ritagliata a ${AVATAR_PX} × ${AVATAR_PX} px`}
+            onPress={handleAvatarUpload}
+            busy={uploading}
+          />
+          <Riga label="Email" note="Non modificabile" value={email} />
+          <Riga
+            label="Metodi di accesso"
+            value={providers.label}
+            valueStyle={providers.soloUno && styles.valueWarning}
+            onPress={() => navigation?.navigate('accesso')}
+            last
+          />
+        </View>
+
+        <Text style={styles.sectionTitle}>Informazioni</Text>
+        <View style={styles.card}>
+          <Riga
+            label="Privacy e cookie"
+            onPress={() => Linking.openURL(PRIVACY_URL)}
+          />
+          <Riga
+            label="Termini e condizioni"
+            onPress={() => Linking.openURL(TERMS_URL)}
+          />
+          <Riga label="Versione" value={versione} last />
+        </View>
+
+        <View style={[styles.card, styles.logoutCard]}>
+          <TouchableOpacity onPress={handleLogout} activeOpacity={0.6}>
+            <View style={[styles.row, styles.rowLast]}>
+              <Text style={styles.logoutLabel}>Disconnetti</Text>
             </View>
-
-            {/* Username: non ancora modificabile, ma risponde — la freccia
-                prometteva una destinazione e non succedeva nulla. */}
-            <TouchableOpacity
-              style={[styles.row, styles.disabledRow]}
-              onPress={showProssimamente}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.rowLabel}>
-                username <Text style={styles.comingSoon}>(coming soon)</Text>
-              </Text>
-              <View style={styles.rowRight}>
-                <Text style={styles.rowValue}>{nickname || '—'}</Text>
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-              </View>
-            </TouchableOpacity>
-
-            {/* Password: invia il link di reset alla mail dell'account */}
-            <TouchableOpacity
-              style={[styles.row, sendingReset && styles.disabledRow]}
-              onPress={handlePasswordReset}
-              disabled={sendingReset}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.rowLabel}>password</Text>
-              <View style={styles.rowRight}>
-                <Text style={styles.rowValue}>
-                  {sendingReset ? 'invio…' : 'cambia'}
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-              </View>
-            </TouchableOpacity>
-
-            {/* Avatar Upload (active) */}
-            <TouchableOpacity
-              style={[styles.row, uploading && styles.disabledRow]}
-              onPress={handleAvatarUpload}
-              disabled={uploading}
-            >
-              <Text style={styles.rowLabel}>immagine profilo</Text>
-              <View style={styles.rowRight}>
-                {uploading && <ActivityIndicator size="small" color={colors.primary} />}
-                {uploading && <Text style={styles.rowValue}>Caricamento...</Text>}
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-              </View>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Notification Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Notifiche <Text style={styles.comingSoon}>(coming soon)</Text>
-          </Text>
-          <View style={styles.sectionContent}>
-            {/* Risultati (Disabled - coming soon) */}
-            <TouchableOpacity
-              style={[styles.toggleRow, styles.disabledRow]}
-              onPress={showProssimamente}
-            >
-              <View style={styles.toggleLeft}>
-                <Text style={styles.toggleTitle}>Risultati</Text>
-                <Text style={styles.toggleDescription}>
-                  Scopri il tuo punteggio a fine giornata
-                </Text>
-              </View>
-              <Switch
-                // Mostrato spento come Partite e Goal: la notifica non viene
-                // ancora inviata, quindi esporre la preferenza salvata farebbe
-                // credere attivo un avviso che non arrivera'. Il gestore resta
-                // agganciato, pronto per quando la funzione sara' attiva.
-                value={false}
-                onValueChange={(value) => optimisticUpdate({ results: value })}
-                disabled={true}
-                trackColor={{ false: '#e5e7eb', true: '#9333ea' }}
-                thumbColor="#ffffff"
-              />
-            </TouchableOpacity>
-
-            {/* Partite (Disabled) */}
-            <TouchableOpacity
-              style={[styles.toggleRow, styles.disabledRow]}
-              onPress={showProssimamente}
-            >
-              <View style={styles.toggleLeft}>
-                <Text style={styles.toggleTitle}>Partite</Text>
-                <Text style={styles.toggleDescription}>Ti avvisiamo al 90°</Text>
-              </View>
-              <Switch
-                value={false}
-                disabled={true}
-                trackColor={{ false: '#e5e7eb', true: '#9333ea' }}
-                thumbColor="#ffffff"
-              />
-            </TouchableOpacity>
-
-            {/* Goal (Disabled) */}
-            <TouchableOpacity
-              style={[styles.toggleRow, styles.disabledRow]}
-              onPress={showProssimamente}
-            >
-              <View style={styles.toggleLeft}>
-                <Text style={styles.toggleTitle}>Goal</Text>
-                <Text style={styles.toggleDescription}>
-                  Ad ogni marcatura sarai il primo a saperlo
-                </Text>
-              </View>
-              <Switch
-                value={false}
-                disabled={true}
-                trackColor={{ false: '#e5e7eb', true: '#9333ea' }}
-                thumbColor="#ffffff"
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Delete Account Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Attenzione</Text>
-          <Text style={styles.dangerSubtitle}>Chiudi e distruggi il tuo account</Text>
-          <View style={styles.sectionContent}>
-            <TouchableOpacity
-              style={[styles.deleteButton, deleting && styles.disabledRow]}
-              onPress={handleDeleteAccount}
-              disabled={deleting}
-            >
-              <Text style={styles.deleteButtonText}>ELIMINA ACCOUNT</Text>
-            </TouchableOpacity>
-            <Text style={styles.deleteDisclaimer}>
-              Questa azione è irreversibile e rimuoverà il tuo account e la tua cronologia.
-            </Text>
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.deleteLink}
+          onPress={() => navigation?.navigate('elimina')}
+        >
+          <Text style={styles.deleteLinkText}>Elimina account</Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      {/* Toast Notification */}
       {toast && (
         <View style={styles.toastContainer}>
           <View style={styles.toast}>
@@ -464,44 +322,6 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
           </View>
         </View>
       )}
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        visible={showDeleteModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => !deleting && setShowDeleteModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Conferma eliminazione</Text>
-            <Text style={styles.modalMessage}>
-              Sei sicuro di voler eliminare definitivamente il tuo account? Questa azione
-              non può essere annullata.
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowDeleteModal(false)}
-                disabled={deleting}
-              >
-                <Text style={styles.cancelButtonText}>Annulla</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={confirmDelete}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.confirmButtonText}>Elimina</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -509,18 +329,14 @@ export default function ImpostazioniScreen({ navigation }: ImpostazioniScreenPro
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: '#F5F5F7',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
-    backgroundColor: colors.backgroundSecondary,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 100,
+    backgroundColor: '#F5F5F7',
   },
   loadingText: {
     marginTop: spacing.md,
@@ -545,223 +361,112 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-
-  // Header
   header: {
-    height: 125,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: '#e5e7eb',
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 50,
-    paddingHorizontal: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    zIndex: 20,
-  },
-  backButton: {
-    position: 'absolute',
-    left: spacing.md,
-    top: 60,
-    padding: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 20,
     fontWeight: '700',
-    color: '#000',
+    color: '#111827',
   },
-
-  // Section
-  section: {
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
+  headerSpacer: {
+    width: 26,
+  },
+  scroll: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 40,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: spacing.sm,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginLeft: 4,
+    marginBottom: 8,
   },
-  comingSoon: {
-    fontStyle: 'italic',
-    fontWeight: '400',
-    color: '#6b7280',
-  },
-  dangerSubtitle: {
-    fontSize: 12,
-    color: '#4b5563',
-    marginTop: -spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  sectionContent: {
+  card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    borderRadius: 14,
     overflow: 'hidden',
+    marginBottom: 16,
   },
-
-  // Row
+  logoutCard: {
+    marginTop: 2,
+  },
+  // Niente larghezze fisse: l'etichetta prende lo spazio che resta e il
+  // valore si accorcia. È quello che tiene in piedi la riga dell'email
+  // lunga su uno schermo da 375 punti.
   row: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 22,
-    paddingHorizontal: spacing.md,
+    gap: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
+  rowLeft: {
+    flexShrink: 0,
   },
   rowLabel: {
     fontSize: 16,
-    color: '#1f2937',
+    color: '#111827',
+  },
+  rowNote: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 2,
   },
   rowValue: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginRight: 8,
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  disabledRow: {
-    opacity: 0.6,
-  },
-
-  // Toggle Row
-  toggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  toggleLeft: {
     flex: 1,
-    marginRight: spacing.md,
+    textAlign: 'right',
+    fontSize: 15,
+    color: '#6B7280',
   },
-  toggleTitle: {
+  valueWarning: {
+    color: '#b45309',
+  },
+  logoutLabel: {
     fontSize: 16,
-    color: '#1f2937',
-    fontWeight: '500',
-    marginBottom: 4,
+    color: '#5742a4',
   },
-  toggleDescription: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-
-  // Delete Button
-  deleteButton: {
-    backgroundColor: '#dc2626',
-    paddingVertical: 12,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 12,
+  deleteLink: {
     alignItems: 'center',
-    margin: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingVertical: 8,
   },
-  deleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 1,
+  deleteLinkText: {
+    fontSize: 15,
+    color: '#b91c1c',
   },
-  deleteDisclaimer: {
-    fontSize: 11,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-
-  // Toast
   toastContainer: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 40,
     left: 0,
     right: 0,
     alignItems: 'center',
-    zIndex: 100,
   },
   toast: {
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    backgroundColor: 'rgba(17,24,39,0.92)',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
   },
   toastText: {
     color: '#FFFFFF',
     fontSize: 14,
-  },
-
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    width: '100%',
-    maxWidth: 420,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: spacing.md,
-  },
-  modalMessage: {
-    fontSize: 14,
-    color: '#4b5563',
-    marginBottom: spacing.lg,
-    lineHeight: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#f3f4f6',
-  },
-  cancelButtonText: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  confirmButton: {
-    backgroundColor: '#dc2626',
-  },
-  confirmButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

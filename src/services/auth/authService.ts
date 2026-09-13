@@ -8,7 +8,11 @@ import {
   UserCredential,
   GoogleAuthProvider,
   OAuthProvider,
+  EmailAuthProvider,
   signInWithCredential,
+  linkWithCredential,
+  reauthenticateWithCredential,
+  AuthCredential,
 } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -324,6 +328,119 @@ class AuthService {
     } catch (error) {
       console.error('[AuthService] Failed to save email:', error);
     }
+  }
+
+  // ==========================================================================
+  // Metodi di accesso
+  //
+  // Un account, piu' modi per entrarci. Firebase li tiene su providerData:
+  // e' quella la verita', non la colonna authProvider del backend, che
+  // registra solo da dove si e' passati la prima volta.
+  // ==========================================================================
+
+  /** Identificativi dei provider collegati: 'google.com', 'apple.com', 'password'. */
+  getLinkedProviders(): string[] {
+    return auth.currentUser?.providerData.map((p) => p.providerId) ?? [];
+  }
+
+  /** Credenziale Google fresca, chiedendo all'utente di rientrare. */
+  private async freshGoogleCredential(): Promise<AuthCredential> {
+    if (!GoogleSignin) {
+      throw new Error(
+        'Login Google non disponibile in questa build (Expo Go). Usa un development build.',
+      );
+    }
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    const response = await GoogleSignin.signIn();
+    const idToken = response.data?.idToken;
+    if (!idToken) {
+      throw new Error('Nessun token ricevuto da Google');
+    }
+    return GoogleAuthProvider.credential(idToken);
+  }
+
+  /** Credenziale Apple fresca, con il nonce che impedisce il riuso. */
+  private async freshAppleCredential(): Promise<AuthCredential> {
+    const available = await AppleAuthentication.isAvailableAsync();
+    if (!available) {
+      throw new Error('apple-sign-in-unavailable');
+    }
+
+    const rawNonce = Crypto.randomUUID();
+    const hashedNonce = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      rawNonce,
+    );
+
+    const appleCredential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
+
+    const provider = new OAuthProvider('apple.com');
+    return provider.credential({
+      idToken: appleCredential.identityToken!,
+      rawNonce,
+    });
+  }
+
+  /** Collega Google a un account che gia' esiste. */
+  async linkGoogle(): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Nessun utente collegato');
+
+    const credential = await this.freshGoogleCredential();
+    await linkWithCredential(user, credential);
+    console.log('[AuthService] Google collegato');
+  }
+
+  /** Collega Apple a un account che gia' esiste. */
+  async linkApple(): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Nessun utente collegato');
+
+    const credential = await this.freshAppleCredential();
+    await linkWithCredential(user, credential);
+    console.log('[AuthService] Apple collegato');
+  }
+
+  /**
+   * Imposta una password su un account nato da Google o Apple.
+   *
+   * Prima fa rientrare l'utente col metodo che gia' possiede. Senza quel
+   * passaggio, chiunque trovi il telefono sbloccato potrebbe darsi una
+   * password e prendersi l'account per sempre, e il proprietario non avrebbe
+   * modo di accorgersene.
+   */
+  async addPassword(password: string): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Nessun utente collegato');
+    if (!user.email) {
+      throw new Error(
+        "Questo account non ha un indirizzo email: non e' possibile impostare una password.",
+      );
+    }
+
+    const providers = this.getLinkedProviders();
+
+    let reauthCredential: AuthCredential;
+    if (providers.includes('google.com')) {
+      reauthCredential = await this.freshGoogleCredential();
+    } else if (providers.includes('apple.com')) {
+      reauthCredential = await this.freshAppleCredential();
+    } else {
+      throw new Error('Nessun metodo di accesso con cui confermare la tua identita\'');
+    }
+
+    await reauthenticateWithCredential(user, reauthCredential);
+    await linkWithCredential(
+      user,
+      EmailAuthProvider.credential(user.email, password),
+    );
+    console.log('[AuthService] Password impostata');
   }
 
   /**

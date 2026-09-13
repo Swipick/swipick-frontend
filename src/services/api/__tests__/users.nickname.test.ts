@@ -2,6 +2,7 @@ jest.mock('../client', () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),
+    patch: jest.fn(),
   },
 }));
 
@@ -72,6 +73,31 @@ describe('usersApi.completeProfile', () => {
     });
 
     await expect(usersApi.completeProfile('u-1', 'mario_rossi')).rejects.toThrow(
+      'Questo nickname è già in uso'
+    );
+  });
+});
+
+describe('usersApi.updateNickname', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('PATCHa il nickname sulla risorsa utente', async () => {
+    (mockApiClient as any).patch = jest.fn().mockResolvedValue({ success: true });
+
+    await usersApi.updateNickname('u-1', 'nuovo_nick');
+
+    expect((mockApiClient as any).patch).toHaveBeenCalledWith(
+      '/users/u-1/nickname',
+      { nickname: 'nuovo_nick' }
+    );
+  });
+
+  it('rilancia il messaggio del backend quando il nickname è occupato', async () => {
+    (mockApiClient as any).patch = jest.fn().mockRejectedValue({
+      response: { data: { message: 'Questo nickname è già in uso' } },
+    });
+
+    await expect(usersApi.updateNickname('u-1', 'preso')).rejects.toThrow(
       'Questo nickname è già in uso'
     );
   });

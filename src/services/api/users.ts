@@ -92,6 +92,29 @@ export const usersApi = {
   },
 
   /**
+   * Cambia il nickname dalle impostazioni.
+   * Diverso da completeProfile, che vale una volta sola: qui il profilo
+   * esiste gia' e si sta correggendo un campo.
+   */
+  async updateNickname(userId: string, nickname: string): Promise<void> {
+    try {
+      console.log('[UsersAPI] Updating nickname for:', userId);
+
+      await apiClient.patch(`/users/${userId}/nickname`, { nickname });
+
+      console.log('[UsersAPI] Nickname updated');
+    } catch (error: any) {
+      console.error('[UsersAPI] Update nickname error:', error);
+
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+
+      throw new Error('Non siamo riusciti a salvare il nickname. Riprova.');
+    }
+  },
+
+  /**
    * Il nickname e' libero? Usato dal passo 2 mentre l'utente scrive.
    * In caso di errore di rete torna `true`: il controllo definitivo resta
    * quello del server al salvataggio, qui non dobbiamo bloccare nessuno.

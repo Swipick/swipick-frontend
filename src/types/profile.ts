@@ -49,11 +49,33 @@ export interface WeekPerformance {
   week: number | null;             // Week number; null before the first finished results
 }
 
+/** Andamento di una giornata rispetto alla precedente conclusa. */
+export type WeekTrend = 'up' | 'down' | 'flat' | null;
+
+export interface LastWeekPerformance extends WeekPerformance {
+  trend: WeekTrend;
+}
+
+export interface ChartBar {
+  week: number;                    // Numero di giornata reale (non la posizione)
+  accuracy: number;                // 0-100
+  pct: string;                     // Percentuale formattata, senza decimali
+}
+
 export interface ProfileKPI {
   average: string;                 // Formatted average (e.g., "65,5%")
+  /**
+   * Almeno una partita conclusa. Distingue lo zero dal nulla: senza risultati
+   * la schermata mostra un trattino, perche' 0% e' un esito e il vuoto no.
+   */
+  hasResults: boolean;
+  correct: number;                 // Pronostici indovinati sulle partite concluse
+  finished: number;                // Pronostici su partite concluse
   weeksPlayed: number;            // Number of weeks with predictions
   best: WeekPerformance;          // Best week performance
   worst: WeekPerformance;         // Worst week performance
+  last: LastWeekPerformance;      // Ultima giornata conclusa, con l'andamento
+  chart: ChartBar[];              // Una barra per giornata conclusa, in ordine
 }
 
 // ============================================================================
