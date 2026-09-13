@@ -24,6 +24,7 @@ import {
   avatarToDataUrl,
   getAvatarInitial,
   generateShareMessage,
+  ordinalWeek,
 } from '../../utils/profileCalculations';
 
 type ProfiloScreenProps = {
@@ -34,7 +35,6 @@ type ProfiloScreenProps = {
 export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenProps) {
   // Selettori: re-render solo su cambi effettivi (azioni Zustand sono stabili)
   const user = useAuthStore((s) => s.user);
-  const signOut = useAuthStore((s) => s.signOut);
 
   // User info state
   const [userId, setUserId] = useState<string | null>(null);
@@ -114,35 +114,11 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
     }
   };
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Disconnetti',
-      'Sei sicuro di voler uscire dal tuo account?',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Disconnetti',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-            } catch (err) {
-              console.error('[ProfiloScreen] Logout error:', err);
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const handleShare = async () => {
     try {
-      const message = generateShareMessage(kpi);
-      const url = 'https://swipick.com'; // Replace with actual app URL or deep link
-
       await Share.share({
         title: 'Swipick',
-        message: `${message}\n${url}`,
+        message: generateShareMessage(kpi),
       });
     } catch (err) {
       console.error('[ProfiloScreen] Share error:', err);
@@ -192,108 +168,146 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
     );
   }
 
+  // Altezza delle barre: la più alta occupa tutto, le altre in proporzione.
+  // Il riferimento è il massimo del periodo mostrato, non il 100%: con
+  // percentuali tutte basse un grafico schiacciato non direbbe niente.
+  const chartMax = Math.max(...kpi.chart.map((b) => b.accuracy), 1);
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Gradient Header */}
+        {/* Intestazione */}
         <LinearGradient
           colors={['#554099', '#3d2d73']}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={styles.header}
         >
-          {/* Settings Button */}
-          <TouchableOpacity style={styles.settingsButton} onPress={handleSettingsPress}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={handleSettingsPress}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
             <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
-          {/* Avatar */}
-          <View style={styles.avatarSection}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitial}>
-                  {getAvatarInitial(displayName, email)}
-                </Text>
-              </View>
-            )}
-          </View>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitial}>
+                {getAvatarInitial(displayName, email)}
+              </Text>
+            </View>
+          )}
 
-          {/* User Info */}
-          <Text style={styles.userName}>{displayName}</Text>
-          <Text style={styles.userNickname}>
+          <Text style={styles.userNickname} numberOfLines={1}>
             @{nickname || email.split('@')[0]}
+          </Text>
+          <Text style={styles.userWeeks}>
+            {kpi.weeksPlayed === 0
+              ? 'nessuna giornata giocata'
+              : kpi.weeksPlayed === 1
+                ? '1 giornata giocata'
+                : `${kpi.weeksPlayed} giornate giocate`}
           </Text>
         </LinearGradient>
 
-        {/* Content Container */}
         <View style={styles.content}>
-          {/* Average Score Card */}
-          <LinearGradient
-            colors={['#FFFFFF', '#d8b4fe']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.averageCard}
-          >
-            <Text style={styles.cardLabel}>Punteggio medio</Text>
-            <View style={styles.cardValueContainer}>
-              <Text style={styles.cardValueLarge}>{kpi.average}</Text>
-              <Text style={styles.cardSubtitle}>
-                {kpi.weeksPlayed} {kpi.weeksPlayed === 1 ? 'giornata giocata' : 'giornate giocate'}
+          {/* Media, con i numeri grezzi sotto: una percentuale senza
+              denominatore non si puo' verificare. */}
+          <View style={styles.card}>
+            <View style={styles.averageRow}>
+              <Text style={styles.averageValue}>
+                {kpi.hasResults ? kpi.average : '—'}
               </Text>
+              <Text style={styles.averageLabel}>di media</Text>
             </View>
-          </LinearGradient>
-
-          {/* Best/Worst Week Grid */}
-          <View style={styles.gridContainer}>
-            {/* Best Week Card */}
-            <LinearGradient
-              colors={['#e7f8f2', '#FFFFFF']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.gridCard}
+            <Text
+              style={[styles.averageDetail, !kpi.hasResults && styles.muted]}
             >
-              <Text style={styles.cardLabel}>Risultato migliore</Text>
-              <View style={styles.cardValueContainer}>
-                <Text style={styles.cardValueMedium}>{kpi.best.pct}</Text>
-                <Text style={styles.cardSubtitle}>
-                  {kpi.best.week !== null ? `giornata ${kpi.best.week}` : 'in attesa dei primi risultati'}
-                </Text>
-              </View>
-            </LinearGradient>
-
-            {/* Worst Week Card */}
-            <LinearGradient
-              colors={['#ffeef2', '#FFFFFF']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.gridCard}
-            >
-              <Text style={styles.cardLabel}>Risultato peggiore</Text>
-              <View style={styles.cardValueContainer}>
-                <Text style={styles.cardValueMedium}>{kpi.worst.pct}</Text>
-                <Text style={styles.cardSubtitle}>
-                  {kpi.worst.week !== null ? `giornata ${kpi.worst.week}` : 'in attesa dei primi risultati'}
-                </Text>
-              </View>
-            </LinearGradient>
+              {kpi.hasResults
+                ? `${kpi.correct} ${kpi.correct === 1 ? 'pronostico indovinato' : 'pronostici indovinati'} su ${kpi.finished}`
+                : 'Nessun pronostico ancora'}
+            </Text>
           </View>
 
-          {/* Share Button */}
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={handleShare}
-            disabled={loading}
-          >
-            <Ionicons name="share-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.shareButtonText}>Condividi profilo</Text>
-          </TouchableOpacity>
+          {/* Andamento */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Come stai andando</Text>
 
-          {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-            <Text style={styles.logoutButtonText}>Disconnetti</Text>
+            {kpi.chart.length === 0 ? (
+              <View style={styles.emptyChart}>
+                <Ionicons name="stats-chart-outline" size={30} color="#b6abd8" />
+                <Text style={styles.emptyChartText}>
+                  Il grafico si riempirà dopo la tua prima giornata giocata.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.chartRow}>
+                  {kpi.chart.map((bar) => (
+                    <View key={bar.week} style={styles.chartColumn}>
+                      {/* Sopra le sei barre le etichette si toccherebbero */}
+                      {kpi.chart.length <= 6 && (
+                        <Text style={styles.chartValue}>{bar.pct}</Text>
+                      )}
+                      <View
+                        style={[
+                          styles.chartBar,
+                          {
+                            height: Math.max(
+                              4,
+                              (bar.accuracy / chartMax) * CHART_HEIGHT
+                            ),
+                          },
+                        ]}
+                      />
+                      <Text style={styles.chartWeek}>g{bar.week}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.statsRow}>
+                  <View style={styles.statCell}>
+                    <Text style={styles.statLabel}>Migliore</Text>
+                    <Text style={styles.statValue}>{kpi.best.pct}</Text>
+                    <Text style={styles.statWeek}>
+                      {ordinalWeek(kpi.best.week)}
+                    </Text>
+                  </View>
+                  <View style={styles.statCell}>
+                    <Text style={styles.statLabel}>Peggiore</Text>
+                    <Text style={styles.statValue}>{kpi.worst.pct}</Text>
+                    <Text style={styles.statWeek}>
+                      {ordinalWeek(kpi.worst.week)}
+                    </Text>
+                  </View>
+                  <View style={styles.statCell}>
+                    <Text style={styles.statLabel}>Ultima</Text>
+                    <Text
+                      style={[
+                        styles.statValue,
+                        kpi.last.trend === 'up' && styles.statUp,
+                        kpi.last.trend === 'down' && styles.statDown,
+                      ]}
+                    >
+                      {kpi.last.pct}
+                      {kpi.last.trend === 'up' ? ' ▲' : ''}
+                      {kpi.last.trend === 'down' ? ' ▼' : ''}
+                    </Text>
+                    <Text style={styles.statWeek}>
+                      {ordinalWeek(kpi.last.week)}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+
+          <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+            <Ionicons name="share-social-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.shareButtonText}>Condividi profilo</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -301,10 +315,13 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
   );
 }
 
+/** Altezza massima di una barra, in punti. */
+const CHART_HEIGHT = 84;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: '#F9FAFB',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -315,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: '#F9FAFB',
   },
   loadingText: {
     marginTop: spacing.md,
@@ -341,11 +358,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Header
+  // Intestazione
   header: {
     paddingTop: 60,
     paddingBottom: 28,
     paddingHorizontal: 40,
+    alignItems: 'center',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
     shadowColor: '#554099',
@@ -362,146 +380,186 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     zIndex: 10,
   },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
+  // 72 punti invece di 128: l'avatar fa posto ai dati, che sono il motivo
+  // per cui si apre questa schermata.
   avatarImage: {
-    width: 128,
-    height: 128,
+    width: 72,
+    height: 72,
     borderRadius: 16,
   },
   avatarPlaceholder: {
-    width: 128,
-    height: 128,
+    width: 72,
+    height: 72,
     borderRadius: 16,
     backgroundColor: '#8b5cf6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarInitial: {
-    fontSize: 48,
+    fontSize: 30,
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  userName: {
-    fontSize: 18,
-    fontWeight: '600',
+  userNickname: {
+    fontSize: 20,
+    fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: spacing.sm,
+    marginTop: 14,
+    maxWidth: '100%',
   },
-  userNickname: {
+  userWeeks: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.75)',
     textAlign: 'center',
     marginTop: 4,
   },
 
-  // Content
+  // Contenuto
   content: {
-    padding: spacing.lg,
+    padding: 16,
+    gap: 12,
   },
-
-  // Average Card
-  averageCard: {
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
     borderRadius: 16,
     padding: 20,
-    minHeight: 132,
-    borderWidth: 1,
-    borderColor: 'rgba(216, 180, 254, 0.4)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowColor: '#111827',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 4,
-    marginBottom: spacing.lg,
+    elevation: 2,
   },
-  cardLabel: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  cardValueContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
-  },
-  cardValueLarge: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: '#1f1147',
-  },
-  cardValueMedium: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: '#1f1147',
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
   },
 
-  // Grid
-  gridContainer: {
+  // Media
+  averageRow: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: spacing.xl,
+    alignItems: 'baseline',
+    gap: 10,
   },
-  gridCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 16,
-    minHeight: 162,
-    borderWidth: 1,
-    borderColor: 'rgba(220, 252, 231, 0.5)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+  averageValue: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#111827',
+    lineHeight: 48,
+  },
+  averageLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  averageDetail: {
+    fontSize: 14,
+    color: '#4b5563',
+    marginTop: 8,
+  },
+  muted: {
+    color: '#9ca3af',
   },
 
-  // Share Button
+  // Grafico
+  chartRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    height: CHART_HEIGHT + 36,
+  },
+  chartColumn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  chartValue: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  chartBar: {
+    width: '100%',
+    backgroundColor: '#7c3aed',
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+  },
+  chartWeek: {
+    fontSize: 11,
+    color: '#9ca3af',
+  },
+  emptyChart: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#ddd7f0',
+    borderRadius: 12,
+    backgroundColor: '#fbfaff',
+    paddingVertical: 28,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    gap: 10,
+  },
+  emptyChartText: {
+    fontSize: 14,
+    color: '#4b5563',
+    textAlign: 'center',
+    lineHeight: 21,
+  },
+
+  // Migliore / Peggiore / Ultima
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+  },
+  statCell: {
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  statUp: {
+    color: '#059669',
+  },
+  statDown: {
+    color: '#b91c1c',
+  },
+  statWeek: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 1,
+  },
+
+  // Condivisione
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
     backgroundColor: '#4f46e5',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    marginTop: spacing.xl,
+    marginTop: 4,
   },
   shareButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-
-  // Logout Button
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    marginTop: spacing.lg,
-  },
-  logoutButtonText: {
-    color: '#dc2626',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 8,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
