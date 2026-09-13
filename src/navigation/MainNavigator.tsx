@@ -5,22 +5,43 @@ import GiocaScreen from '../screens/game/GiocaScreen';
 import RisultatiScreen from '../screens/results/RisultatiScreen';
 import ProfiloScreen from '../screens/profile/ProfiloScreen';
 import ImpostazioniScreen from '../screens/profile/ImpostazioniScreen';
+import CambiaNicknameScreen from '../screens/profile/CambiaNicknameScreen';
+import EliminaAccountScreen from '../screens/profile/EliminaAccountScreen';
+import MetodiAccessoScreen from '../screens/profile/MetodiAccessoScreen';
 import { useGameStore } from '../store/stores/useGameStore';
 
-type ScreenType = 'gioca' | 'risultati' | 'profilo' | 'impostazioni';
+type ScreenType =
+  | 'gioca'
+  | 'risultati'
+  | 'profilo'
+  | 'impostazioni'
+  | 'nickname'
+  | 'elimina'
+  | 'accesso';
+
+/** Schermate che stanno dentro le impostazioni: niente barra in fondo. */
+const SOTTO_IMPOSTAZIONI: ScreenType[] = ['nickname', 'elimina', 'accesso'];
 
 export default function MainNavigator() {
   const [activeScreen, setActiveScreen] = useState<ScreenType>('gioca');
   const { currentWeek, mode } = useGameStore();
 
-  // Simple navigation object to pass to screens
+  // Dati del profilo tenuti qui: le schermate figlie ne hanno bisogno e il
+  // render a switch le smonta a ogni passaggio, quindi non possono tenerli loro.
+  const [profileInfo, setProfileInfo] = useState<{
+    userId: string;
+    email: string;
+    nickname: string | null;
+  } | null>(null);
+
   const navigation = {
     navigate: (screen: ScreenType) => {
       setActiveScreen(screen);
     },
     goBack: () => {
-      // Go back to profilo from impostazioni
-      if (activeScreen === 'impostazioni') {
+      if (SOTTO_IMPOSTAZIONI.includes(activeScreen)) {
+        setActiveScreen('impostazioni');
+      } else if (activeScreen === 'impostazioni') {
         setActiveScreen('profilo');
       }
     },
@@ -33,32 +54,62 @@ export default function MainNavigator() {
       case 'gioca':
         return <GiocaScreen />;
       case 'profilo':
-        return <ProfiloScreen navigation={navigation} onLogout={() => {
-          // Logout handled by ProfiloScreen
-        }} />;
+        return <ProfiloScreen navigation={navigation} />;
       case 'impostazioni':
-        return <ImpostazioniScreen navigation={navigation} />;
+        return (
+          <ImpostazioniScreen
+            navigation={navigation}
+            nickname={profileInfo?.nickname ?? null}
+            onProfileLoaded={setProfileInfo}
+          />
+        );
+      case 'nickname':
+        if (!profileInfo) return null;
+        return (
+          <CambiaNicknameScreen
+            navigation={navigation}
+            userId={profileInfo.userId}
+            current={profileInfo.nickname}
+            onChanged={(nickname) =>
+              setProfileInfo((prev) => (prev ? { ...prev, nickname } : prev))
+            }
+          />
+        );
+      case 'accesso':
+        if (!profileInfo) return null;
+        return (
+          <MetodiAccessoScreen navigation={navigation} email={profileInfo.email} />
+        );
+      case 'elimina':
+        if (!profileInfo) return null;
+        return (
+          <EliminaAccountScreen
+            navigation={navigation}
+            userId={profileInfo.userId}
+            nickname={profileInfo.nickname}
+          />
+        );
       default:
         return null;
     }
   };
 
+  const mostraBarra =
+    activeScreen !== 'impostazioni' &&
+    !SOTTO_IMPOSTAZIONI.includes(activeScreen);
+
   return (
     <View style={styles.container}>
-      {/* Screen Content */}
-      <View style={styles.screenContainer}>
-        {renderScreen()}
-      </View>
+      <View style={styles.screenContainer}>{renderScreen()}</View>
 
-      {/* Bottom Navigation - Hide on Impostazioni screen */}
-      {activeScreen !== 'impostazioni' && (
+      {mostraBarra && (
         <BottomNav
           currentMode={mode}
           selectedWeek={currentWeek}
           onNavigateToResults={() => setActiveScreen('risultati')}
           onNavigateToGioca={() => setActiveScreen('gioca')}
           onNavigateToProfile={() => setActiveScreen('profilo')}
-          activeTab={activeScreen}
+          activeTab={activeScreen as 'gioca' | 'risultati' | 'profilo'}
         />
       )}
     </View>
