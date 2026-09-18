@@ -18,7 +18,7 @@ type MetodiAccessoScreenProps = {
   email: string;
 };
 
-type Azione = null | 'google' | 'apple' | 'password';
+type Azione = null | 'google' | 'apple' | 'password' | 'reset';
 
 /**
  * Un account, più modi per entrarci.
@@ -94,6 +94,52 @@ export default function MetodiAccessoScreen({
     });
   };
 
+  /**
+   * Cambiare la password vuol dire riceverne il link via email: la vecchia
+   * non la chiediamo, cosi' chi non se la ricorda piu' non resta bloccato.
+   */
+  const handleResetPassword = () => {
+    Alert.alert(
+      'Cambiare password',
+      `Ti mandiamo a ${email} un link per sceglierne una nuova.`,
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Mandami il link',
+          onPress: () =>
+            run('reset', async () => {
+              await authService.resetPassword(email.trim().toLowerCase());
+              Alert.alert(
+                'Link inviato',
+                'Controlla la posta, anche nello spam. Il link vale un\u2019ora.'
+              );
+            }),
+        },
+      ]
+    );
+  };
+
+  const handleUnlink = (
+    providerId: 'google.com' | 'apple.com',
+    nome: string
+  ) => {
+    Alert.alert(
+      `Scollegare ${nome}?`,
+      `Non potrai piu\u2019 entrare con ${nome}. Gli altri metodi restano come sono.`,
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Scollega',
+          style: 'destructive',
+          onPress: () =>
+            run(providerId === 'google.com' ? 'google' : 'apple', () =>
+              authService.unlinkProvider(providerId)
+            ),
+        },
+      ]
+    );
+  };
+
   /** Con un metodo solo, staccarne uno chiuderebbe fuori l'utente. */
   const metodiCollegati = providers.length;
 
@@ -131,7 +177,20 @@ export default function MetodiAccessoScreen({
               </Text>
             </View>
             {hasGoogle ? (
-              <Text style={styles.linked}>collegato</Text>
+              <View style={styles.rowActions}>
+                <Text style={styles.linked}>collegato</Text>
+                {metodiCollegati > 1 &&
+                  (azione === 'google' ? (
+                    <ActivityIndicator size="small" color="#5742a4" />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => handleUnlink('google.com', 'Google')}
+                      disabled={azione !== null}
+                    >
+                      <Text style={styles.actionDanger}>Scollega</Text>
+                    </TouchableOpacity>
+                  ))}
+              </View>
             ) : azione === 'google' ? (
               <ActivityIndicator size="small" color="#5742a4" />
             ) : (
@@ -154,7 +213,20 @@ export default function MetodiAccessoScreen({
                 </Text>
               </View>
               {hasApple ? (
-                <Text style={styles.linked}>collegato</Text>
+                <View style={styles.rowActions}>
+                  <Text style={styles.linked}>collegato</Text>
+                  {metodiCollegati > 1 &&
+                    (azione === 'apple' ? (
+                      <ActivityIndicator size="small" color="#5742a4" />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => handleUnlink('apple.com', 'Apple')}
+                        disabled={azione !== null}
+                      >
+                        <Text style={styles.actionDanger}>Scollega</Text>
+                      </TouchableOpacity>
+                    ))}
+                </View>
               ) : azione === 'apple' ? (
                 <ActivityIndicator size="small" color="#5742a4" />
               ) : (
@@ -177,7 +249,19 @@ export default function MetodiAccessoScreen({
               </Text>
             </View>
             {hasPassword ? (
-              <Text style={styles.linked}>collegato</Text>
+              <View style={styles.rowActions}>
+                <Text style={styles.linked}>collegato</Text>
+                {azione === 'reset' ? (
+                  <ActivityIndicator size="small" color="#5742a4" />
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleResetPassword}
+                    disabled={azione !== null}
+                  >
+                    <Text style={styles.action}>Cambia</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             ) : azione === 'password' ? (
               <ActivityIndicator size="small" color="#5742a4" />
             ) : (
@@ -229,7 +313,7 @@ export default function MetodiAccessoScreen({
           />
           <Text style={styles.noteText}>
             {hasPassword
-              ? 'Per cambiare la password ti mandiamo un link via email dalla schermata di accesso.'
+              ? 'Per cambiare la password ti mandiamo un link via email: non serve ricordare quella attuale.'
               : `Per aggiungere una password ti chiederemo di rientrare con ${
                   hasGoogle ? 'Google' : 'Apple'
                 }: serve a impedire che qualcuno con il tuo telefono sbloccato si prenda l’account per sempre.`}
@@ -314,6 +398,11 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     marginTop: 2,
   },
+  rowActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
   linked: {
     fontSize: 14,
     color: '#059669',
@@ -322,6 +411,11 @@ const styles = StyleSheet.create({
   action: {
     fontSize: 15,
     color: '#5742a4',
+    fontWeight: '600',
+  },
+  actionDanger: {
+    fontSize: 15,
+    color: '#b91c1c',
     fontWeight: '600',
   },
   formLabel: {

@@ -12,6 +12,7 @@ import {
   signInWithCredential,
   linkWithCredential,
   reauthenticateWithCredential,
+  unlink,
   AuthCredential,
 } from 'firebase/auth';
 import { auth } from '../../config/firebase';
@@ -405,6 +406,32 @@ class AuthService {
     const credential = await this.freshAppleCredential();
     await linkWithCredential(user, credential);
     console.log('[AuthService] Apple collegato');
+  }
+
+  /**
+   * Stacca Google o Apple da un account che ha altri modi per entrare.
+   *
+   * L'ultimo metodo non si tocca: senza, l'account resterebbe li' senza
+   * nessuno che possa piu' aprirlo — e non e' una cosa da cui si torna
+   * indietro da soli. Il controllo sta qui e non solo nella schermata
+   * perche' e' una regola dell'account, non una decisione di layout.
+   */
+  async unlinkProvider(providerId: 'google.com' | 'apple.com'): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Nessun utente collegato');
+
+    const providers = this.getLinkedProviders();
+    if (!providers.includes(providerId)) {
+      throw new Error('Questo metodo non e\u2019 collegato al tuo account');
+    }
+    if (providers.length < 2) {
+      throw new Error(
+        'E\u2019 il tuo unico metodo di accesso: collegane un altro prima di staccare questo.',
+      );
+    }
+
+    await unlink(user, providerId);
+    console.log('[AuthService] Provider scollegato:', providerId);
   }
 
   /**
