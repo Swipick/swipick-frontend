@@ -29,20 +29,23 @@ export const formatDateRange = (isoDates: string[]): string | null => {
 
 export interface AdjacentWeekLabels {
   previous: string | null;
-  next: string;
+  next: string | null;
 }
 
 /**
  * Labels for the previous/next slots in the week selector.
  *
- * After the last giornata comes the next season, not "Giornata 39";
- * before giornata 1 there is nothing, never "Giornata 0".
+ * Solo il numero: gli slot laterali sono larghi 48pt, e "Giornata" a 14px ne
+ * misura una cinquantina — ci si spezzava dentro a meta' parola ("giorna" e
+ * poi "ta"). La parola la dice gia' il titolo al centro, in grande.
+ *
+ * Oltre l'ultima giornata non c'e' un numero da mostrare, come prima della
+ * giornata 1: in entrambi i casi la freccia e' comunque disabilitata.
  */
 export const getAdjacentWeekLabels = (
   selectedWeek: number,
   lastWeek: number = 38,
 ): AdjacentWeekLabels => ({
-  previous: selectedWeek > 1 ? `Giornata ${selectedWeek - 1}` : null,
-  next:
-    selectedWeek >= lastWeek ? 'Stagione successiva' : `Giornata ${selectedWeek + 1}`,
+  previous: selectedWeek > 1 ? String(selectedWeek - 1) : null,
+  next: selectedWeek >= lastWeek ? null : String(selectedWeek + 1),
 });

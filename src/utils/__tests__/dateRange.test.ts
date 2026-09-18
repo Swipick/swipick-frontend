@@ -47,31 +47,33 @@ describe('formatDateRange', () => {
 });
 
 describe('getAdjacentWeekLabels', () => {
-  it('returns previous and next giornata labels for a mid-season week', () => {
+  // Solo il numero: negli slot da 48pt "Giornata 19" si spezzava a meta'
+  // parola. Il titolo al centro dice gia' di che si tratta.
+  it('returns previous and next giornata numbers for a mid-season week', () => {
     expect(getAdjacentWeekLabels(20)).toEqual({
-      previous: 'Giornata 19',
-      next: 'Giornata 21',
+      previous: '19',
+      next: '21',
     });
   });
 
-  it('returns no previous label at week 1 (never "Giornata 0")', () => {
+  it('returns no previous label at week 1 (never "0")', () => {
     expect(getAdjacentWeekLabels(1)).toEqual({
       previous: null,
-      next: 'Giornata 2',
+      next: '2',
     });
   });
 
-  it('returns the next season label at the last week (never "Giornata 39")', () => {
+  it('returns no next label at the last week (never "39")', () => {
     expect(getAdjacentWeekLabels(38)).toEqual({
-      previous: 'Giornata 37',
-      next: 'Stagione successiva',
+      previous: '37',
+      next: null,
     });
   });
 
   it('supports a custom last week (future-proof for season config)', () => {
     expect(getAdjacentWeekLabels(40, 40)).toEqual({
-      previous: 'Giornata 39',
-      next: 'Stagione successiva',
+      previous: '39',
+      next: null,
     });
   });
 });
