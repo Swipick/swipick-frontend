@@ -28,14 +28,30 @@ export interface UserResponseDto {
   verificationEmailSent?: boolean;
 }
 
+/** Quello che le schermate vogliono sapere dopo un accesso social. */
 export interface SyncGoogleUserResponse {
   id: string;
   needsProfileCompletion: boolean;
 }
 
-export interface SyncAppleUserResponse {
-  id: string;
-  needsProfileCompletion: boolean;
+export type SyncAppleUserResponse = SyncGoogleUserResponse;
+
+/**
+ * Quello che il BFF manda davvero: i due /users/sync-* incartano il DTO in
+ * { success, data, message }, e dentro c'e' profileCompleted, non il suo
+ * contrario. Normalizziamo qui cosi' le schermate leggono un campo solo.
+ */
+interface SyncUserEnvelope {
+  success: boolean;
+  data: { id: string; profileCompleted?: boolean };
+  message?: string;
+}
+
+function normalizeSync(envelope: SyncUserEnvelope): SyncGoogleUserResponse {
+  return {
+    id: envelope.data.id,
+    needsProfileCompletion: envelope.data.profileCompleted === false,
+  };
 }
 
 export const usersApi = {
@@ -47,13 +63,13 @@ export const usersApi = {
     try {
       console.log('[UsersAPI] Syncing Apple user');
 
-      const response = await apiClient.post<SyncAppleUserResponse>(
+      const response = await apiClient.post<SyncUserEnvelope>(
         '/users/sync-apple',
         { firebaseIdToken }
       );
 
       console.log('[UsersAPI] Apple user synced:', response);
-      return response;
+      return normalizeSync(response);
     } catch (error: any) {
       console.error('[UsersAPI] Apple sync error:', error);
 
@@ -207,13 +223,13 @@ export const usersApi = {
     try {
       console.log('[UsersAPI] Syncing Google user');
 
-      const response = await apiClient.post<SyncGoogleUserResponse>(
+      const response = await apiClient.post<SyncUserEnvelope>(
         '/users/sync-google',
         { firebaseIdToken }
       );
 
       console.log('[UsersAPI] Google user synced:', response);
-      return response;
+      return normalizeSync(response);
     } catch (error: any) {
       console.error('[UsersAPI] Google sync error:', error);
       console.error('[UsersAPI] Error response:', error.response?.data);

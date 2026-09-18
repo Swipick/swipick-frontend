@@ -17,7 +17,7 @@ import * as Haptics from "expo-haptics";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { authService } from "../../services/auth/authService";
 import { usersApi } from "../../services/api/users";
-import { profileApi } from "../../services/api/profile";
+import { profileApi, needsProfileCompletion } from "../../services/api/profile";
 import { useAuthStore } from "../../store/stores/useAuthStore";
 import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
 
@@ -153,7 +153,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       const profile = await profileApi.getUserByFirebaseUid(user.uid);
 
       // Transizione alla home gestita da AppNavigator via onAuthStateChanged.
-      if (profile.data?.needsProfileCompletion) {
+      if (needsProfileCompletion(profile.data)) {
         setPendingNicknameUserId(profile.data.id);
       }
     } catch (error: any) {

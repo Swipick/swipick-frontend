@@ -5,7 +5,7 @@ import { auth } from '../config/firebase';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import NicknameScreen from '../screens/auth/NicknameScreen';
-import { profileApi } from '../services/api/profile';
+import { profileApi, needsProfileCompletion } from '../services/api/profile';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuthStore } from '../store/stores/useAuthStore';
 
@@ -50,7 +50,7 @@ export default function AppNavigator() {
       try {
         const profile = await profileApi.getUserByFirebaseUid(user.uid);
         if (cancelled) return;
-        if (profile.data?.needsProfileCompletion) {
+        if (needsProfileCompletion(profile.data)) {
           setPendingNicknameUserId(profile.data.id);
         }
       } catch (error) {
