@@ -263,10 +263,11 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
                           },
                         ]}
                       />
-                      <Text style={styles.chartWeek}>g{bar.week}</Text>
+                      <Text style={styles.chartWeek}>{bar.week}</Text>
                     </View>
                   ))}
                 </View>
+                <Text style={styles.chartCaption}>giornata</Text>
 
                 <View style={styles.statsRow}>
                   <View style={styles.statCell}>
@@ -491,6 +492,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 3,
   },
   chartWeek: {
+    fontSize: 11,
+    color: '#9ca3af',
+  },
+  chartCaption: {
+    marginTop: 6,
+    textAlign: 'center',
     fontSize: 11,
     color: '#9ca3af',
   },
