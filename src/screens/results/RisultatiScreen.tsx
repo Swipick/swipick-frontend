@@ -436,16 +436,23 @@ export default function RisultatiScreen({
                 disabled={selectedWeek === 1 || contentLoading}
                 style={styles.sideWeek}
               >
-                <Text
+                <View
                   style={[
-                    styles.sideWeekText,
+                    styles.sideWeekInner,
                     {
                       opacity: selectedWeek === 1 || contentLoading ? 0.1 : 0.3,
                     },
                   ]}
                 >
-                  {weekLabels?.previous ?? ""}
-                </Text>
+                  <Ionicons
+                    name="chevron-back"
+                    size={isSmallScreen ? 14 : 16}
+                    color="#fff"
+                  />
+                  <Text numberOfLines={1} style={styles.sideWeekText}>
+                    {weekLabels?.previous ?? ""}
+                  </Text>
+                </View>
               </TouchableOpacity>
 
               <View style={styles.centerWeek}>
@@ -469,17 +476,24 @@ export default function RisultatiScreen({
                 disabled={selectedWeek === 38 || contentLoading}
                 style={[styles.sideWeek, styles.sideWeekRight]}
               >
-                <Text
+                <View
                   style={[
-                    styles.sideWeekText,
+                    styles.sideWeekInner,
                     {
                       opacity:
                         selectedWeek === 38 || contentLoading ? 0.1 : 0.6,
                     },
                   ]}
                 >
-                  {weekLabels?.next ?? ""}
-                </Text>
+                  <Text numberOfLines={1} style={styles.sideWeekText}>
+                    {weekLabels?.next ?? ""}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={isSmallScreen ? 14 : 16}
+                    color="#fff"
+                  />
+                </View>
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -927,6 +941,11 @@ const styles = StyleSheet.create({
   },
   sideWeekRight: {
     alignItems: "flex-end",
+  },
+  sideWeekInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
   },
   sideWeekText: {
     fontSize: isSmallScreen ? 12 : 14,
