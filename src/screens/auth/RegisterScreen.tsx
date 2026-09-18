@@ -16,7 +16,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { usersApi } from '../../services/api/users';
-import { profileApi } from '../../services/api/profile';
+import { profileApi, needsProfileCompletion } from '../../services/api/profile';
 import { authService } from '../../services/auth/authService';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 
@@ -141,7 +141,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       const user = await authService.signInWithApple();
       const profile = await profileApi.getUserByFirebaseUid(user.uid);
 
-      if (profile.data?.needsProfileCompletion) {
+      if (needsProfileCompletion(profile.data)) {
         setPendingNicknameUserId(profile.data.id);
       }
     } catch (error: any) {

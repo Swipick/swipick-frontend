@@ -14,7 +14,7 @@ export interface UserProfile {
   name: string | null;             // Full name
   nickname: string | null;         // Nickname/username
   googleProfileUrl: string | null;
-  needsProfileCompletion: boolean;
+  profileCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 }

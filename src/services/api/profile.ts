@@ -9,6 +9,20 @@ import { apiClient } from './client';
 // TYPES & INTERFACES
 // ============================================================================
 
+/**
+ * Il BFF dichiara needsProfileCompletion, ma e' un getter di classe: plainToClass
+ * lo mette sul prototipo e JSON.stringify serializza solo le proprieta' proprie,
+ * quindi sul filo non arriva mai. Quello che arriva e' profileCompleted.
+ *
+ * Nel dubbio si passa: se il campo manca (backend piu' vecchio, risposta parziale)
+ * non sbarriamo la strada, come gia' faceva il catch del gate in AppNavigator.
+ */
+export function needsProfileCompletion(
+  profile?: { profileCompleted?: boolean } | null
+): boolean {
+  return profile?.profileCompleted === false;
+}
+
 export interface UserProfileResponse {
   success: boolean;
   data: {
@@ -18,7 +32,7 @@ export interface UserProfileResponse {
     name: string | null;             // Full name
     nickname: string | null;         // Nickname/username
     googleProfileUrl: string | null;
-    needsProfileCompletion: boolean;
+    profileCompleted: boolean;
     createdAt: string;
     updatedAt: string;
   };
