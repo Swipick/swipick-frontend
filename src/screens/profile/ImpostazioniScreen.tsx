@@ -129,7 +129,7 @@ export default function ImpostazioniScreen({
       onProfileLoaded({
         userId: profile.id,
         email: profile.email,
-        nickname: profile.sopranome,
+        nickname: profile.nickname,
       });
 
       setLoading(false);
