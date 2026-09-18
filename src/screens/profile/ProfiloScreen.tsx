@@ -79,8 +79,8 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
       // Set user info
       setUserId(profile.id);
       setEmail(profile.email);
-      setNickname(profile.sopranome);
-      setDisplayName(extractDisplayName(profile.nome, profile.email));
+      setNickname(profile.nickname);
+      setDisplayName(extractDisplayName(profile.name, profile.email));
 
       // Set avatar URL (Google profile or fallback)
       if (profile.googleProfileUrl) {

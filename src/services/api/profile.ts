@@ -15,8 +15,8 @@ export interface UserProfileResponse {
     id: string;                      // Backend user UUID
     firebaseUid: string;
     email: string;
-    nome: string | null;             // Full name
-    sopranome: string | null;        // Nickname/username
+    name: string | null;             // Full name
+    nickname: string | null;         // Nickname/username
     googleProfileUrl: string | null;
     needsProfileCompletion: boolean;
     createdAt: string;
