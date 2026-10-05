@@ -1,13 +1,10 @@
 import { create } from 'zustand';
 import { User } from 'firebase/auth';
-import {
-  AuthStore,
-  AuthUser,
-  LoginCredentials,
-  RegisterCredentials,
-} from '../../types/auth.types';
+import { AuthStore, AuthUser, LoginCredentials, RegisterCredentials } from '../../types/auth.types';
 import { authService } from '../../services/auth/authService';
 import { useGameStore } from './useGameStore';
+import { useLeaguesStore } from './useLeaguesStore';
+import { identifica, dimentica } from '../../services/analytics';
 import { setUnauthorizedHandler } from '../../services/api/unauthorizedHandler';
 
 /**
@@ -77,6 +74,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
       // senza questo, chi accede dopo nella stessa sessione si trova in
       // memoria i pronostici dell'utente precedente.
       useGameStore.getState().clearSession();
+      useLeaguesStore.getState().clearSession();
+      // Gli eventi successivi non devono finire sulla persona precedente.
+      dimentica();
     } catch (error: any) {
       set({ error: error.message, loading: false });
       throw error;
@@ -115,13 +115,18 @@ export const useAuthStore = create<AuthStore>((set) => ({
       };
       // Un utente reale annulla sempre la modalità ospite.
       set({ user, firebaseUser, isGuest: false });
+      // Da qui gli eventi appartengono a questa persona. L'identificativo è
+      // quello di Firebase, lo stesso che usano i punteggi: senza, i numeri
+      // dell'analisi non si potrebbero mai incrociare con quelli del gioco.
+      identifica(firebaseUser.uid, {
+        email_verificata: firebaseUser.emailVerified,
+      });
     } else {
       set({ user: null, firebaseUser: null });
     }
   },
 
-  setPendingNicknameUserId: (userId: string | null) =>
-    set({ pendingNicknameUserId: userId }),
+  setPendingNicknameUserId: (userId: string | null) => set({ pendingNicknameUserId: userId }),
 
   setGuest: (isGuest: boolean) => set({ isGuest }),
 
@@ -137,9 +142,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 setUnauthorizedHandler(() => {
   const { user, signOut } = useAuthStore.getState();
   if (user) {
-    console.warn(
-      '[AuthStore] Sessione non più valida (401 ripetuti) — signout forzato',
-    );
+    console.warn('[AuthStore] Sessione non più valida (401 ripetuti) — signout forzato');
     void signOut();
   }
 });

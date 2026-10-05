@@ -56,6 +56,8 @@
       "firebaseStorageBucket": "swipick-2026.firebasestorage.app",
       "firebaseMessagingSenderId": "614934207425",
       "firebaseAppId": "1:614934207425:web:9520be51871f9f1998ed40",
+      "posthogKey": "phc_soUA6GdUHbj2Reyui7mdM6fkPLYT54d6BrjyPnfunwpW",
+      "posthogHost": "https://eu.i.posthog.com",
       "googleWebClientId": "614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com",
       "googleIosClientId": "614934207425-a2slvratu5hufc9ibf3c27lt6b3lvdq9.apps.googleusercontent.com",
       "appEnv": "production",
@@ -72,7 +74,9 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "expo-localization",
+      "./plugins/withPodfilePatches"
     ],
     "runtimeVersion": {
       "policy": "appVersion"

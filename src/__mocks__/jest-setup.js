@@ -1,3 +1,9 @@
+// Metro definisce __DEV__, Jest no: senza, il solo import di react-native
+// fa fallire la suite. Serve da quando l'analisi d'uso tira dentro `Share`.
+if (typeof global.__DEV__ === 'undefined') {
+  global.__DEV__ = true;
+}
+
 // Preemptively define __ExpoImportMetaRegistry to prevent Expo's winter runtime
 // lazy getter from trying to load runtime.native.ts (which uses ESM imports
 // incompatible with Jest's CommonJS environment)

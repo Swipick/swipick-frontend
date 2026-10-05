@@ -36,6 +36,9 @@ module.exports = {
       '<rootDir>/src/__mocks__/structured-clone-stub.js',
     // Stub expo-crypto
     '^expo-crypto$': '<rootDir>/src/__mocks__/expo-crypto.ts',
+    // Nei test non deve entrare un SDK che parla con la rete
+    '^posthog-react-native$':
+      '<rootDir>/src/__mocks__/posthog-react-native.ts',
     // Asset mocks
     '\\.(png|jpg|jpeg|gif|svg|webp)$':
       '<rootDir>/src/__mocks__/fileMock.js',
