@@ -1,343 +1,169 @@
-import React, { useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  ScrollView,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Haptics from "expo-haptics";
-import { useAuthStore } from "../../store/stores/useAuthStore";
-import { PixelPlayerLogo } from "../../components/game/PixelPlayerLogo";
-import { PredictSlide, ResultSlide } from "./WizardMockups";
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useAuthStore } from '../../store/stores/useAuthStore';
 
 interface LandingScreenProps {
   onNavigate: (
-    screen:
-      | "Landing"
-      | "Welcome"
-      | "Login"
-      | "Register"
-      | "EmailVerification"
-      | "LoginVerified",
-    params?: any
+    screen: 'Landing' | 'Onboarding' | 'Login' | 'Register' | 'EmailVerification' | 'LoginVerified',
+    params?: any,
   ) => void;
 }
 
-const { width: screenWidth } = Dimensions.get("window");
+const { height: altezzaSchermo } = Dimensions.get('window');
+const schermoPiccolo = altezzaSchermo < 750;
 
+/**
+ * La schermata d'accesso.
+ *
+ * Il carosello che spiegava il gioco stava qui, sopra questi stessi bottoni,
+ * e per questo non lo scorreva quasi nessuno: chi arriva ha gia' un pulsante
+ * sotto il pollice. Ora la spiegazione e' un passo a se' (OnboardingScreen),
+ * mostrato alla prima apertura, e qui resta solo la scelta su come entrare.
+ *
+ * "Registrati" e' il bottone pieno e sta per primo: chi arriva qui dopo
+ * l'onboarding e' nuovo, e il bottone piu' in vista deve essere il suo.
+ */
 export default function LandingScreen({ onNavigate }: LandingScreenProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const scrollViewRef = useRef<ScrollView>(null);
   const setGuest = useAuthStore((s) => s.setGuest);
 
-  const handleExploreAsGuest = async () => {
+  const esploraSenzaAccount = async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
-      console.error("[LandingScreen] Error with haptics:", error);
+      console.error('[LandingScreen] Error with haptics:', error);
     }
-    // Entra in modalità ospite: AppNavigator passa a MainNavigator (App Store 5.1.1).
+    // Modalita' ospite: AppNavigator passa a MainNavigator (App Store 5.1.1).
     setGuest(true);
   };
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollPosition / screenWidth);
-    setActiveIndex(index);
+  const conTocco = async (azione: () => void) => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error) {
+      console.error('[LandingScreen] Error with haptics:', error);
+    }
+    azione();
   };
 
   return (
     <View style={styles.container}>
-      {/* Swipick Logo/Title */}
-      <Text style={styles.title}>swipick</Text>
-
-      {/* Tagline */}
-      <Text style={styles.tagline}>Ogni giornata fai la tua giocata</Text>
-
-      {/* Swipeable Carousel */}
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        style={styles.carouselContainer}
-        contentContainerStyle={styles.carouselContent}
-      >
-        {/* Screen 1: Team Logos + Prediction Buttons */}
-        <View style={styles.carouselPage}>
-          <View style={styles.logosContainer}>
-            {/* Omini pixel: si guardano (casa a sinistra, ospite specchiato a destra) */}
-            <PixelPlayerLogo
-              teamName="Juventus"
-              size={isSmallScreen ? 70 : 100}
-            />
-            <PixelPlayerLogo
-              teamName="Napoli"
-              mirror
-              size={isSmallScreen ? 70 : 100}
-            />
-          </View>
-
-          <View style={styles.predictionButtonsContainer}>
-            <LinearGradient
-              colors={["#7956f3", "#5742a4"]}
-              start={{ x: 1, y: 0.5 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.predictionButton}
-            >
-              <Text style={styles.predictionButtonText}>1</Text>
-            </LinearGradient>
-
-            <LinearGradient
-              colors={["#7956f3", "#5742a4"]}
-              start={{ x: 1, y: 0.5 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.predictionButton, styles.predictionButtonMiddle]}
-            >
-              <Text style={styles.predictionButtonText}>X</Text>
-            </LinearGradient>
-
-            <LinearGradient
-              colors={["#7956f3", "#5742a4"]}
-              start={{ x: 1, y: 0.5 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.predictionButton}
-            >
-              <Text style={styles.predictionButtonText}>2</Text>
-            </LinearGradient>
-          </View>
-        </View>
-
-        {/* Screen 2: Pronostica le partite (mockup vivo con omini pixel) */}
-        <View style={styles.carouselPage}>
-          <PredictSlide />
-        </View>
-
-        {/* Screen 3: Guarda i risultati (mockup vivo con omini pixel) */}
-        <View style={styles.carouselPage}>
-          <ResultSlide />
-        </View>
-      </ScrollView>
-
-      {/* Page Indicator Dots */}
-      <View style={styles.dotsContainer}>
-        <View
-          style={[
-            styles.dot,
-            activeIndex === 0 && styles.dotActive,
-            activeIndex !== 0 && styles.dotInactive,
-          ]}
-        />
-        <View
-          style={[
-            styles.dot,
-            activeIndex === 1 && styles.dotActive,
-            activeIndex !== 1 && styles.dotInactive,
-          ]}
-        />
-        <View
-          style={[
-            styles.dot,
-            activeIndex === 2 && styles.dotActive,
-            activeIndex !== 2 && styles.dotInactive,
-          ]}
-        />
+      <View style={styles.marchio}>
+        <Text style={styles.title}>swipick</Text>
+        <Text style={styles.tagline}>Ogni giornata fai la tua giocata</Text>
       </View>
 
-      {/* Auth Buttons Container */}
       <View style={styles.authButtonsContainer}>
-        {/* Login Button */}
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={async () => {
-            try {
-              console.log("[LandingScreen] Login button pressed");
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              console.log("[LandingScreen] Haptic feedback triggered");
-              onNavigate("Login");
-              console.log("[LandingScreen] Navigation to Login triggered");
-            } catch (error) {
-              console.error("[LandingScreen] Error with haptics:", error);
-              onNavigate("Login");
-            }
-          }}
-        >
-          <Text style={styles.loginButtonText}>Login</Text>
-        </TouchableOpacity>
-
-        {/* Register Button */}
         <TouchableOpacity
           style={styles.registerButton}
-          onPress={async () => {
-            try {
-              console.log("[LandingScreen] Register button pressed");
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              console.log("[LandingScreen] Haptic feedback triggered");
-              onNavigate("Register");
-              console.log("[LandingScreen] Navigation to Register triggered");
-            } catch (error) {
-              console.error("[LandingScreen] Error with haptics:", error);
-              onNavigate("Register");
-            }
-          }}
+          onPress={() => conTocco(() => onNavigate('Register'))}
+          activeOpacity={0.8}
         >
           <Text style={styles.registerButtonText}>Registrati</Text>
         </TouchableOpacity>
 
-        {/* Guest Mode Button - esplora senza account */}
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => conTocco(() => onNavigate('Login'))}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.loginButtonText}>Accedi</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.guestButton}
-          onPress={handleExploreAsGuest}
+          onPress={esploraSenzaAccount}
           activeOpacity={0.7}
         >
           <Text style={styles.guestButtonText}>Esplora senza account</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.comeFunziona}
+          onPress={() => onNavigate('Onboarding')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.comeFunzionaTesto}>Come funziona</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const { height: screenHeight } = Dimensions.get("window");
-const isSmallScreen = screenHeight < 750; // iPhone XR and smaller
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: isSmallScreen ? 40 : 60,
+    backgroundColor: '#FFFFFF',
+    paddingTop: schermoPiccolo ? 40 : 60,
     paddingBottom: 40,
     paddingHorizontal: 24,
   },
+  marchio: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     fontSize: 38,
-    fontWeight: "bold",
-    color: "#5742a4",
-    marginTop: isSmallScreen ? 20 : 40,
+    fontWeight: 'bold',
+    color: '#5742a4',
     letterSpacing: -1,
   },
   tagline: {
     fontSize: 16,
-    color: "#333333",
-    textAlign: "center",
+    color: '#333333',
+    textAlign: 'center',
     marginTop: 8,
-    fontWeight: "400",
-  },
-  carouselContainer: {
-    flex: 1,
-    width: screenWidth,
-  },
-  carouselContent: {
-    alignItems: "center",
-    flexGrow: 1,
-  },
-  carouselPage: {
-    width: screenWidth,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    flex: 1,
-  },
-  logosContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 40,
-  },
-  predictionButtonsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 24,
-    marginTop: isSmallScreen ? 16 : 24,
-  },
-  predictionButton: {
-    width: 80,
-    height: 46,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  predictionButtonMiddle: {
-    marginBottom: 40,
-  },
-  predictionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  dotsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: isSmallScreen ? 24 : 40,
-  },
-  dot: {
-    width: 20,
-    height: 20,
-    borderRadius: 25,
-  },
-  dotActive: {
-    backgroundColor: "#4d32b1ff",
-  },
-  dotInactive: {
-    backgroundColor: "rgba(179, 172, 203, 0.3)",
+    fontWeight: '400',
   },
   authButtonsContainer: {
-    width: "100%",
+    width: '100%',
     gap: 12,
-    marginTop: isSmallScreen ? 35 : 40,
-  },
-  loginButton: {
-    width: "100%",
-    height: 56,
-    backgroundColor: "#4d32b1ff",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loginButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
   },
   registerButton: {
-    width: "100%",
+    width: '100%',
     height: 56,
-    backgroundColor: "rgba(111, 73, 247, 0.1)",
+    backgroundColor: 'rgba(111, 73, 247, 0.1)',
     borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   registerButtonText: {
-    color: "#000000",
+    color: '#000000',
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+  },
+  loginButton: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#4d32b1ff',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   guestButton: {
-    width: "100%",
+    width: '100%',
     height: 48,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   guestButtonText: {
-    color: "#6f49ff",
+    color: '#6f49ff',
     fontSize: 15,
-    fontWeight: "600",
-    textDecorationLine: "underline",
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  comeFunziona: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  comeFunzionaTesto: {
+    fontSize: 13,
+    color: '#9ca3af',
   },
 });

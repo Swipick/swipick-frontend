@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,26 +11,26 @@ import {
   Image,
   Dimensions,
   Platform,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Haptics from "expo-haptics";
-import * as AppleAuthentication from "expo-apple-authentication";
-import { authService } from "../../services/auth/authService";
-import { usersApi } from "../../services/api/users";
-import { profileApi, needsProfileCompletion } from "../../services/api/profile";
-import { useAuthStore } from "../../store/stores/useAuthStore";
-import { AUTH_ERROR_MESSAGES } from "../../types/auth.types";
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { authService } from '../../services/auth/authService';
+import { usersApi } from '../../services/api/users';
+import { profileApi, needsProfileCompletion } from '../../services/api/profile';
+import { useAuthStore } from '../../store/stores/useAuthStore';
+import { AUTH_ERROR_MESSAGES } from '../../types/auth.types';
 
 type LoginScreenProps = {
   onNavigate: (
-    screen: "Landing" | "Welcome" | "Login" | "Register" | "EmailVerification",
-    params?: any
+    screen: 'Landing' | 'Onboarding' | 'Login' | 'Register' | 'EmailVerification',
+    params?: any,
   ) => void;
 };
 
 export default function LoginScreen({ onNavigate }: LoginScreenProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -39,20 +39,20 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   const handleLogin = async () => {
     // Validate inputs
     if (!email || !password) {
-      Alert.alert("Errore", "Inserisci email e password");
+      Alert.alert('Errore', 'Inserisci email e password');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Errore", "Formato email non valido");
+      Alert.alert('Errore', 'Formato email non valido');
       return;
     }
 
     try {
       setLoading(true);
-      console.log("[LoginScreen] Attempting login:", { email });
+      console.log('[LoginScreen] Attempting login:', { email });
 
       // Sign in with Firebase
       const user = await authService.signIn({
@@ -60,27 +60,27 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         password: password,
       });
 
-      console.log("[LoginScreen] Login successful:", {
+      console.log('[LoginScreen] Login successful:', {
         uid: user.uid,
         emailVerified: user.emailVerified,
       });
 
       // Check email verification status
       if (!user.emailVerified) {
-        console.log("[LoginScreen] Email not verified, showing verification prompt");
+        console.log('[LoginScreen] Email not verified, showing verification prompt');
 
         Alert.alert(
-          "Email Non Verificata",
-          "Devi verificare la tua email prima di accedere. Controlla la tua casella di posta.",
+          'Email Non Verificata',
+          'Devi verificare la tua email prima di accedere. Controlla la tua casella di posta.',
           [
             {
-              text: "OK",
+              text: 'OK',
               onPress: () => {
                 // Navigate to email verification screen
-                onNavigate("EmailVerification", { email: email.trim().toLowerCase() });
+                onNavigate('EmailVerification', { email: email.trim().toLowerCase() });
               },
             },
-          ]
+          ],
         );
         return;
       }
@@ -88,12 +88,12 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
       // Utente verificato: la transizione alla home la fa AppNavigator
       // via onAuthStateChanged (AuthNavigator viene smontato).
     } catch (error: any) {
-      console.error("[LoginScreen] Login error:", error);
+      console.error('[LoginScreen] Login error:', error);
 
       // Get user-friendly error message
       const errorMessage = AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default;
 
-      Alert.alert("Errore di Accesso", errorMessage);
+      Alert.alert('Errore di Accesso', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -102,12 +102,12 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      console.log("[LoginScreen] Google login initiated");
+      console.log('[LoginScreen] Google login initiated');
 
       // Sign in with Google via Firebase
       const user = await authService.signInWithGoogle();
 
-      console.log("[LoginScreen] Google login successful:", {
+      console.log('[LoginScreen] Google login successful:', {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
@@ -115,11 +115,11 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
 
       // Get Firebase ID token to sync with backend
       const idToken = await user.getIdToken();
-      console.log("[LoginScreen] Got Firebase ID token, syncing with backend...");
+      console.log('[LoginScreen] Got Firebase ID token, syncing with backend...');
 
       // Sync user to NeonDB via backend
       const syncResult = await usersApi.syncGoogleUser(idToken);
-      console.log("[LoginScreen] User synced to backend:", syncResult);
+      console.log('[LoginScreen] User synced to backend:', syncResult);
 
       // Utenti Google già verificati: la transizione alla home la fa
       // AppNavigator via onAuthStateChanged. Chi non ha ancora un nickname
@@ -128,7 +128,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         setPendingNicknameUserId(syncResult.id);
       }
     } catch (error: any) {
-      console.error("[LoginScreen] Google login error:", error);
+      console.error('[LoginScreen] Google login error:', error);
 
       // Check if user cancelled
       if (error.message === 'Google sign-in was cancelled') {
@@ -136,7 +136,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         return;
       }
 
-      Alert.alert("Errore", error.message || "Accesso con Google non riuscito");
+      Alert.alert('Errore', error.message || 'Accesso con Google non riuscito');
     } finally {
       setLoading(false);
     }
@@ -145,7 +145,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   const handleAppleLogin = async () => {
     try {
       setLoading(true);
-      console.log("[LoginScreen] Apple login initiated");
+      console.log('[LoginScreen] Apple login initiated');
 
       // signInWithApple sincronizza l'utente sul backend e lo attende: qui il
       // profilo esiste, e possiamo chiedergli se manca il nickname.
@@ -157,15 +157,18 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         setPendingNicknameUserId(profile.data.id);
       }
     } catch (error: any) {
-      console.error("[LoginScreen] Apple login error:", error);
+      console.error('[LoginScreen] Apple login error:', error);
 
       // Silently ignore user cancellation
-      if (error.code === "ERR_REQUEST_CANCELED" || error.message === "apple-sign-in-cancelled") {
+      if (error.code === 'ERR_REQUEST_CANCELED' || error.message === 'apple-sign-in-cancelled') {
         return;
       }
 
-      const errorMessage = AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES[error.message] || AUTH_ERROR_MESSAGES.default;
-      Alert.alert("Errore", errorMessage);
+      const errorMessage =
+        AUTH_ERROR_MESSAGES[error.code] ||
+        AUTH_ERROR_MESSAGES[error.message] ||
+        AUTH_ERROR_MESSAGES.default;
+      Alert.alert('Errore', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -174,18 +177,18 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   const handleForgotPassword = async () => {
     // Prompt user for email
     Alert.prompt(
-      "Recupera Password",
-      "Inserisci il tuo indirizzo email per ricevere il link di reset password",
+      'Recupera Password',
+      'Inserisci il tuo indirizzo email per ricevere il link di reset password',
       [
         {
-          text: "Annulla",
-          style: "cancel",
+          text: 'Annulla',
+          style: 'cancel',
         },
         {
-          text: "Invia",
+          text: 'Invia',
           onPress: async (emailInput?: string) => {
             if (!emailInput || !emailInput.trim()) {
-              Alert.alert("Errore", "Inserisci un indirizzo email valido");
+              Alert.alert('Errore', 'Inserisci un indirizzo email valido');
               return;
             }
 
@@ -194,14 +197,14 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               await authService.resetPassword(emailInput.trim().toLowerCase());
 
               Alert.alert(
-                "Email Inviata",
+                'Email Inviata',
                 "Ti abbiamo inviato un'email con le istruzioni per reimpostare la password. Controlla anche la cartella spam.",
-                [{ text: "OK" }]
+                [{ text: 'OK' }],
               );
             } catch (error: any) {
               Alert.alert(
-                "Errore",
-                error.message || "Impossibile inviare l'email. Riprova più tardi."
+                'Errore',
+                error.message || "Impossibile inviare l'email. Riprova più tardi.",
               );
             } finally {
               setLoading(false);
@@ -209,8 +212,8 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           },
         },
       ],
-      "plain-text",
-      email || ""
+      'plain-text',
+      email || '',
     );
   };
 
@@ -221,7 +224,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         style={styles.backButton}
         onPress={async () => {
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onNavigate("Landing");
+          onNavigate('Landing');
         }}
       >
         <Text style={styles.backButtonText}>← Indietro</Text>
@@ -270,11 +273,8 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               autoCorrect={false}
               editable={!loading}
             />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Text style={styles.eyeText}>{showPassword ? "👁️" : "👁️‍🗨️"}</Text>
+            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+              <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -308,7 +308,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           disabled={loading}
         >
           <Image
-            source={require("../../assets/images/icons/google-logo-icon.png")}
+            source={require('../../assets/images/icons/google-logo-icon.png')}
             style={styles.googleLogoImage}
             resizeMode="contain"
           />
@@ -316,7 +316,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         </TouchableOpacity>
 
         {/* Apple Sign-In Button — iOS only (required by App Store guideline 4.8) */}
-        {Platform.OS === "ios" && (
+        {Platform.OS === 'ios' && (
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
             buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
@@ -334,9 +334,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
 
         {/* Forgot Password */}
         <View style={styles.forgotPasswordContainer}>
-          <Text style={styles.forgotPasswordText}>
-            Hai dimenticato la password?
-          </Text>
+          <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
           <TouchableOpacity
             style={styles.forgotPasswordButton}
             onPress={async () => {
@@ -345,9 +343,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
             }}
             disabled={loading}
           >
-            <Text style={styles.forgotPasswordButtonText}>
-              Recupera password
-            </Text>
+            <Text style={styles.forgotPasswordButtonText}>Recupera password</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -361,10 +357,10 @@ const isSmallScreen = screenHeight < 700; // iPhone XR is ~896, but content area
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
-    position: "absolute",
+    position: 'absolute',
     top: 50,
     left: 20,
     zIndex: 10,
@@ -372,43 +368,43 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: "#5742a4",
-    fontWeight: "600",
+    color: '#5742a4',
+    fontWeight: '600',
   },
   scrollContainer: {
     flexGrow: 1,
     padding: 24,
     paddingTop: isSmallScreen ? 60 : 80,
-    alignItems: "center",
+    alignItems: 'center',
   },
   title: {
     fontSize: 38,
-    fontWeight: "bold",
-    color: "#5742a4",
+    fontWeight: 'bold',
+    color: '#5742a4',
     marginBottom: isSmallScreen ? 30 : 40,
     letterSpacing: -1,
   },
   inputContainer: {
-    width: "100%",
+    width: '100%',
     marginBottom: 16,
   },
   passwordContainer: {
-    position: "relative",
-    width: "100%",
+    position: 'relative',
+    width: '100%',
   },
   input: {
-    width: "100%",
+    width: '100%',
     height: 56,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: "#111827",
-    backgroundColor: "#FFFFFF",
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
   },
   eyeIcon: {
-    position: "absolute",
+    position: 'absolute',
     right: 12,
     top: 16,
     padding: 4,
@@ -417,38 +413,38 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   loginButton: {
-    width: "100%",
+    width: '100%',
     height: 56,
-    backgroundColor: "#6f49f7",
+    backgroundColor: '#6f49f7',
     borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   loginButtonText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   divider: {
     fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
+    color: '#6B7280',
+    textAlign: 'center',
     marginVertical: 20,
   },
   googleButton: {
-    width: "100%",
+    width: '100%',
     height: 56,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: '#D1D5DB',
     borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 32,
   },
   googleLogoImage: {
@@ -457,12 +453,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   googleButtonText: {
-    color: "#374151",
+    color: '#374151',
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   appleButton: {
-    width: "100%" as any,
+    width: '100%' as any,
     height: 56,
     marginBottom: 32,
   },
@@ -471,26 +467,26 @@ const styles = StyleSheet.create({
     minHeight: 20,
   },
   forgotPasswordContainer: {
-    alignItems: "center",
-    width: "100%",
+    alignItems: 'center',
+    width: '100%',
     marginBottom: 20,
   },
   forgotPasswordText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: '#6B7280',
     marginBottom: 12,
   },
   forgotPasswordButton: {
-    width: "100%",
+    width: '100%',
     height: 56,
-    backgroundColor: "rgba(111, 73, 247, 0.1)",
+    backgroundColor: 'rgba(111, 73, 247, 0.1)',
     borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   forgotPasswordButtonText: {
     fontSize: 14,
-    color: "#6f49f7",
-    fontWeight: "600",
+    color: '#6f49f7',
+    fontWeight: '600',
   },
 });

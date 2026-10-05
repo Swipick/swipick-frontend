@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { onboardingGiaVisto } from '../utils/onboardingVisto';
 import LandingScreen from '../screens/onboarding/LandingScreen';
-import WelcomeScreen from '../screens/auth/WelcomeScreen';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
@@ -14,7 +16,7 @@ import LoginVerifiedScreen from '../screens/auth/LoginVerifiedScreen';
 
 type AuthScreen =
   | 'Landing'
-  | 'Welcome'
+  | 'Onboarding'
   | 'Login'
   | 'Register'
   | 'Nickname'
@@ -36,18 +38,32 @@ interface NavigationState {
 }
 
 export default function AuthNavigator() {
-  const [navigationState, setNavigationState] = useState<NavigationState>({
-    screen: 'Landing',
-    params: undefined,
-  });
+  // null finché non si sa se l'onboarding è già stato visto: meglio una
+  // frazione di secondo di schermo vuoto che il lampo della schermata
+  // sbagliata.
+  const [navigationState, setNavigationState] = useState<NavigationState | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    onboardingGiaVisto().then((visto) => {
+      if (vivo) setNavigationState({ screen: visto ? 'Landing' : 'Onboarding' });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const navigate = (screen: AuthScreen, params?: AuthNavParams) => {
     setNavigationState({ screen, params });
   };
 
+  if (!navigationState) {
+    return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
+  }
+
   switch (navigationState.screen) {
-    case 'Landing':
-      return <LandingScreen onNavigate={navigate} />;
+    case 'Onboarding':
+      return <OnboardingScreen onFine={() => navigate('Landing')} />;
     case 'Login':
       return <LoginScreen onNavigate={navigate} />;
     case 'Register':
@@ -63,8 +79,7 @@ export default function AuthNavigator() {
             navigate('EmailVerification', {
               email: navigationState.params?.email,
               verificationLink: navigationState.params?.verificationLink,
-              verificationEmailSent:
-                navigationState.params?.verificationEmailSent,
+              verificationEmailSent: navigationState.params?.verificationEmailSent,
             })
           }
         />
@@ -76,8 +91,7 @@ export default function AuthNavigator() {
             params: {
               email: navigationState.params?.email ?? '',
               verificationLink: navigationState.params?.verificationLink,
-              verificationEmailSent:
-                navigationState.params?.verificationEmailSent,
+              verificationEmailSent: navigationState.params?.verificationEmailSent,
             },
           }}
           onNavigate={navigate}
@@ -85,8 +99,8 @@ export default function AuthNavigator() {
       );
     case 'LoginVerified':
       return <LoginVerifiedScreen onNavigate={navigate} />;
-    case 'Welcome':
+    case 'Landing':
     default:
-      return <WelcomeScreen onNavigate={navigate} />;
+      return <LandingScreen onNavigate={navigate} />;
   }
 }

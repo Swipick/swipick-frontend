@@ -22,7 +22,7 @@ import { useAuthStore } from '../../store/stores/useAuthStore';
 
 type RegisterScreenProps = {
   onNavigate: (
-    screen: 'Landing' | 'Welcome' | 'Login' | 'Register' | 'Nickname' | 'EmailVerification',
+    screen: 'Landing' | 'Onboarding' | 'Login' | 'Register' | 'Nickname' | 'EmailVerification',
     params?: any
   ) => void;
 };
