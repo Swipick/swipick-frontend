@@ -23,7 +23,7 @@ interface EmailVerificationScreenProps {
       verificationEmailSent?: boolean;
     };
   };
-  onNavigate: (screen: 'Landing' | 'Welcome' | 'Login' | 'Register' | 'LoginVerified', params?: any) => void;
+  onNavigate: (screen: 'Landing' | 'Onboarding' | 'Login' | 'Register' | 'LoginVerified', params?: any) => void;
 }
 
 export default function EmailVerificationScreen({

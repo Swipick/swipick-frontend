@@ -25,6 +25,11 @@ export const ENV = {
   GOOGLE_WEB_CLIENT_ID: extra.googleWebClientId || '',
   GOOGLE_IOS_CLIENT_ID: extra.googleIosClientId || '',
 
+  // Analisi d'uso (PostHog). Senza chiave l'analisi resta spenta e l'app
+  // funziona identica: nessun evento deve essere necessario per giocare.
+  POSTHOG_KEY: extra.posthogKey || '',
+  POSTHOG_HOST: extra.posthogHost || 'https://eu.i.posthog.com',
+
   // App Configuration
   APP_ENV: extra.appEnv || 'development',
   IS_DEV: extra.appEnv !== 'production',
@@ -43,12 +48,12 @@ export const validateEnv = () => {
     'BFF_API_URL',
   ] as const;
 
-  const missing = required.filter(key => !ENV[key]);
+  const missing = required.filter((key) => !ENV[key]);
 
   if (missing.length > 0) {
     throw new Error(
       `[ENV] Missing required environment variables: ${missing.join(', ')}. ` +
-      'Configure them in app.json under "extra".'
+        'Configure them in app.json under "extra".',
     );
   }
 

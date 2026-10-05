@@ -1,28 +1,21 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Share,
-  Alert,
-  Dimensions,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import { spacing } from "../../theme";
-import CountdownTimer from "./CountdownTimer";
-import ProgressBar from "./ProgressBar";
-import { MatchCard } from "../../types/game.types";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Share, Alert, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { spacing } from '../../theme';
+import CountdownTimer from './CountdownTimer';
+import ProgressBar from './ProgressBar';
+import { MatchCard } from '../../types/game.types';
+import { condividiEMisura } from '../../services/analytics';
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
 
 interface GameHeaderProps {
   currentWeek: number;
   totalFixtures: number;
   completedPredictions: number;
-  mode: "live" | "test";
+  mode: 'live' | 'test';
   fixtures: MatchCard[];
   onReset: () => void;
   /** Scadenza verso cui scala il countdown: la prossima card che si chiude.
@@ -50,20 +43,12 @@ export default function GameHeader({
   const handleShare = async () => {
     setShareLoading(true);
     try {
-      const result = await Share.share({
-        title: "Swipick - Previsioni Calcio",
-        message:
-          "Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? https://swipick-frontend-production.up.railway.app/registro",
+      await condividiEMisura({
+        punto: 'fine_mazzo',
+        titolo: 'Swipick - Previsioni Calcio',
+        messaggio:
+          'Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? https://swipick-frontend-production.up.railway.app/registro',
       });
-
-      if (result.action === Share.sharedAction) {
-        console.log("[GameHeader] Successfully shared!");
-      } else if (result.action === Share.dismissedAction) {
-        console.log("[GameHeader] Share dismissed");
-      }
-    } catch (error) {
-      Alert.alert("Errore", "Impossibile condividere in questo momento.");
-      console.error("[GameHeader] Share error:", error);
     } finally {
       setShareLoading(false);
     }
@@ -71,7 +56,7 @@ export default function GameHeader({
 
   // Calculate week date range
   const getWeekDateRange = (): string => {
-    if (fixtures.length === 0) return "";
+    if (fixtures.length === 0) return '';
 
     const dates = fixtures
       .map((f) => new Date(f.kickoff.iso))
@@ -104,13 +89,12 @@ export default function GameHeader({
 
   // Il countdown segue il mazzo quando chi ci sta sopra sa quale sia la
   // prossima scadenza; altrimenti se la calcola da se'.
-  const nextMatchDate =
-    nextKickoff !== undefined ? nextKickoff : getNextMatchDate();
+  const nextMatchDate = nextKickoff !== undefined ? nextKickoff : getNextMatchDate();
   const weekDateRange = getWeekDateRange();
 
   return (
     <LinearGradient
-      colors={["#52418d", "#7a57f6"]}
+      colors={['#52418d', '#7a57f6']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.container, sticky && styles.sticky]}
@@ -123,7 +107,7 @@ export default function GameHeader({
       }}
     >
       {/* Mode Badge */}
-      {mode === "test" && (
+      {mode === 'test' && (
         <View style={styles.modeBadge}>
           <Text style={styles.modeText}>MODALITÀ TEST</Text>
         </View>
@@ -145,11 +129,7 @@ export default function GameHeader({
 
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
-        <ProgressBar
-          completed={completedPredictions}
-          total={totalFixtures}
-          height={24}
-        />
+        <ProgressBar completed={completedPredictions} total={totalFixtures} height={24} />
       </View>
 
       {/* Share Button - Only visible when sticky (summary screen) */}
@@ -157,10 +137,7 @@ export default function GameHeader({
         <View style={styles.shareContainer}>
           <View style={styles.divider} />
           <TouchableOpacity
-            style={[
-              styles.shareButton,
-              shareLoading && styles.shareButtonDisabled,
-            ]}
+            style={[styles.shareButton, shareLoading && styles.shareButtonDisabled]}
             onPress={handleShare}
             disabled={shareLoading}
           >
@@ -182,20 +159,20 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   sticky: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 100,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
   },
   modeBadge: {
-    alignSelf: "center",
-    backgroundColor: "rgba(255, 193, 7, 0.9)",
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255, 193, 7, 0.9)',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 16,
@@ -203,25 +180,25 @@ const styles = StyleSheet.create({
   },
   modeText: {
     fontSize: 11,
-    fontWeight: "bold",
-    color: "#fff",
+    fontWeight: 'bold',
+    color: '#fff',
     letterSpacing: 0.5,
   },
   weekHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: isSmallScreen ? 8 : spacing.md,
-    position: "relative",
+    position: 'relative',
   },
   weekTitle: {
     fontSize: isSmallScreen ? 13 : 16,
-    fontWeight: "400",
-    color: "#fff",
-    textAlign: "center",
+    fontWeight: '400',
+    color: '#fff',
+    textAlign: 'center',
   },
   countdownContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: isSmallScreen ? 6 : spacing.md,
   },
   progressContainer: {
@@ -233,20 +210,20 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginBottom: 12,
   },
   shareButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    alignSelf: "center",
-    shadowColor: "#000",
+    alignSelf: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -254,11 +231,11 @@ const styles = StyleSheet.create({
   },
 
   shareButtonDisabled: {
-    backgroundColor: "#E5E5E5",
+    backgroundColor: '#E5E5E5',
   },
   shareButtonText: {
-    color: "#7a57f6",
+    color: '#7a57f6',
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

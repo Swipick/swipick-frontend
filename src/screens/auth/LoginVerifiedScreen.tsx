@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface LoginVerifiedScreenProps {
-  onNavigate: (screen: 'Landing' | 'Welcome' | 'Login' | 'Register') => void;
+  onNavigate: (screen: 'Landing' | 'Onboarding' | 'Login' | 'Register') => void;
 }
 
 export default function LoginVerifiedScreen({ onNavigate }: LoginVerifiedScreenProps) {

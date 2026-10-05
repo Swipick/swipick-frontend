@@ -12,8 +12,9 @@ interface BottomNavProps {
   selectedWeek?: number | null;
   onNavigateToResults: () => void;
   onNavigateToGioca?: () => void;
+  onNavigateToLeghe?: () => void;
   onNavigateToProfile: () => void;
-  activeTab?: 'gioca' | 'risultati' | 'profilo';
+  activeTab?: 'gioca' | 'risultati' | 'leghe' | 'profilo';
 }
 
 export default function BottomNav({
@@ -21,6 +22,7 @@ export default function BottomNav({
   selectedWeek,
   onNavigateToResults,
   onNavigateToGioca,
+  onNavigateToLeghe,
   onNavigateToProfile,
   activeTab = 'gioca',
 }: BottomNavProps) {
@@ -86,6 +88,34 @@ export default function BottomNav({
             ]}
           >
             Gioca
+          </Text>
+        </TouchableOpacity>
+
+        {/* Leghe Tab */}
+        <TouchableOpacity
+          style={styles.tab}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onNavigateToLeghe?.();
+          }}
+          activeOpacity={0.7}
+          disabled={!onNavigateToLeghe}
+        >
+          {activeTab === 'leghe' && <View style={styles.activeIndicator} />}
+          <View style={styles.iconContainer}>
+            <Ionicons
+              name="people"
+              size={isSmallScreen ? 20 : 24}
+              color={activeTab === 'leghe' ? '#6f49ff' : '#6B7280'}
+            />
+          </View>
+          <Text
+            style={[
+              styles.label,
+              activeTab === 'leghe' && styles.labelActive
+            ]}
+          >
+            Leghe
           </Text>
         </TouchableOpacity>
 

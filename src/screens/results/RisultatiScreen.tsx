@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,40 +11,32 @@ import {
   Animated,
   Dimensions,
   Vibration,
-} from "react-native";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import Svg, {
-  Path,
-  Defs,
-  LinearGradient as SvgLinearGradient,
-  Stop,
-} from "react-native-svg";
-import ConfettiCannon from "react-native-confetti-cannon";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuthStore } from "../../store/stores/useAuthStore";
-import { predictionsApi } from "../../services/api/predictions";
-import { fixturesApi } from "../../services/api/fixtures";
-import { colors, spacing } from "../../theme";
-import { formatKickoffTime } from "../../utils/formatters";
-import { computeWeekMeter, hasKickedOff } from "../../utils/weekMeter";
-import {
-  PredictionChoice,
-  WeeklyStats,
-  FixtureWithResult,
-} from "../../types/game.types";
-import { PixelPlayerLogo } from "../../components/game/PixelPlayerLogo";
-import { resolveTeamKey } from "../../utils/pixelPlayers";
-import { formatDateRange, getAdjacentWeekLabels } from "../../utils/dateRange";
-import GuestCTA from "../../components/common/GuestCTA";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import ConfettiCannon from 'react-native-confetti-cannon';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../store/stores/useAuthStore';
+import { predictionsApi } from '../../services/api/predictions';
+import { fixturesApi } from '../../services/api/fixtures';
+import { condividiEMisura } from '../../services/analytics';
+import { colors, spacing } from '../../theme';
+import { formatKickoffTime } from '../../utils/formatters';
+import { computeWeekMeter, hasKickedOff } from '../../utils/weekMeter';
+import { PredictionChoice, WeeklyStats, FixtureWithResult } from '../../types/game.types';
+import { PixelPlayerLogo } from '../../components/game/PixelPlayerLogo';
+import { resolveTeamKey } from '../../utils/pixelPlayers';
+import { formatDateRange, getAdjacentWeekLabels } from '../../utils/dateRange';
+import GuestCTA from '../../components/common/GuestCTA';
 
 type RisultatiScreenProps = {
-  mode?: "live" | "test";
+  mode?: 'live' | 'test';
 };
 
 interface MatchResult {
@@ -58,15 +44,13 @@ interface MatchResult {
   home: { name: string; score: number | null };
   away: { name: string; score: number | null };
   userPrediction: PredictionChoice | null;
-  actualResult: "1" | "X" | "2" | null;
+  actualResult: '1' | 'X' | '2' | null;
   isCorrect: boolean | null;
   kickoff: string;
   status: string;
 }
 
-export default function RisultatiScreen({
-  mode = "live",
-}: RisultatiScreenProps) {
+export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps) {
   // Selettore: re-render solo quando cambia user (non loading/error auth)
   const user = useAuthStore((s) => s.user);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -74,9 +58,7 @@ export default function RisultatiScreen({
   // season (last with results); it follows last-played once the new season
   // has played matches. Navigation stays within this season (MVP: stop at edges).
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
-  const [fixturesWithResults, setFixturesWithResults] = useState<
-    FixtureWithResult[]
-  >([]);
+  const [fixturesWithResults, setFixturesWithResults] = useState<FixtureWithResult[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -110,26 +92,26 @@ export default function RisultatiScreen({
           // finirebbe a un tocco di distanza.
           const liveFixtures = await fixturesApi.getFixturesWithResults(
             liveWeek,
-            lastPlayed.season
+            lastPlayed.season,
           );
           const weekStarted = liveFixtures.some((fixture) =>
-            hasKickedOff(fixture.status, fixture.match_date)
+            hasKickedOff(fixture.status, fixture.match_date),
           );
           const weekToShow = weekStarted ? liveWeek : liveWeek - 1;
           console.log(
-            `[RisultatiScreen] Live week ${liveWeek} ${weekStarted ? "gia' iniziata" : "non ancora iniziata"} -> apre su giornata ${weekToShow} (stagione ${lastPlayed.season})`
+            `[RisultatiScreen] Live week ${liveWeek} ${weekStarted ? "gia' iniziata" : 'non ancora iniziata'} -> apre su giornata ${weekToShow} (stagione ${lastPlayed.season})`,
           );
           setSelectedSeason(lastPlayed.season);
           setSelectedWeek(weekToShow);
         } else {
           console.log(
-            `[RisultatiScreen] Fallback last-played: stagione ${lastPlayed.season}, giornata ${lastPlayed.week}`
+            `[RisultatiScreen] Fallback last-played: stagione ${lastPlayed.season}, giornata ${lastPlayed.week}`,
           );
           setSelectedSeason(lastPlayed.season);
           setSelectedWeek(lastPlayed.week);
         }
       } catch (error) {
-        console.error("[RisultatiScreen] Error initializing week:", error);
+        console.error('[RisultatiScreen] Error initializing week:', error);
         setSelectedSeason(2025);
         setSelectedWeek(1);
       }
@@ -151,16 +133,16 @@ export default function RisultatiScreen({
       if (stored) {
         const parsed = JSON.parse(stored);
         console.log(
-          "[RisultatiScreen] Loaded revealed state:",
+          '[RisultatiScreen] Loaded revealed state:',
           Object.keys(parsed).length,
-          "revealed"
+          'revealed',
         );
         setRevealed(parsed);
       } else {
         setRevealed({});
       }
     } catch (error) {
-      console.error("[RisultatiScreen] Error loading revealed state:", error);
+      console.error('[RisultatiScreen] Error loading revealed state:', error);
       setRevealed({});
     }
   };
@@ -169,18 +151,14 @@ export default function RisultatiScreen({
   const saveRevealedState = async (
     week: number,
     userId: string,
-    state: Record<string, boolean>
+    state: Record<string, boolean>,
   ) => {
     try {
       const key = getRevealKey(week, userId);
       await AsyncStorage.setItem(key, JSON.stringify(state));
-      console.log(
-        "[RisultatiScreen] Saved revealed state:",
-        Object.keys(state).length,
-        "revealed"
-      );
+      console.log('[RisultatiScreen] Saved revealed state:', Object.keys(state).length, 'revealed');
     } catch (error) {
-      console.error("[RisultatiScreen] Error saving revealed state:", error);
+      console.error('[RisultatiScreen] Error saving revealed state:', error);
     }
   };
 
@@ -203,18 +181,12 @@ export default function RisultatiScreen({
     }
 
     try {
-      console.log("[RisultatiScreen] Loading data for week", selectedWeek);
+      console.log('[RisultatiScreen] Loading data for week', selectedWeek);
 
       // Load fixtures with results for the week (season-scoped).
       // Public data: available also in guest mode.
-      const fixturesData = await fixturesApi.getFixturesWithResults(
-        selectedWeek,
-        season
-      );
-      console.log(
-        "[RisultatiScreen] Fixtures with results loaded:",
-        fixturesData.length
-      );
+      const fixturesData = await fixturesApi.getFixturesWithResults(selectedWeek, season);
+      console.log('[RisultatiScreen] Fixtures with results loaded:', fixturesData.length);
       setFixturesWithResults(fixturesData);
 
       // Personal predictions are account-based: load only for authenticated users.
@@ -223,12 +195,9 @@ export default function RisultatiScreen({
           user.uid,
           selectedWeek,
           mode,
-          season
+          season,
         );
-        console.log(
-          "[RisultatiScreen] Predictions loaded:",
-          stats.predictions.length
-        );
+        console.log('[RisultatiScreen] Predictions loaded:', stats.predictions.length);
         setWeeklyStats(stats);
 
         // Load revealed state from AsyncStorage
@@ -238,8 +207,8 @@ export default function RisultatiScreen({
         setRevealed({});
       }
     } catch (error) {
-      console.error("[RisultatiScreen] Error loading data:", error);
-      Alert.alert("Errore", "Impossibile caricare i risultati");
+      console.error('[RisultatiScreen] Error loading data:', error);
+      Alert.alert('Errore', 'Impossibile caricare i risultati');
     } finally {
       setLoading(false);
       setContentLoading(false);
@@ -251,19 +220,14 @@ export default function RisultatiScreen({
     if (!fixturesWithResults.length) return [];
 
     console.log(
-      "[RisultatiScreen] Mapping predictions. Total predictions:",
-      weeklyStats?.predictions.length ?? 0
+      '[RisultatiScreen] Mapping predictions. Total predictions:',
+      weeklyStats?.predictions.length ?? 0,
     );
-    console.log(
-      "[RisultatiScreen] First fixture ID:",
-      fixturesWithResults[0]?.id
-    );
+    console.log('[RisultatiScreen] First fixture ID:', fixturesWithResults[0]?.id);
 
     const results = fixturesWithResults.map((fixture) => {
       // In guest mode weeklyStats is null → no personal prediction badges.
-      const prediction = weeklyStats?.predictions.find(
-        (p) => p.fixtureId === fixture.id
-      );
+      const prediction = weeklyStats?.predictions.find((p) => p.fixtureId === fixture.id);
 
       // Use actual scores from backend
       const homeScore = fixture.home_score;
@@ -271,8 +235,7 @@ export default function RisultatiScreen({
       const actualResult = fixture.result;
 
       // Check if prediction is correct
-      const isCorrect =
-        prediction && actualResult ? prediction.choice === actualResult : null;
+      const isCorrect = prediction && actualResult ? prediction.choice === actualResult : null;
 
       const result = {
         fixtureId: fixture.id,
@@ -292,7 +255,7 @@ export default function RisultatiScreen({
       };
 
       console.log(
-        `[RisultatiScreen] Match ${fixture.home_team} vs ${fixture.away_team}: prediction=${prediction?.choice}, result=${actualResult}, isCorrect=${isCorrect}`
+        `[RisultatiScreen] Match ${fixture.home_team} vs ${fixture.away_team}: prediction=${prediction?.choice}, result=${actualResult}, isCorrect=${isCorrect}`,
       );
 
       return result;
@@ -312,17 +275,15 @@ export default function RisultatiScreen({
           actualResult: m.actualResult,
           isCorrect: m.isCorrect,
           revealed: !!revealed[m.fixtureId],
-        }))
+        })),
       ),
-    [matchResults, revealed]
+    [matchResults, revealed],
   );
 
   // Fire confetti when a match is recently revealed
   useEffect(() => {
     if (recentlyRevealed) {
-      const match = matchResults.find(
-        (m) => m.fixtureId === recentlyRevealed.id
-      );
+      const match = matchResults.find((m) => m.fixtureId === recentlyRevealed.id);
       if (match?.isCorrect === true) {
         confettiRef.current?.start();
         // Trigger longer vibration pattern for correct prediction
@@ -336,12 +297,12 @@ export default function RisultatiScreen({
   // Calculate date range for week
   const dateRange = useMemo(
     () => formatDateRange(fixturesWithResults.map((m) => m.match_date)),
-    [fixturesWithResults]
+    [fixturesWithResults],
   );
 
   const weekLabels = useMemo(
     () => (selectedWeek !== null ? getAdjacentWeekLabels(selectedWeek) : null),
-    [selectedWeek]
+    [selectedWeek],
   );
 
   // Handle share
@@ -357,30 +318,26 @@ export default function RisultatiScreen({
       message += `\nE tu?`;
       message += `\n\nhttps://swipick-frontend-production.up.railway.app/risultati?mode=live`;
 
-      await Share.share({
-        title: `Giornata ${selectedWeek} — Swipick`,
-        message,
+      await condividiEMisura({
+        punto: 'risultati',
+        titolo: `Giornata ${selectedWeek} — Swipick`,
+        messaggio: message,
+        percentuale: meter.percent,
       });
     } catch (error) {
-      console.error("[RisultatiScreen] Share error:", error);
+      console.error('[RisultatiScreen] Share error:', error);
     }
   };
 
   // Handle reveal with confetti
-  const handleReveal = async (
-    fixtureId: string,
-    origin: { x: number; y: number }
-  ) => {
+  const handleReveal = async (fixtureId: string, origin: { x: number; y: number }) => {
     if (selectedWeek === null) return;
 
     const match = matchResults.find((m) => m.fixtureId === fixtureId);
 
     // Check if match has finished
     if (!match?.actualResult) {
-      Alert.alert(
-        "Il risultato non è ancora disponibile",
-        "La partita non è ancora terminata."
-      );
+      Alert.alert('Il risultato non è ancora disponibile', 'La partita non è ancora terminata.');
       return;
     }
 
@@ -398,11 +355,11 @@ export default function RisultatiScreen({
   };
 
   const handlePreviousWeek = () => {
-    setSelectedWeek((prev) => prev !== null ? Math.max(1, prev - 1) : 1);
+    setSelectedWeek((prev) => (prev !== null ? Math.max(1, prev - 1) : 1));
   };
 
   const handleNextWeek = () => {
-    setSelectedWeek((prev) => prev !== null ? Math.min(38, prev + 1) : 1);
+    setSelectedWeek((prev) => (prev !== null ? Math.min(38, prev + 1) : 1));
   };
 
   if (loading || selectedWeek === null) {
@@ -416,15 +373,12 @@ export default function RisultatiScreen({
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        stickyHeaderIndices={[0]}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContainer} stickyHeaderIndices={[0]}>
         {/* Sticky Header with Frosted Glass */}
         <View style={styles.stickyHeaderContainer}>
           {/* Week Selector Header with Gradient */}
           <LinearGradient
-            colors={["#554099", "#3d2d73"]}
+            colors={['#554099', '#3d2d73']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={styles.headerGradient}
@@ -444,13 +398,9 @@ export default function RisultatiScreen({
                     },
                   ]}
                 >
-                  <Ionicons
-                    name="chevron-back"
-                    size={isSmallScreen ? 14 : 16}
-                    color="#fff"
-                  />
+                  <Ionicons name="chevron-back" size={isSmallScreen ? 14 : 16} color="#fff" />
                   <Text numberOfLines={1} style={styles.sideWeekText}>
-                    {weekLabels?.previous ?? ""}
+                    {weekLabels?.previous ?? ''}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -466,9 +416,7 @@ export default function RisultatiScreen({
                     </View>
                   )}
                 </View>
-                {dateRange !== null && (
-                  <Text style={styles.dateRangeText}>{dateRange}</Text>
-                )}
+                {dateRange !== null && <Text style={styles.dateRangeText}>{dateRange}</Text>}
               </View>
 
               <TouchableOpacity
@@ -480,30 +428,21 @@ export default function RisultatiScreen({
                   style={[
                     styles.sideWeekInner,
                     {
-                      opacity:
-                        selectedWeek === 38 || contentLoading ? 0.1 : 0.6,
+                      opacity: selectedWeek === 38 || contentLoading ? 0.1 : 0.6,
                     },
                   ]}
                 >
                   <Text numberOfLines={1} style={styles.sideWeekText}>
-                    {weekLabels?.next ?? ""}
+                    {weekLabels?.next ?? ''}
                   </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={isSmallScreen ? 14 : 16}
-                    color="#fff"
-                  />
+                  <Ionicons name="chevron-forward" size={isSmallScreen ? 14 : 16} color="#fff" />
                 </View>
               </TouchableOpacity>
             </View>
           </LinearGradient>
 
           {/* Meter Container - Frosted Glass Background */}
-          <BlurView
-            intensity={40}
-            tint="light"
-            style={styles.meterContainerWrapper}
-          >
+          <BlurView intensity={40} tint="light" style={styles.meterContainerWrapper}>
             {user ? (
               <View style={styles.meterContainer}>
                 <CircularMeter percent={meter.percent} />
@@ -513,17 +452,16 @@ export default function RisultatiScreen({
                 {meter.toPlay > 0 ? (
                   <Text style={styles.meterHint}>
                     <Text style={styles.meterHintStrong}>
-                      {meter.toPlay} {meter.toPlay === 1 ? "partita" : "partite"}
+                      {meter.toPlay} {meter.toPlay === 1 ? 'partita' : 'partite'}
                     </Text>
-                    {" ancora da giocare"}
+                    {' ancora da giocare'}
                   </Text>
                 ) : meter.toReveal > 0 ? (
                   <Text style={styles.meterHint}>
                     <Text style={styles.meterHintStrong}>
-                      {meter.toReveal}{" "}
-                      {meter.toReveal === 1 ? "risultato" : "risultati"}
+                      {meter.toReveal} {meter.toReveal === 1 ? 'risultato' : 'risultati'}
                     </Text>
-                    {" da scoprire"}
+                    {' da scoprire'}
                   </Text>
                 ) : null}
 
@@ -531,10 +469,7 @@ export default function RisultatiScreen({
                     quando la giornata e' conclusa: chi tiene i risultati per il
                     lunedi' altrimenti condividerebbe uno 0% che non merita. */}
                 {meter.isFinal && (
-                  <TouchableOpacity
-                    style={styles.shareButton}
-                    onPress={handleShare}
-                  >
+                  <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
                     <Ionicons name="share-outline" size={18} color="#fff" />
                     <Text style={styles.shareText}>Condividi risultato</Text>
                   </TouchableOpacity>
@@ -560,9 +495,7 @@ export default function RisultatiScreen({
           <View style={styles.matchList}>
             {matchResults.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  Nessuna predizione per questa settimana
-                </Text>
+                <Text style={styles.emptyText}>Nessuna predizione per questa settimana</Text>
               </View>
             ) : (
               matchResults.map((match) => (
@@ -583,7 +516,7 @@ export default function RisultatiScreen({
         ref={confettiRef}
         count={90}
         origin={recentlyRevealed?.origin || { x: 0, y: 0 }}
-        colors={["#6366f1", "#ffffff"]}
+        colors={['#6366f1', '#ffffff']}
         fadeOut
         autoStart={false}
       />
@@ -601,9 +534,7 @@ function CircularMeter({ percent }: { percent: number }) {
 
   // The path is the same for both background and progress
   // Scaled path for small screens
-  const arcPath = isSmallScreen
-    ? "M 14 82 A 67 67 0 0 1 146 82"
-    : "M 18 102 A 84 84 0 0 1 182 102";
+  const arcPath = isSmallScreen ? 'M 14 82 A 67 67 0 0 1 146 82' : 'M 18 102 A 84 84 0 0 1 182 102';
 
   // Calculate the total length of the semicircle arc
   // Arc length = radius × angle (in radians)
@@ -620,19 +551,13 @@ function CircularMeter({ percent }: { percent: number }) {
   // SVG dimensions
   const svgWidth = isSmallScreen ? 160 : 200;
   const svgHeight = isSmallScreen ? 88 : 110;
-  const viewBox = isSmallScreen ? "0 0 160 88" : "0 0 200 110";
+  const viewBox = isSmallScreen ? '0 0 160 88' : '0 0 200 110';
 
   return (
     <View style={styles.meter}>
       <Svg width={svgWidth} height={svgHeight} viewBox={viewBox}>
         <Defs>
-          <SvgLinearGradient
-            id="meterGradient"
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="0%"
-          >
+          <SvgLinearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <Stop offset="0%" stopColor="#c4b5fd" />
             <Stop offset="100%" stopColor="#7c3aed" />
           </SvgLinearGradient>
@@ -679,13 +604,13 @@ function MatchCard({
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const buttonRef = useRef<View>(null);
 
-  const isPlayable = match.status === "FINISHED" && !!match.actualResult;
+  const isPlayable = match.status === 'FINISHED' && !!match.actualResult;
   // formatKickoffTime rende "lun, 14/09, 18:30": la card lo mostra su due righe.
   const [kickoffDay, kickoffHour] = (() => {
-    const parts = formatKickoffTime(match.kickoff).split(", ");
+    const parts = formatKickoffTime(match.kickoff).split(', ');
     return parts.length >= 3
       ? [`${parts[0]}, ${parts[1]}`, parts[2]]
-      : [parts[0] ?? "", parts[1] ?? ""];
+      : [parts[0] ?? '', parts[1] ?? ''];
   })();
 
   const handleRevealPress = async () => {
@@ -693,7 +618,7 @@ function MatchCard({
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // If match not finished, shake the button
-    if (!match.actualResult || match.status !== "FINISHED") {
+    if (!match.actualResult || match.status !== 'FINISHED') {
       Animated.sequence([
         Animated.timing(shakeAnim, {
           toValue: 10,
@@ -717,10 +642,7 @@ function MatchCard({
         }),
       ]).start();
 
-      Alert.alert(
-        "Partita non terminata",
-        "Il risultato non è ancora disponibile"
-      );
+      Alert.alert('Partita non terminata', 'Il risultato non è ancora disponibile');
       return;
     }
 
@@ -746,9 +668,7 @@ function MatchCard({
             </View>
           ) : (
             <View style={styles.teamLogoFallback}>
-              <Text style={styles.teamLogoText}>
-                {match.home.name.charAt(0).toUpperCase()}
-              </Text>
+              <Text style={styles.teamLogoText}>{match.home.name.charAt(0).toUpperCase()}</Text>
             </View>
           )}
           <Text style={styles.teamName} numberOfLines={1}>
@@ -764,9 +684,7 @@ function MatchCard({
             </View>
           ) : (
             <View style={styles.teamLogoFallback}>
-              <Text style={styles.teamLogoText}>
-                {match.away.name.charAt(0).toUpperCase()}
-              </Text>
+              <Text style={styles.teamLogoText}>{match.away.name.charAt(0).toUpperCase()}</Text>
             </View>
           )}
           <Text style={styles.teamName} numberOfLines={1}>
@@ -778,28 +696,17 @@ function MatchCard({
       {/* Scores Section */}
       <View style={styles.scoresColumn}>
         <Text style={styles.score}>
-          {isRevealed
-            ? match.home.score !== null
-              ? match.home.score
-              : "ND"
-            : "–"}
+          {isRevealed ? (match.home.score !== null ? match.home.score : 'ND') : '–'}
         </Text>
         <Text style={styles.score}>
-          {isRevealed
-            ? match.away.score !== null
-              ? match.away.score
-              : "ND"
-            : "–"}
+          {isRevealed ? (match.away.score !== null ? match.away.score : 'ND') : '–'}
         </Text>
       </View>
 
       {/* Reveal Button Section */}
       <Animated.View
         ref={buttonRef}
-        style={[
-          styles.buttonColumn,
-          { transform: [{ translateX: shakeAnim }] },
-        ]}
+        style={[styles.buttonColumn, { transform: [{ translateX: shakeAnim }] }]}
       >
         {!isRevealed ? (
           isPlayable ? (
@@ -830,13 +737,11 @@ function MatchCard({
 
       {/* Prediction Badges Section */}
       <View style={styles.badgesColumn}>
-        {(["1", "X", "2"] as const).map((choice) => {
+        {(['1', 'X', '2'] as const).map((choice) => {
           const isUserChoice = match.userPrediction === choice;
           const isActualResult = isRevealed && match.actualResult === choice;
-          const isCorrectChoice =
-            isRevealed && isUserChoice && match.isCorrect === true;
-          const isWrongChoice =
-            isRevealed && isUserChoice && match.isCorrect === false;
+          const isCorrectChoice = isRevealed && isUserChoice && match.isCorrect === true;
+          const isWrongChoice = isRevealed && isUserChoice && match.isCorrect === false;
 
           // Show green for actual result (always), red for wrong user prediction
           const showAsCorrect = isActualResult;
@@ -874,7 +779,7 @@ function MatchCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: '#F9FAFB',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -882,8 +787,8 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
     marginTop: spacing.md,
@@ -892,14 +797,14 @@ const styles = StyleSheet.create({
   },
   contentLoadingContainer: {
     padding: spacing.xl,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     minHeight: 300,
   },
 
   // Sticky Header - Frosted Glass Container
   stickyHeaderContainer: {
-    backgroundColor: "transparent", // Allow blur to show through
+    backgroundColor: 'transparent', // Allow blur to show through
     zIndex: 30, // Above scrollable content
     paddingBottom: 8, // pb-2
   },
@@ -909,7 +814,7 @@ const styles = StyleSheet.create({
     paddingTop: isSmallScreen ? 35 : 60,
     paddingHorizontal: 16,
     paddingBottom: isSmallScreen ? 12 : 20, // Extend to overlap with blur
-    shadowColor: "#554099",
+    shadowColor: '#554099',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -921,12 +826,12 @@ const styles = StyleSheet.create({
     paddingTop: 0, // No top padding
     paddingBottom: 8, // pb-2
     marginTop: -20, // Move up by 20px to overlap header
-    overflow: "hidden", // Required for BlurView
+    overflow: 'hidden', // Required for BlurView
   },
   weekSelector: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: isSmallScreen ? 12 : 24,
     minHeight: isSmallScreen ? 40 : 60,
   },
@@ -937,130 +842,130 @@ const styles = StyleSheet.create({
     // pastiglia finiva sopra i numeri laterali. 48 resta sopra i 44pt di
     // bersaglio tattile.
     width: 48,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   sideWeekRight: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   sideWeekInner: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 2,
   },
   sideWeekText: {
     fontSize: isSmallScreen ? 12 : 14,
-    fontWeight: "500",
-    color: "#fff",
+    fontWeight: '500',
+    color: '#fff',
   },
   centerWeek: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   currentWeekTitle: {
     fontSize: isSmallScreen ? 18 : 24,
-    fontWeight: "bold",
-    color: "#fff",
+    fontWeight: 'bold',
+    color: '#fff',
     flexShrink: 1,
   },
   dateRangeText: {
     fontSize: isSmallScreen ? 12 : 14,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: isSmallScreen ? 4 : 8,
   },
 
   // Success Meter
   meterHint: {
     fontSize: isSmallScreen ? 12 : 13,
-    color: "#4b5563",
+    color: '#4b5563',
     marginTop: isSmallScreen ? 2 : 4,
-    textAlign: "center",
+    textAlign: 'center',
   },
   meterHintStrong: {
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: '600',
+    color: '#111827',
   },
   weekTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
     // Se anche cosi' non bastasse (titoli lunghi, corpi accessibilita'), a
     // cedere e' il titolo: la pastiglia non si deforma e niente straborda.
-    maxWidth: "100%",
+    maxWidth: '100%',
   },
   liveBadge: {
     flexShrink: 0,
-    backgroundColor: "#f7c948",
+    backgroundColor: '#f7c948',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   liveBadgeText: {
     fontSize: isSmallScreen ? 10 : 11,
-    fontWeight: "600",
-    color: "#3d2d73",
+    fontWeight: '600',
+    color: '#3d2d73',
     letterSpacing: 0.3,
   },
   kickoffBox: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: '#f9fafb',
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: '#e5e7eb',
     paddingHorizontal: isSmallScreen ? 6 : 8,
     paddingVertical: isSmallScreen ? 6 : 8,
     borderRadius: 6,
-    alignItems: "center",
+    alignItems: 'center',
   },
   kickoffDay: {
     fontSize: isSmallScreen ? 9 : 11,
-    fontWeight: "600",
-    color: "#9ca3af",
+    fontWeight: '600',
+    color: '#9ca3af',
     lineHeight: isSmallScreen ? 12 : 14,
   },
   kickoffHour: {
     fontSize: isSmallScreen ? 9 : 11,
-    fontWeight: "700",
-    color: "#6B7280",
+    fontWeight: '700',
+    color: '#6B7280',
     lineHeight: isSmallScreen ? 12 : 14,
   },
   meterContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: isSmallScreen ? 6 : 12,
   },
   meter: {
     width: isSmallScreen ? 160 : 200,
     height: isSmallScreen ? 88 : 110,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   percentText: {
-    position: "absolute",
-    top: "58%",
+    position: 'absolute',
+    top: '58%',
     fontSize: isSmallScreen ? 22 : 28,
-    fontWeight: "bold",
-    color: "#000",
+    fontWeight: 'bold',
+    color: '#000',
   },
 
   // Share Button
   shareButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: isSmallScreen ? 6 : 8,
-    backgroundColor: "#312e81",
+    backgroundColor: '#312e81',
     paddingHorizontal: 8,
     paddingVertical: isSmallScreen ? 10 : 16,
     borderRadius: 12,
     width: isSmallScreen ? 170 : 200,
-    justifyContent: "center",
+    justifyContent: 'center',
     marginTop: isSmallScreen ? 4 : 8,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   shareText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: isSmallScreen ? 12 : 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 
   // Match List
@@ -1070,28 +975,28 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     padding: spacing.xl,
-    alignItems: "center",
+    alignItems: 'center',
   },
   emptyText: {
     fontSize: 16,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
 
   // Match Card
   matchCard: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: isSmallScreen ? 12 : 16,
     padding: isSmallScreen ? 10 : 16,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 24,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     gap: isSmallScreen ? 8 : 12,
   },
 
@@ -1101,50 +1006,50 @@ const styles = StyleSheet.create({
     gap: isSmallScreen ? 8 : 12,
   },
   teamRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: isSmallScreen ? 8 : 12,
     height: isSmallScreen ? 40 : 56,
   },
   teamLogoImage: {
     width: isSmallScreen ? 32 : 48,
     height: isSmallScreen ? 32 : 48,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   teamLogoFallback: {
     width: isSmallScreen ? 32 : 48,
     height: isSmallScreen ? 32 : 48,
-    backgroundColor: "#f9fafb",
+    backgroundColor: '#f9fafb',
     borderRadius: 0,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   teamLogoText: {
     fontSize: isSmallScreen ? 14 : 20,
-    fontWeight: "bold",
-    color: "#6366f1",
+    fontWeight: 'bold',
+    color: '#6366f1',
   },
   teamName: {
     flex: 1,
     fontSize: isSmallScreen ? 12 : 14,
-    fontWeight: "600",
-    color: "#000",
+    fontWeight: '600',
+    color: '#000',
   },
 
   // Scores Column
   scoresColumn: {
     gap: isSmallScreen ? 8 : 12,
     minWidth: isSmallScreen ? 24 : 30,
-    alignItems: "center",
+    alignItems: 'center',
   },
   score: {
     fontSize: isSmallScreen ? 18 : 24,
-    fontWeight: "600",
-    color: "#000",
+    fontWeight: '600',
+    color: '#000',
     height: isSmallScreen ? 40 : 56,
     lineHeight: isSmallScreen ? 40 : 56,
-    textAlign: "center",
+    textAlign: 'center',
     minWidth: isSmallScreen ? 14 : 16,
   },
 
@@ -1153,29 +1058,29 @@ const styles = StyleSheet.create({
     minWidth: isSmallScreen ? 56 : 72,
   },
   revealButton: {
-    backgroundColor: "rgba(99, 102, 241, 0.9)",
+    backgroundColor: 'rgba(99, 102, 241, 0.9)',
     paddingHorizontal: isSmallScreen ? 6 : 8,
     paddingVertical: isSmallScreen ? 6 : 8,
     borderRadius: 6,
-    alignItems: "center",
+    alignItems: 'center',
   },
   revealButtonText: {
     fontSize: isSmallScreen ? 9 : 11,
-    fontWeight: "600",
-    color: "#fff",
+    fontWeight: '600',
+    color: '#fff',
     lineHeight: isSmallScreen ? 12 : 14,
   },
   finishedButton: {
-    backgroundColor: "#e5e7eb",
+    backgroundColor: '#e5e7eb',
     paddingHorizontal: isSmallScreen ? 6 : 8,
     paddingVertical: isSmallScreen ? 6 : 8,
     borderRadius: 6,
-    alignItems: "center",
+    alignItems: 'center',
   },
   finishedButtonText: {
     fontSize: isSmallScreen ? 9 : 11,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: '600',
+    color: '#374151',
     lineHeight: isSmallScreen ? 12 : 14,
   },
 
@@ -1187,34 +1092,34 @@ const styles = StyleSheet.create({
     width: isSmallScreen ? 26 : 32,
     height: isSmallScreen ? 26 : 32,
     borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badgeDefault: {
-    backgroundColor: "#f3f4f6",
+    backgroundColor: '#f3f4f6',
   },
   badgeSelected: {
-    backgroundColor: "#e0e7ff",
+    backgroundColor: '#e0e7ff',
     borderWidth: 2,
-    borderColor: "#818cf8",
+    borderColor: '#818cf8',
   },
   badgeCorrect: {
-    backgroundColor: "#ccffb3",
+    backgroundColor: '#ccffb3',
   },
   badgeWrong: {
-    backgroundColor: "#ffb3b3",
+    backgroundColor: '#ffb3b3',
   },
   badgeText: {
     fontSize: isSmallScreen ? 12 : 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   badgeTextDefault: {
-    color: "#374151",
+    color: '#374151',
   },
   badgeTextSelected: {
-    color: "#4338ca",
+    color: '#4338ca',
   },
   badgeTextResult: {
-    color: "#000",
+    color: '#000',
   },
 });

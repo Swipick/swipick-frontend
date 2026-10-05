@@ -16,6 +16,8 @@ import { colors, spacing } from '../../theme';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 import GuestCTA from '../../components/common/GuestCTA';
 import { profileApi } from '../../services/api/profile';
+import { condividiEMisura } from '../../services/analytics';
+import { percentualeDa } from '../../utils/percentuale';
 import { UserSummary } from '../../types/profile';
 import {
   normalizeSummaryResponse,
@@ -100,7 +102,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
         if (avatarResponse?.data) {
           const avatarDataUrl = avatarToDataUrl(
             avatarResponse.data.mimeType,
-            avatarResponse.data.base64
+            avatarResponse.data.base64,
           );
           setAvatarUrl(avatarDataUrl); // Override Google avatar if custom exists
         }
@@ -114,16 +116,13 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
     }
   };
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        title: 'Swipick',
-        message: generateShareMessage(kpi),
-      });
-    } catch (err) {
-      console.error('[ProfiloScreen] Share error:', err);
-    }
-  };
+  const handleShare = () =>
+    condividiEMisura({
+      punto: 'profilo',
+      titolo: 'Swipick',
+      messaggio: generateShareMessage(kpi),
+      percentuale: percentualeDa(kpi.average),
+    });
 
   const handleSettingsPress = () => {
     if (navigation) {
@@ -195,9 +194,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
             <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarInitial}>
-                {getAvatarInitial(displayName, email)}
-              </Text>
+              <Text style={styles.avatarInitial}>{getAvatarInitial(displayName, email)}</Text>
             </View>
           )}
 
@@ -218,14 +215,10 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
               denominatore non si puo' verificare. */}
           <View style={styles.card}>
             <View style={styles.averageRow}>
-              <Text style={styles.averageValue}>
-                {kpi.hasResults ? kpi.average : '—'}
-              </Text>
+              <Text style={styles.averageValue}>{kpi.hasResults ? kpi.average : '—'}</Text>
               <Text style={styles.averageLabel}>di media</Text>
             </View>
-            <Text
-              style={[styles.averageDetail, !kpi.hasResults && styles.muted]}
-            >
+            <Text style={[styles.averageDetail, !kpi.hasResults && styles.muted]}>
               {kpi.hasResults
                 ? `${kpi.correct} ${kpi.correct === 1 ? 'pronostico indovinato' : 'pronostici indovinati'} su ${kpi.finished}`
                 : 'Nessun pronostico ancora'}
@@ -249,17 +242,12 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
                   {kpi.chart.map((bar) => (
                     <View key={bar.week} style={styles.chartColumn}>
                       {/* Sopra le sei barre le etichette si toccherebbero */}
-                      {kpi.chart.length <= 6 && (
-                        <Text style={styles.chartValue}>{bar.pct}</Text>
-                      )}
+                      {kpi.chart.length <= 6 && <Text style={styles.chartValue}>{bar.pct}</Text>}
                       <View
                         style={[
                           styles.chartBar,
                           {
-                            height: Math.max(
-                              4,
-                              (bar.accuracy / chartMax) * CHART_HEIGHT
-                            ),
+                            height: Math.max(4, (bar.accuracy / chartMax) * CHART_HEIGHT),
                           },
                         ]}
                       />
@@ -273,16 +261,12 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
                   <View style={styles.statCell}>
                     <Text style={styles.statLabel}>Migliore</Text>
                     <Text style={styles.statValue}>{kpi.best.pct}</Text>
-                    <Text style={styles.statWeek}>
-                      {ordinalWeek(kpi.best.week)}
-                    </Text>
+                    <Text style={styles.statWeek}>{ordinalWeek(kpi.best.week)}</Text>
                   </View>
                   <View style={styles.statCell}>
                     <Text style={styles.statLabel}>Peggiore</Text>
                     <Text style={styles.statValue}>{kpi.worst.pct}</Text>
-                    <Text style={styles.statWeek}>
-                      {ordinalWeek(kpi.worst.week)}
-                    </Text>
+                    <Text style={styles.statWeek}>{ordinalWeek(kpi.worst.week)}</Text>
                   </View>
                   <View style={styles.statCell}>
                     <Text style={styles.statLabel}>Ultima</Text>
@@ -297,9 +281,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
                       {kpi.last.trend === 'up' ? ' ▲' : ''}
                       {kpi.last.trend === 'down' ? ' ▼' : ''}
                     </Text>
-                    <Text style={styles.statWeek}>
-                      {ordinalWeek(kpi.last.week)}
-                    </Text>
+                    <Text style={styles.statWeek}>{ordinalWeek(kpi.last.week)}</Text>
                   </View>
                 </View>
               </>
