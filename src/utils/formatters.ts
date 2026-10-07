@@ -1,31 +1,19 @@
 /**
  * Formatting utility functions
  */
+import { calcioDInizioItaliano } from './oraItaliana';
 
 /**
- * Format kickoff time to Italian format: "gio, 24/10, 20:45"
+ * Format kickoff time to Italian format: "gio, 24/10, 20:45".
+ *
+ * Sempre in ora italiana: l'orario di una partita di Serie A non dipende da
+ * dove si trova il telefono. Il calcolo sta in `oraItaliana.ts`, dove è
+ * coperto da test — prima qui si usava `getHours()`, cioè il fuso del
+ * dispositivo, e `dateRange` usava invece l'UTC: due schermate della stessa
+ * app potevano mostrare giorni diversi per la stessa partita.
  */
-export const formatKickoffTime = (isoDate: string): string => {
-  try {
-    const date = new Date(isoDate);
-
-    // Get day of week (short, Italian)
-    const dayOfWeek = date.toLocaleDateString('it-IT', { weekday: 'short' });
-
-    // Get date parts
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-
-    // Get time
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-
-    return `${dayOfWeek}, ${day}/${month}, ${hours}:${minutes}`;
-  } catch (error) {
-    console.error('[Formatters] Error formatting kickoff time:', error);
-    return isoDate;
-  }
-};
+export const formatKickoffTime = (isoDate: string): string =>
+  calcioDInizioItaliano(new Date(isoDate)) ?? isoDate;
 
 /**
  * Format win rate as percentage
