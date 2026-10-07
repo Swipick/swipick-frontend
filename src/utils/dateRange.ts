@@ -1,6 +1,7 @@
 /**
  * Date range and week navigation helpers for the Risultati screen.
  */
+import { giornoMeseItaliano } from './oraItaliana';
 
 /**
  * Format the date range of a giornata as "dal DD/MM al DD/MM".
@@ -9,22 +10,21 @@
  * depend on the JS engine locale data. Invalid dates are ignored; returns
  * null when there is nothing valid to format, so the caller can render an
  * empty state instead of invented dates.
+ *
+ * Le date sono in ora italiana, come gli orari di calcio d'inizio: prima qui
+ * si leggeva l'UTC e altrove il fuso del dispositivo, e le due cose potevano
+ * non concordare sul giorno.
  */
 export const formatDateRange = (isoDates: string[]): string | null => {
-  const times = isoDates
-    .map((d) => new Date(d).getTime())
-    .filter((t) => !Number.isNaN(t));
+  const times = isoDates.map((d) => new Date(d).getTime()).filter((t) => !Number.isNaN(t));
 
   if (times.length === 0) return null;
 
-  const toIt = (t: number): string => {
-    const d = new Date(t);
-    const day = d.getUTCDate().toString().padStart(2, '0');
-    const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
-    return `${day}/${month}`;
-  };
+  const primo = giornoMeseItaliano(new Date(Math.min(...times)));
+  const ultimo = giornoMeseItaliano(new Date(Math.max(...times)));
+  if (!primo || !ultimo) return null;
 
-  return `dal ${toIt(Math.min(...times))} al ${toIt(Math.max(...times))}`;
+  return `dal ${primo} al ${ultimo}`;
 };
 
 export interface AdjacentWeekLabels {

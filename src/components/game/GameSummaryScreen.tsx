@@ -1,14 +1,10 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { MatchCard, PredictionChoice } from '../../types/game.types';
 import { PixelPlayerLogo } from './PixelPlayerLogo';
 import { resolveTeamKey } from '../../utils/pixelPlayers';
 import { isAnswered } from '../../utils/prediction';
+import { formatKickoffTime } from '../../utils/formatters';
 import { colors } from '../../theme';
 
 interface GameSummaryScreenProps {
@@ -22,9 +18,7 @@ function TeamLogo({ teamName }: { teamName: string }) {
   if (!resolveTeamKey(teamName)) {
     return (
       <View style={styles.logoFallback}>
-        <Text style={styles.logoFallbackText}>
-          {teamName.charAt(0).toUpperCase()}
-        </Text>
+        <Text style={styles.logoFallbackText}>{teamName.charAt(0).toUpperCase()}</Text>
       </View>
     );
   }
@@ -37,20 +31,9 @@ function TeamLogo({ teamName }: { teamName: string }) {
 }
 
 // Choice Badge Component
-function ChoiceBadge({
-  label,
-  isSelected,
-}: {
-  label: '1' | 'X' | '2';
-  isSelected: boolean;
-}) {
+function ChoiceBadge({ label, isSelected }: { label: '1' | 'X' | '2'; isSelected: boolean }) {
   return (
-    <View
-      style={[
-        styles.badge,
-        isSelected ? styles.badgeSelected : styles.badgeUnselected,
-      ]}
-    >
+    <View style={[styles.badge, isSelected ? styles.badgeSelected : styles.badgeUnselected]}>
       <Text
         style={[
           styles.badgeText,
@@ -68,87 +51,72 @@ export default function GameSummaryScreen({
   predictions,
   headerHeight = 160,
 }: GameSummaryScreenProps) {
-  const formatKickoff = (isoDate: string) => {
-    const date = new Date(isoDate);
-
-    // Format: "gio, 24/10, 20:45"
-    const weekday = date.toLocaleDateString('it-IT', { weekday: 'short' });
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${weekday}, ${day}/${month}, ${hours}:${minutes}`;
-  };
+  // Era una copia di formatKickoffTime che leggeva il fuso del dispositivo:
+  // ora passa dall'unica implementazione, sempre in ora italiana.
+  const formatKickoff = (isoDate: string) => formatKickoffTime(isoDate);
 
   return (
     <View style={styles.container}>
       {/* Header Spacer - prevents content from hiding under sticky header */}
       <View style={{ height: headerHeight + 24 }} />
 
-        {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {fixtures.map((fixture) => {
-            const prediction = predictions.get(fixture.fixtureId);
-            const kickoff = formatKickoff(fixture.kickoff.iso);
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {fixtures.map((fixture) => {
+          const prediction = predictions.get(fixture.fixtureId);
+          const kickoff = formatKickoff(fixture.kickoff.iso);
 
-            return (
-              <View key={fixture.fixtureId} style={styles.card}>
-                {/* Teams Section */}
-                <View style={styles.teamsSection}>
-                  {/* Home Team */}
-                  <View style={styles.teamRow}>
-                    <TeamLogo teamName={fixture.home.name} />
-                    <Text style={styles.teamName}>
-                      {fixture.home.name}
-                    </Text>
-                  </View>
-
-                  {/* Away Team */}
-                  <View style={styles.teamRow}>
-                    <TeamLogo teamName={fixture.away.name} />
-                    <Text style={styles.teamName}>
-                      {fixture.away.name}
-                    </Text>
-                  </View>
+          return (
+            <View key={fixture.fixtureId} style={styles.card}>
+              {/* Teams Section */}
+              <View style={styles.teamsSection}>
+                {/* Home Team */}
+                <View style={styles.teamRow}>
+                  <TeamLogo teamName={fixture.home.name} />
+                  <Text style={styles.teamName}>{fixture.home.name}</Text>
                 </View>
 
-                {/* Orario e, sotto, l'eventuale assenza di pronostico: la
+                {/* Away Team */}
+                <View style={styles.teamRow}>
+                  <TeamLogo teamName={fixture.away.name} />
+                  <Text style={styles.teamName}>{fixture.away.name}</Text>
+                </View>
+              </View>
+
+              {/* Orario e, sotto, l'eventuale assenza di pronostico: la
                     scritta sta al centro e non nella colonna di destra, che
                     e' stretta come le caselle. Metterla li' rubava larghezza
                     ai nomi delle squadre, troncandoli. */}
-                <View style={styles.centerColumn}>
-                  <View style={styles.kickoffPill}>
-                    <Text style={styles.kickoffText}>{kickoff}</Text>
-                  </View>
-                  {!isAnswered(prediction) && (
-                    <Text style={styles.noPredictionText}>
-                      nessun pronostico
-                    </Text>
-                  )}
+              <View style={styles.centerColumn}>
+                <View style={styles.kickoffPill}>
+                  <Text style={styles.kickoffText}>{kickoff}</Text>
                 </View>
+                {!isAnswered(prediction) && (
+                  <Text style={styles.noPredictionText}>nessun pronostico</Text>
+                )}
+              </View>
 
-                {/* Tre caselle tutte vuote non direbbero nulla: su una partita
+              {/* Tre caselle tutte vuote non direbbero nulla: su una partita
                     non giocata la colonna resta vuota, conservando pero' la
                     propria larghezza cosi' le righe restano allineate. */}
-                <View style={styles.badgesColumn}>
-                  {isAnswered(prediction) && (
-                    <>
-                      <ChoiceBadge label="1" isSelected={prediction === '1'} />
-                      <ChoiceBadge label="X" isSelected={prediction === 'X'} />
-                      <ChoiceBadge label="2" isSelected={prediction === '2'} />
-                    </>
-                  )}
-                </View>
+              <View style={styles.badgesColumn}>
+                {isAnswered(prediction) && (
+                  <>
+                    <ChoiceBadge label="1" isSelected={prediction === '1'} />
+                    <ChoiceBadge label="X" isSelected={prediction === 'X'} />
+                    <ChoiceBadge label="2" isSelected={prediction === '2'} />
+                  </>
+                )}
               </View>
-            );
-          })}
-        </ScrollView>
-      </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
