@@ -11,7 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../theme';
 import { useAuthStore } from '../../store/stores/useAuthStore';
@@ -221,10 +221,12 @@ export default function ImpostazioniScreen({
     ]);
   };
 
-  const versione = `${Constants.expoConfig?.version ?? '—'} (${
-    Platform.OS === 'ios'
-      ? (Constants.expoConfig?.ios?.buildNumber ?? '—')
-      : (Constants.expoConfig?.android?.versionCode ?? '—')
+  // Letti dal binario, non da app.json: con appVersionSource "remote" il
+  // build number lo incrementa EAS sui suoi server, e la copia in configurazione
+  // resta indietro. Mostrarla voleva dire dare ai tester un numero che non
+  // corrisponde a nessuna build.
+  const versione = `${Application.nativeApplicationVersion ?? '—'} (${
+    Application.nativeBuildVersion ?? '—'
   })`;
 
   if (loading) {

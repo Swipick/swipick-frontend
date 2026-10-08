@@ -15,7 +15,6 @@
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.zenotomiolo.swipick",
-      "buildNumber": "12",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Swipick necessita l'accesso alla tua libreria fotografica per permetterti di caricare un'immagine del profilo.",
