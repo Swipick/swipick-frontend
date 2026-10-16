@@ -26,6 +26,7 @@ import { useAuthStore } from '../../store/stores/useAuthStore';
 import { predictionsApi } from '../../services/api/predictions';
 import { fixturesApi } from '../../services/api/fixtures';
 import { condividiEMisura } from '../../services/analytics';
+import { SWIPICK_URL } from '../../config/links';
 import { colors, spacing } from '../../theme';
 import { formatKickoffTime } from '../../utils/formatters';
 import { computeWeekMeter, hasKickedOff } from '../../utils/weekMeter';
@@ -316,7 +317,7 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
       // }
 
       message += `\nE tu?`;
-      message += `\n\nhttps://swipick-frontend-production.up.railway.app/risultati?mode=live`;
+      message += `\n\n${SWIPICK_URL}`;
 
       await condividiEMisura({
         punto: 'risultati',
