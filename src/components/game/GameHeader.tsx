@@ -7,6 +7,7 @@ import CountdownTimer from './CountdownTimer';
 import ProgressBar from './ProgressBar';
 import { MatchCard } from '../../types/game.types';
 import { condividiEMisura } from '../../services/analytics';
+import { SWIPICK_URL } from '../../config/links';
 
 const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
@@ -46,8 +47,7 @@ export default function GameHeader({
       await condividiEMisura({
         punto: 'fine_mazzo',
         titolo: 'Swipick - Previsioni Calcio',
-        messaggio:
-          'Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? https://swipick-frontend-production.up.railway.app/registro',
+        messaggio: `Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? ${SWIPICK_URL}`,
       });
     } finally {
       setShareLoading(false);
