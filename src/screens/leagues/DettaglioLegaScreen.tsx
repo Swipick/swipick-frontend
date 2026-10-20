@@ -80,8 +80,10 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
     setWeekBusy(true);
     setWeekError(null);
     try {
-      // Senza `week` il BFF usa la giornata in corso.
-      const rows = await leaguesApi.standings(leagueId, 'week');
+      // La giornata la sceglie il BFF (in corso se è cominciata, altrimenti
+      // l'ultima conclusa): la si chiede per numero, così la tabella è
+      // proprio quella scritta sulla scheda.
+      const rows = await leaguesApi.standings(leagueId, 'week', detail?.standingsWeek);
       setWeekRows(rows);
     } catch (err: any) {
       setWeekError(err?.message ?? 'Non riesco a caricare la giornata');
@@ -91,6 +93,7 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
   };
 
   const rows = scope === 'season' ? (detail?.standings ?? []) : (weekRows ?? []);
+  const giornata = detail?.standingsWeek ? `Giornata ${detail.standingsWeek}` : 'Giornata';
 
   if (detailLoading && !detail) {
     return (
@@ -147,9 +150,7 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
             style={[styles.tab, scope === 'week' && styles.tabOn]}
             onPress={mostraGiornata}
           >
-            <Text style={[styles.tabText, scope === 'week' && styles.tabTextOn]}>
-              Giornata in corso
-            </Text>
+            <Text style={[styles.tabText, scope === 'week' && styles.tabTextOn]}>{giornata}</Text>
           </TouchableOpacity>
         </View>
       </GradientHeader>
@@ -198,7 +199,9 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
             <Text style={styles.tableNote}>
               {scope === 'season'
                 ? 'La classifica va per pronostici giusti. La media è sulle partite già scoperte, che per chi è entrato dopo sono meno.'
-                : 'Solo la giornata in corso.'}
+                : detail.standingsWeek
+                  ? `Solo la giornata ${detail.standingsWeek}: durante le partite i punti salgono man mano che arrivano i risultati.`
+                  : 'Solo una giornata.'}
             </Text>
           </View>
         )}

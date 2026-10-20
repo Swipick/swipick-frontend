@@ -47,6 +47,11 @@ export interface StandingRow {
 export interface LeagueDetail extends League {
   memberCount: number;
   standings: StandingRow[];
+  /**
+   * La giornata della classifica di giornata: quella in corso se è già
+   * cominciata, altrimenti l'ultima conclusa. Manca con un BFF più vecchio.
+   */
+  standingsWeek?: number;
 }
 
 export type LeagueMemberStatus = 'active' | 'left' | 'removed';
