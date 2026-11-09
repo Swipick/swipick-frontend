@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { usersApi } from '../../services/api/users';
+import SpazioTastiera from '../../components/common/SpazioTastiera';
 
 type NicknameScreenProps = {
   /** Id utente sul backend (UUID), non l'uid Firebase. */
@@ -106,74 +107,76 @@ export default function NicknameScreen({ userId, onDone }: NicknameScreenProps) 
 
   return (
     <LinearGradient colors={['#52418d', '#7a57f6']} style={styles.gradient}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerSide} />
-          <Text style={styles.wordmark}>SWIPICK</Text>
-          <Text style={[styles.headerSide, styles.stepLabel]}>Passo 2 di 2</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.title}>Scegli il tuo nickname</Text>
-          <Text style={styles.subtitle}>È il nome con cui ti vedono gli altri</Text>
-
-          <View
-            style={[
-              styles.inputRow,
-              availability === 'taken' && styles.inputRowError,
-            ]}
-          >
-            <Text style={styles.at}>@</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="mario_rossi"
-              placeholderTextColor="#9ca3af"
-              value={nickname}
-              onChangeText={(text) => {
-                setNickname(text.toLowerCase().trim());
-                if (error) setError(null);
-              }}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="username-new"
-              maxLength={50}
-              editable={!saving}
-              returnKeyType="go"
-              onSubmitEditing={handleSubmit}
-            />
-            {availability === 'checking' && (
-              <ActivityIndicator size="small" color="#9ca3af" />
-            )}
+      <SpazioTastiera>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <View style={styles.headerSide} />
+            <Text style={styles.wordmark}>SWIPICK</Text>
+            <Text style={[styles.headerSide, styles.stepLabel]}>Passo 2 di 2</Text>
           </View>
 
-          <Text style={[styles.hint, hintTone]}>{hintText}</Text>
+          <View style={styles.card}>
+            <Text style={styles.title}>Scegli il tuo nickname</Text>
+            <Text style={styles.subtitle}>È il nome con cui ti vedono gli altri</Text>
 
-          <TouchableOpacity
-            style={[styles.primaryButton, !canSubmit && styles.buttonDisabled]}
-            onPress={() => {
-              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              handleSubmit();
-            }}
-            disabled={!canSubmit}
-          >
-            {saving ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Inizia a giocare</Text>
-            )}
-          </TouchableOpacity>
+            <View
+              style={[
+                styles.inputRow,
+                availability === 'taken' && styles.inputRowError,
+              ]}
+            >
+              <Text style={styles.at}>@</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="mario_rossi"
+                placeholderTextColor="#9ca3af"
+                value={nickname}
+                onChangeText={(text) => {
+                  setNickname(text.toLowerCase().trim());
+                  if (error) setError(null);
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="username-new"
+                maxLength={50}
+                editable={!saving}
+                returnKeyType="go"
+                onSubmitEditing={handleSubmit}
+              />
+              {availability === 'checking' && (
+                <ActivityIndicator size="small" color="#9ca3af" />
+              )}
+            </View>
 
-          <Text style={styles.footer}>
-            Puoi cambiarlo quando vuoi dalle impostazioni.
-          </Text>
-        </View>
-      </ScrollView>
+            <Text style={[styles.hint, hintTone]}>{hintText}</Text>
+
+            <TouchableOpacity
+              style={[styles.primaryButton, !canSubmit && styles.buttonDisabled]}
+              onPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleSubmit();
+              }}
+              disabled={!canSubmit}
+            >
+              {saving ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Inizia a giocare</Text>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.footer}>
+              Puoi cambiarlo quando vuoi dalle impostazioni.
+            </Text>
+          </View>
+        </ScrollView>
+      </SpazioTastiera>
     </LinearGradient>
   );
 }

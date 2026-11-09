@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usersApi } from '../../services/api/users';
+import SpazioTastiera from '../../components/common/SpazioTastiera';
 
 type CambiaNicknameScreenProps = {
   navigation?: { goBack: () => void };
@@ -115,56 +116,58 @@ export default function CambiaNicknameScreen({
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
-      >
-        <Text style={styles.intro}>
-          È il nome con cui ti vedono gli altri giocatori.
-        </Text>
-
-        <View style={styles.card}>
-          <View
-            style={[styles.inputRow, availability === 'taken' && styles.inputRowError]}
-          >
-            <Text style={styles.at}>@</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="mario_rossi"
-              placeholderTextColor="#9ca3af"
-              value={nickname}
-              onChangeText={(text) => {
-                setNickname(text.toLowerCase().trim());
-                if (error) setError(null);
-              }}
-              autoCapitalize="none"
-              autoCorrect={false}
-              maxLength={50}
-              editable={!saving}
-              returnKeyType="done"
-              onSubmitEditing={handleSave}
-            />
-            {availability === 'checking' && (
-              <ActivityIndicator size="small" color="#9ca3af" />
-            )}
-          </View>
-          <Text style={[styles.hint, hintTone]}>{hintText}</Text>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.primaryButton, !canSave && styles.buttonDisabled]}
-          onPress={handleSave}
-          disabled={!canSave}
+      <SpazioTastiera>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
         >
-          {saving ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Salva</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
+          <Text style={styles.intro}>
+            È il nome con cui ti vedono gli altri giocatori.
+          </Text>
+
+          <View style={styles.card}>
+            <View
+              style={[styles.inputRow, availability === 'taken' && styles.inputRowError]}
+            >
+              <Text style={styles.at}>@</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="mario_rossi"
+                placeholderTextColor="#9ca3af"
+                value={nickname}
+                onChangeText={(text) => {
+                  setNickname(text.toLowerCase().trim());
+                  if (error) setError(null);
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={50}
+                editable={!saving}
+                returnKeyType="done"
+                onSubmitEditing={handleSave}
+              />
+              {availability === 'checking' && (
+                <ActivityIndicator size="small" color="#9ca3af" />
+              )}
+            </View>
+            <Text style={[styles.hint, hintTone]}>{hintText}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, !canSave && styles.buttonDisabled]}
+            onPress={handleSave}
+            disabled={!canSave}
+          >
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Salva</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </SpazioTastiera>
     </View>
   );
 }

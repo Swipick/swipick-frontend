@@ -20,6 +20,7 @@ import { usersApi } from '../../services/api/users';
 import { profileApi, needsProfileCompletion } from '../../services/api/profile';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 import { AUTH_ERROR_MESSAGES } from '../../types/auth.types';
+import SpazioTastiera from '../../components/common/SpazioTastiera';
 
 type LoginScreenProps = {
   onNavigate: (
@@ -230,123 +231,128 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         <Text style={styles.backButtonText}>← Indietro</Text>
       </TouchableOpacity>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        // iOS non sposta nulla da solo: senza questo la tastiera copre il campo
-        // su cui l'utente ha appena toccato, e per rivederlo deve scorrere a
-        // mano con la tastiera gia' aperta. Android lo fa da se' (Expo usa
-        // softwareKeyboardLayoutMode "resize" per impostazione predefinita).
-        automaticallyAdjustKeyboardInsets
-        keyboardDismissMode="interactive"
-      >
-        {/* Swipick Logo/Title */}
-        <Text style={styles.title}>swipick</Text>
+      <SpazioTastiera>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          // iOS non sposta nulla da solo: senza questo la tastiera copre il campo
+          // su cui l'utente ha appena toccato, e per rivederlo deve scorrere a
+          // mano con la tastiera gia' aperta. Android lo fa da se' (Expo usa
+          // softwareKeyboardLayoutMode "resize" per impostazione predefinita).
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="interactive"
+        >
+          {/* Swipick Logo/Title */}
+          <Text style={styles.title}>swipick</Text>
 
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#9ca3af"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!loading}
-          />
-        </View>
-
-        {/* Password Input */}
-        <View style={styles.inputContainer}>
-          <View style={styles.passwordContainer}>
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="Email"
               placeholderTextColor="#9ca3af"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
             />
-            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-              <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Login Button */}
-        <TouchableOpacity
-          style={[styles.loginButton, loading && styles.buttonDisabled]}
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            handleLogin();
-          }}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text style={styles.loginButtonText}>Accedi</Text>
-          )}
-        </TouchableOpacity>
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#9ca3af"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!loading}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-        {/* Divider */}
-        <Text style={styles.divider}>oppure</Text>
-
-        {/* Google Button */}
-        <TouchableOpacity
-          style={styles.googleButton}
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            handleGoogleLogin();
-          }}
-          disabled={loading}
-        >
-          <Image
-            source={require('../../assets/images/icons/google-logo-icon.png')}
-            style={styles.googleLogoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.googleButtonText}>Accedi con Google</Text>
-        </TouchableOpacity>
-
-        {/* Apple Sign-In Button — iOS only (required by App Store guideline 4.8) */}
-        {Platform.OS === 'ios' && (
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-            cornerRadius={8}
-            style={styles.appleButton}
+          {/* Login Button */}
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.buttonDisabled]}
             onPress={async () => {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              handleAppleLogin();
-            }}
-          />
-        )}
-
-        {/* Spacer to push forgot password to bottom */}
-        <View style={styles.spacer} />
-
-        {/* Forgot Password */}
-        <View style={styles.forgotPasswordContainer}>
-          <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
-          <TouchableOpacity
-            style={styles.forgotPasswordButton}
-            onPress={async () => {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              handleForgotPassword();
+              handleLogin();
             }}
             disabled={loading}
           >
-            <Text style={styles.forgotPasswordButtonText}>Recupera password</Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.loginButtonText}>Accedi</Text>
+            )}
           </TouchableOpacity>
-        </View>
-      </ScrollView>
+
+          {/* Divider */}
+          <Text style={styles.divider}>oppure</Text>
+
+          {/* Google Button */}
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleGoogleLogin();
+            }}
+            disabled={loading}
+          >
+            <Image
+              source={require('../../assets/images/icons/google-logo-icon.png')}
+              style={styles.googleLogoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.googleButtonText}>Accedi con Google</Text>
+          </TouchableOpacity>
+
+          {/* Apple Sign-In Button — iOS only (required by App Store guideline 4.8) */}
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={8}
+              style={styles.appleButton}
+              onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleAppleLogin();
+              }}
+            />
+          )}
+
+          {/* Spacer to push forgot password to bottom */}
+          <View style={styles.spacer} />
+
+          {/* Forgot Password */}
+          <View style={styles.forgotPasswordContainer}>
+            <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
+            <TouchableOpacity
+              style={styles.forgotPasswordButton}
+              onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleForgotPassword();
+              }}
+              disabled={loading}
+            >
+              <Text style={styles.forgotPasswordButtonText}>Recupera password</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SpazioTastiera>
     </View>
   );
 }

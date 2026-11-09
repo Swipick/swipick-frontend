@@ -10,7 +10,6 @@ import {
   Alert,
   Modal,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useLeaguesStore } from '../../store/stores/useLeaguesStore';
 import { leaguesApi } from '../../services/api/leagues';
@@ -293,10 +292,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
         animationType="fade"
         onRequestClose={() => setEliminazioneAperta(false)}
       >
-        <KeyboardAvoidingView
-          style={styles.velo}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <KeyboardAvoidingView style={styles.velo} behavior="padding">
           <View style={styles.finestra}>
             <Text style={styles.finestraTitolo}>Eliminare «{detail.name}»?</Text>
             <Text style={styles.finestraTesto}>

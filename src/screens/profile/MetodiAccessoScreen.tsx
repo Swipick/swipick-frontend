@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../../services/auth/authService';
+import SpazioTastiera from '../../components/common/SpazioTastiera';
 
 type MetodiAccessoScreenProps = {
   navigation?: { goBack: () => void };
@@ -156,177 +157,179 @@ export default function MetodiAccessoScreen({
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
-      >
-        <Text style={styles.intro}>
-          Puoi entrare con uno qualsiasi dei metodi collegati. Averne più di uno
-          ti mette al riparo se perdi l’accesso a uno.
-        </Text>
+      <SpazioTastiera>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+        >
+          <Text style={styles.intro}>
+            Puoi entrare con uno qualsiasi dei metodi collegati. Averne più di uno
+            ti mette al riparo se perdi l’accesso a uno.
+          </Text>
 
-        <View style={styles.card}>
-          {/* Google */}
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Text style={styles.rowTitle}>Google</Text>
-              <Text style={styles.rowSubtitle}>
-                {hasGoogle ? email : 'Non collegato'}
-              </Text>
-            </View>
-            {hasGoogle ? (
-              <View style={styles.rowActions}>
-                <Text style={styles.linked}>collegato</Text>
-                {metodiCollegati > 1 &&
-                  (azione === 'google' ? (
-                    <ActivityIndicator size="small" color="#5742a4" />
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() => handleUnlink('google.com', 'Google')}
-                      disabled={azione !== null}
-                    >
-                      <Text style={styles.actionDanger}>Scollega</Text>
-                    </TouchableOpacity>
-                  ))}
-              </View>
-            ) : azione === 'google' ? (
-              <ActivityIndicator size="small" color="#5742a4" />
-            ) : (
-              <TouchableOpacity
-                onPress={() => run('google', () => authService.linkGoogle())}
-                disabled={azione !== null}
-              >
-                <Text style={styles.action}>Collega</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Apple — solo su iOS: altrove non c'è modo di autenticarsi */}
-          {Platform.OS === 'ios' && (
+          <View style={styles.card}>
+            {/* Google */}
             <View style={styles.row}>
               <View style={styles.rowLeft}>
-                <Text style={styles.rowTitle}>Apple</Text>
+                <Text style={styles.rowTitle}>Google</Text>
                 <Text style={styles.rowSubtitle}>
-                  {hasApple ? 'Collegato' : 'Non collegato'}
+                  {hasGoogle ? email : 'Non collegato'}
                 </Text>
               </View>
-              {hasApple ? (
+              {hasGoogle ? (
                 <View style={styles.rowActions}>
                   <Text style={styles.linked}>collegato</Text>
                   {metodiCollegati > 1 &&
-                    (azione === 'apple' ? (
+                    (azione === 'google' ? (
                       <ActivityIndicator size="small" color="#5742a4" />
                     ) : (
                       <TouchableOpacity
-                        onPress={() => handleUnlink('apple.com', 'Apple')}
+                        onPress={() => handleUnlink('google.com', 'Google')}
                         disabled={azione !== null}
                       >
                         <Text style={styles.actionDanger}>Scollega</Text>
                       </TouchableOpacity>
                     ))}
                 </View>
-              ) : azione === 'apple' ? (
+              ) : azione === 'google' ? (
                 <ActivityIndicator size="small" color="#5742a4" />
               ) : (
                 <TouchableOpacity
-                  onPress={() => run('apple', () => authService.linkApple())}
+                  onPress={() => run('google', () => authService.linkGoogle())}
                   disabled={azione !== null}
                 >
                   <Text style={styles.action}>Collega</Text>
                 </TouchableOpacity>
               )}
             </View>
-          )}
 
-          {/* Email e password */}
-          <View style={[styles.row, styles.rowLast]}>
-            <View style={styles.rowLeft}>
-              <Text style={styles.rowTitle}>Email e password</Text>
-              <Text style={styles.rowSubtitle}>
-                {hasPassword ? email : 'Nessuna password impostata'}
-              </Text>
-            </View>
-            {hasPassword ? (
-              <View style={styles.rowActions}>
-                <Text style={styles.linked}>collegato</Text>
-                {azione === 'reset' ? (
+            {/* Apple — solo su iOS: altrove non c'è modo di autenticarsi */}
+            {Platform.OS === 'ios' && (
+              <View style={styles.row}>
+                <View style={styles.rowLeft}>
+                  <Text style={styles.rowTitle}>Apple</Text>
+                  <Text style={styles.rowSubtitle}>
+                    {hasApple ? 'Collegato' : 'Non collegato'}
+                  </Text>
+                </View>
+                {hasApple ? (
+                  <View style={styles.rowActions}>
+                    <Text style={styles.linked}>collegato</Text>
+                    {metodiCollegati > 1 &&
+                      (azione === 'apple' ? (
+                        <ActivityIndicator size="small" color="#5742a4" />
+                      ) : (
+                        <TouchableOpacity
+                          onPress={() => handleUnlink('apple.com', 'Apple')}
+                          disabled={azione !== null}
+                        >
+                          <Text style={styles.actionDanger}>Scollega</Text>
+                        </TouchableOpacity>
+                      ))}
+                  </View>
+                ) : azione === 'apple' ? (
                   <ActivityIndicator size="small" color="#5742a4" />
                 ) : (
                   <TouchableOpacity
-                    onPress={handleResetPassword}
+                    onPress={() => run('apple', () => authService.linkApple())}
                     disabled={azione !== null}
                   >
-                    <Text style={styles.action}>Cambia</Text>
+                    <Text style={styles.action}>Collega</Text>
                   </TouchableOpacity>
                 )}
               </View>
-            ) : azione === 'password' ? (
-              <ActivityIndicator size="small" color="#5742a4" />
-            ) : (
-              <TouchableOpacity
-                onPress={() => setShowPasswordForm((v) => !v)}
-                disabled={azione !== null}
-              >
-                <Text style={styles.action}>
-                  {showPasswordForm ? 'Chiudi' : 'Imposta'}
-                </Text>
-              </TouchableOpacity>
             )}
-          </View>
-        </View>
 
-        {showPasswordForm && !hasPassword && (
-          <View style={styles.card}>
-            <Text style={styles.formLabel}>Scegli una password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Almeno 8 caratteri"
-              placeholderTextColor="#9ca3af"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={azione === null}
+            {/* Email e password */}
+            <View style={[styles.row, styles.rowLast]}>
+              <View style={styles.rowLeft}>
+                <Text style={styles.rowTitle}>Email e password</Text>
+                <Text style={styles.rowSubtitle}>
+                  {hasPassword ? email : 'Nessuna password impostata'}
+                </Text>
+              </View>
+              {hasPassword ? (
+                <View style={styles.rowActions}>
+                  <Text style={styles.linked}>collegato</Text>
+                  {azione === 'reset' ? (
+                    <ActivityIndicator size="small" color="#5742a4" />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={handleResetPassword}
+                      disabled={azione !== null}
+                    >
+                      <Text style={styles.action}>Cambia</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : azione === 'password' ? (
+                <ActivityIndicator size="small" color="#5742a4" />
+              ) : (
+                <TouchableOpacity
+                  onPress={() => setShowPasswordForm((v) => !v)}
+                  disabled={azione !== null}
+                >
+                  <Text style={styles.action}>
+                    {showPasswordForm ? 'Chiudi' : 'Imposta'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {showPasswordForm && !hasPassword && (
+            <View style={styles.card}>
+              <Text style={styles.formLabel}>Scegli una password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Almeno 8 caratteri"
+                placeholderTextColor="#9ca3af"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={azione === null}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  (password.length < 8 || azione !== null) && styles.buttonDisabled,
+                ]}
+                onPress={handleAddPassword}
+                disabled={password.length < 8 || azione !== null}
+              >
+                <Text style={styles.primaryButtonText}>Imposta password</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={styles.noteCard}>
+            <Ionicons
+              name="lock-closed-outline"
+              size={19}
+              color="#6B7280"
+              style={styles.noteIcon}
             />
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                (password.length < 8 || azione !== null) && styles.buttonDisabled,
-              ]}
-              onPress={handleAddPassword}
-              disabled={password.length < 8 || azione !== null}
-            >
-              <Text style={styles.primaryButtonText}>Imposta password</Text>
-            </TouchableOpacity>
+            <Text style={styles.noteText}>
+              {hasPassword
+                ? 'Per cambiare la password ti mandiamo un link via email: non serve ricordare quella attuale.'
+                : `Per aggiungere una password ti chiederemo di rientrare con ${
+                    hasGoogle ? 'Google' : 'Apple'
+                  }: serve a impedire che qualcuno con il tuo telefono sbloccato si prenda l’account per sempre.`}
+            </Text>
           </View>
-        )}
 
-        <View style={styles.noteCard}>
-          <Ionicons
-            name="lock-closed-outline"
-            size={19}
-            color="#6B7280"
-            style={styles.noteIcon}
-          />
-          <Text style={styles.noteText}>
-            {hasPassword
-              ? 'Per cambiare la password ti mandiamo un link via email: non serve ricordare quella attuale.'
-              : `Per aggiungere una password ti chiederemo di rientrare con ${
-                  hasGoogle ? 'Google' : 'Apple'
-                }: serve a impedire che qualcuno con il tuo telefono sbloccato si prenda l’account per sempre.`}
-          </Text>
-        </View>
-
-        {metodiCollegati === 1 && (
-          <Text style={styles.warning}>
-            Hai un solo metodo di accesso. Se lo perdi, perdi l’account:
-            collegarne un secondo richiede meno di un minuto.
-          </Text>
-        )}
-      </ScrollView>
+          {metodiCollegati === 1 && (
+            <Text style={styles.warning}>
+              Hai un solo metodo di accesso. Se lo perdi, perdi l’account:
+              collegarne un secondo richiede meno di un minuto.
+            </Text>
+          )}
+        </ScrollView>
+      </SpazioTastiera>
     </View>
   );
 }

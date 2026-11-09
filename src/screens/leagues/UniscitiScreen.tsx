@@ -1,13 +1,5 @@
 import React, { useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { leaguesApi } from '../../services/api/leagues';
@@ -81,10 +73,7 @@ export default function UniscitiScreen({ navigation }: Props) {
     <View style={leagueStyles.screen}>
       <SubHeader title="Ho un invito" onBack={() => navigation?.goBack()} />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView
           contentContainerStyle={[leagueStyles.content, styles.scroll]}
           keyboardShouldPersistTaps="handled"
