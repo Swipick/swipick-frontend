@@ -19,6 +19,7 @@ import { authService } from '../../services/auth/authService';
 import { profileApi } from '../../services/api/profile';
 import { describeProviders } from '../../utils/authProviders';
 import { PRIVACY_URL, TERMS_URL } from '../../config/links';
+import { useSpazioInBasso } from '../../utils/spazioInBasso';
 
 type ImpostazioniScreenProps = {
   navigation?: { navigate: (screen: any) => void; goBack: () => void };
@@ -93,6 +94,7 @@ export default function ImpostazioniScreen({
   nickname,
   onProfileLoaded,
 }: ImpostazioniScreenProps) {
+  const spazioInBasso = useSpazioInBasso(40);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
 
@@ -318,7 +320,7 @@ export default function ImpostazioniScreen({
       </ScrollView>
 
       {toast && (
-        <View style={styles.toastContainer}>
+        <View style={[styles.toastContainer, { bottom: spazioInBasso }]}>
           <View style={styles.toast}>
             <Text style={styles.toastText}>{toast}</Text>
           </View>

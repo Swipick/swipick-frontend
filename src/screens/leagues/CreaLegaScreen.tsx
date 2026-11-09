@@ -18,6 +18,7 @@ import {
   leagueStyles,
   leagueColors,
 } from '../../components/leagues/LeagueUI';
+import { useSpazioInBasso } from '../../utils/spazioInBasso';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void; goBack: () => void };
@@ -27,6 +28,7 @@ const MIN = 3;
 const MAX = 40;
 
 export default function CreaLegaScreen({ navigation }: Props) {
+  const spazioInBasso = useSpazioInBasso(16);
   const createLeague = useLeaguesStore((s) => s.createLeague);
 
   const [name, setName] = useState('');
@@ -115,7 +117,7 @@ export default function CreaLegaScreen({ navigation }: Props) {
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: spazioInBasso }]}>
           <PrimaryButton label="Crea lega" onPress={crea} busy={busy} disabled={!valido} />
         </View>
       </KeyboardAvoidingView>

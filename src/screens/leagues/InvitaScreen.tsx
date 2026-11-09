@@ -14,6 +14,7 @@ import {
 } from '../../components/leagues/LeagueUI';
 import { oreRimanenti, testoScadenza } from '../../utils/inviteCountdown';
 import { condividiEMisura } from '../../services/analytics';
+import { useSpazioInBasso } from '../../utils/spazioInBasso';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void; goBack: () => void };
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export default function InvitaScreen({ navigation, leagueId }: Props) {
+  const spazioInBasso = useSpazioInBasso(40);
   const detail = useLeaguesStore((s) => s.detail);
   const openLeague = useLeaguesStore((s) => s.openLeague);
   const rotateCode = useLeaguesStore((s) => s.rotateCode);
@@ -149,7 +151,7 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
       </ScrollView>
 
       {toast && (
-        <View style={styles.toastContainer}>
+        <View style={[styles.toastContainer, { bottom: spazioInBasso }]}>
           <View style={styles.toast}>
             <Text style={styles.toastText}>{toast}</Text>
           </View>
