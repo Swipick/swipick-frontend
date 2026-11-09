@@ -12,6 +12,7 @@ import {
 
 import { PredictSlide, ResultSlide, LeagueSlide } from './WizardMockups';
 import { segnaOnboardingVisto } from '../../utils/onboardingVisto';
+import { useSpazioInBasso } from '../../utils/spazioInBasso';
 
 const { width: larghezzaSchermo, height: altezzaSchermo } = Dimensions.get('window');
 const schermoPiccolo = altezzaSchermo < 750;
@@ -50,6 +51,7 @@ const PAGINE = [
  * «Salta» — che deve esserci, altrimenti diventa un pedaggio.
  */
 export default function OnboardingScreen({ onFine }: Props) {
+  const spazioInBasso = useSpazioInBasso(40);
   const [pagina, setPagina] = useState(0);
   const scorrevole = useRef<ScrollView>(null);
 
@@ -77,7 +79,7 @@ export default function OnboardingScreen({ onFine }: Props) {
   };
 
   return (
-    <View style={styles.contenitore}>
+    <View style={[styles.contenitore, { paddingBottom: spazioInBasso }]}>
       <View style={styles.testa}>
         {/* Il wordmark solo sulla prima: dalla seconda in poi occuperebbe la
             riga senza aggiungere niente. */}

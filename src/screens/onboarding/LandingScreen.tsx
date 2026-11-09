@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../store/stores/useAuthStore';
+import { useSpazioInBasso } from '../../utils/spazioInBasso';
 
 interface LandingScreenProps {
   onNavigate: (
@@ -25,6 +26,7 @@ const schermoPiccolo = altezzaSchermo < 750;
  * l'onboarding e' nuovo, e il bottone piu' in vista deve essere il suo.
  */
 export default function LandingScreen({ onNavigate }: LandingScreenProps) {
+  const spazioInBasso = useSpazioInBasso(40);
   const setGuest = useAuthStore((s) => s.setGuest);
 
   const esploraSenzaAccount = async () => {
@@ -47,7 +49,7 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: spazioInBasso }]}>
       <View style={styles.marchio}>
         <Text style={styles.title}>swipick</Text>
         <Text style={styles.tagline}>Ogni giornata fai la tua giocata</Text>
