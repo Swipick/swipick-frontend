@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { BackHandler, View, StyleSheet } from 'react-native';
 import BottomNav from '../components/navigation/BottomNav';
 import GiocaScreen from '../screens/game/GiocaScreen';
 import RisultatiScreen from '../screens/results/RisultatiScreen';
@@ -102,6 +102,24 @@ export default function MainNavigator() {
       setActiveScreen(INDIETRO[activeScreen] ?? 'profilo');
     },
   };
+
+  // Tasto Indietro di Android: stessa mappa del pulsante indietro delle
+  // schermate. Dalle schede principali si torna a Gioca, da Gioca si esce.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      const dietro = INDIETRO[activeScreen];
+      if (dietro) {
+        setActiveScreen(dietro);
+        return true;
+      }
+      if (activeScreen !== 'gioca') {
+        setActiveScreen('gioca');
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [activeScreen]);
 
   const renderScreen = () => {
     switch (activeScreen) {
