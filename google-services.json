@@ -9,12 +9,72 @@
       "client_info": {
         "mobilesdk_app_id": "1:614934207425:android:6eae3c625d5037b498ed40",
         "android_client_info": {
-          "package_name": "com.zenotomiolo.swipick"
+          "package_name": "com.swipick.app"
         }
       },
       "oauth_client": [
         {
           "client_id": "614934207425-bc6h7kg88fa0311n11i6t05ivua4nhk1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.swipick.app",
+            "certificate_hash": "050e1446a81bd8e84347f994689a647503829a7b"
+          }
+        },
+        {
+          "client_id": "614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8tCffajErEmwRDDrehu22jDmBSXNmEFc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "614934207425-duk9a99dod40sgq3qocf2ast8l1dgurc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "614934207425-a2slvratu5hufc9ibf3c27lt6b3lvdq9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.zenotomiolo.swipick"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:614934207425:android:503e7ce6d3f20bb898ed40",
+        "android_client_info": {
+          "package_name": "com.zenotomiolo.swipick"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "614934207425-6lftdhaao569iet3o0k7ve3et1eo17p7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zenotomiolo.swipick",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "614934207425-9kmlahci70kqc7mfej64cvusahgi04k3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zenotomiolo.swipick",
+            "certificate_hash": "c36e41fc0a5258ca872240b41067fedf4c9def45"
+          }
+        },
+        {
+          "client_id": "614934207425-lm4pav67rj15er2756bhil8bu0jv1ojj.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.zenotomiolo.swipick",
@@ -39,7 +99,7 @@
               "client_type": 3
             },
             {
-              "client_id": "614934207425-j173qqha5p3l3lj8mm1gdincuan38d2d.apps.googleusercontent.com",
+              "client_id": "614934207425-a2slvratu5hufc9ibf3c27lt6b3lvdq9.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.zenotomiolo.swipick"
