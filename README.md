@@ -168,12 +168,35 @@ eas submit --platform ios
 ### Android
 
 ```bash
-# Build for Android
+# Build for Android (AAB per il Play Store)
 eas build --platform android
 
-# Submit to Play Store
+# Submit to Play Store (canale "Test interno", come bozza)
 eas submit --platform android
 ```
+
+Il primo AAB va caricato a mano dalla Play Console: `eas submit` funziona dal
+secondo in poi e richiede la chiave del service account Google, che non va nel
+repo (si carica tra le credenziali EAS).
+
+Per le build locali serve JDK 17: Gradle 8.14 non gira con il JDK 25 incluso in
+Android Studio.
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+export ANDROID_HOME=~/Library/Android/sdk
+npx expo run:android
+```
+
+### Versioni (iOS e Android)
+
+- `version` in `app.json` è unica per le due piattaforme: si alza a ogni build
+  nativa, meglio se fatta per entrambe insieme (`eas build --platform all`).
+- Build number iOS e `versionCode` Android li incrementa EAS
+  (`appVersionSource: remote`): non si toccano a mano.
+- `runtimeVersion` segue `version`, quindi un `eas update` raggiunge iPhone e
+  Android con la stessa versione: va provato su entrambi. Per un fix di una
+  sola piattaforma: `eas update --platform ios|android`.
 
 ## 🤝 Contributing
 
