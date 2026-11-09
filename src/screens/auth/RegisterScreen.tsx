@@ -19,6 +19,7 @@ import { usersApi } from '../../services/api/users';
 import { profileApi, needsProfileCompletion } from '../../services/api/profile';
 import { authService } from '../../services/auth/authService';
 import { useAuthStore } from '../../store/stores/useAuthStore';
+import SpazioTastiera from '../../components/common/SpazioTastiera';
 
 type RegisterScreenProps = {
   onNavigate: (
@@ -165,196 +166,198 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
 
   return (
     <LinearGradient colors={['#52418d', '#7a57f6']} style={styles.gradient}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Intestazione: indietro, marchio, passo */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerSide}
-            onPress={() => {
-              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onNavigate('Landing');
-            }}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.wordmark}>SWIPICK</Text>
-          <Text style={[styles.headerSide, styles.stepLabel]}>Passo 1 di 2</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.title}>Crea account</Text>
-          <Text style={styles.subtitle}>Bastano dieci secondi</Text>
-
-          {/* Apple per primo: su iOS è il percorso più breve e la 4.8 lo richiede */}
-          {Platform.OS === 'ios' && (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-              cornerRadius={8}
-              style={styles.appleButton}
+      <SpazioTastiera>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Intestazione: indietro, marchio, passo */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.headerSide}
               onPress={() => {
-                if (busy) return;
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                handleAppleSignIn();
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onNavigate('Landing');
               }}
-            />
-          )}
-
-          <TouchableOpacity
-            style={[styles.googleButton, busy && styles.buttonDisabled]}
-            onPress={() => {
-              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              handleGoogleSignIn();
-            }}
-            disabled={busy}
-          >
-            {socialLoading === 'google' ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color="#374151" size="small" />
-                <Text style={styles.googleButtonText}>Accesso con Google…</Text>
-              </View>
-            ) : (
-              <>
-                <Image
-                  source={require('../../assets/images/icons/google-logo-icon.png')}
-                  style={styles.googleLogoImage}
-                  resizeMode="contain"
-                />
-                <Text style={styles.googleButtonText}>Continua con Google</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {/* Consenso passivo: nessuna casella, l'atto di iscriversi è l'assenso */}
-          <Text style={styles.consent}>
-            Continuando accetti i{' '}
-            <Text style={styles.link} onPress={openTerms}>
-              Termini di servizio
-            </Text>
-            {' '}e la{' '}
-            <Text style={styles.link} onPress={openPrivacy}>
-              Privacy Policy
-            </Text>
-            .
-          </Text>
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>oppure</Text>
-            <View style={styles.dividerLine} />
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.wordmark}>SWIPICK</Text>
+            <Text style={[styles.headerSide, styles.stepLabel]}>Passo 1 di 2</Text>
           </View>
 
-          {/* Email */}
-          <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
-            placeholder="La tua email"
-            placeholderTextColor="#9ca3af"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text.toLowerCase());
-              if (errors.email) {
-                setErrors((prev) => {
-                  const next = { ...prev };
-                  delete next.email;
-                  return next;
-                });
-              }
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            textContentType="emailAddress"
-            editable={!busy}
-          />
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+          <View style={styles.card}>
+            <Text style={styles.title}>Crea account</Text>
+            <Text style={styles.subtitle}>Bastano dieci secondi</Text>
 
-          {/* Password */}
-          <View style={[styles.passwordRow, errors.password && styles.inputError]}>
+            {/* Apple per primo: su iOS è il percorso più breve e la 4.8 lo richiede */}
+            {Platform.OS === 'ios' && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={8}
+                style={styles.appleButton}
+                onPress={() => {
+                  if (busy) return;
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  handleAppleSignIn();
+                }}
+              />
+            )}
+
+            <TouchableOpacity
+              style={[styles.googleButton, busy && styles.buttonDisabled]}
+              onPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleGoogleSignIn();
+              }}
+              disabled={busy}
+            >
+              {socialLoading === 'google' ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator color="#374151" size="small" />
+                  <Text style={styles.googleButtonText}>Accesso con Google…</Text>
+                </View>
+              ) : (
+                <>
+                  <Image
+                    source={require('../../assets/images/icons/google-logo-icon.png')}
+                    style={styles.googleLogoImage}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.googleButtonText}>Continua con Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Consenso passivo: nessuna casella, l'atto di iscriversi è l'assenso */}
+            <Text style={styles.consent}>
+              Continuando accetti i{' '}
+              <Text style={styles.link} onPress={openTerms}>
+                Termini di servizio
+              </Text>
+              {' '}e la{' '}
+              <Text style={styles.link} onPress={openPrivacy}>
+                Privacy Policy
+              </Text>
+              .
+            </Text>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>oppure</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Email */}
             <TextInput
-              style={styles.passwordInput}
-              placeholder="Password"
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="La tua email"
               placeholderTextColor="#9ca3af"
-              value={password}
+              value={email}
               onChangeText={(text) => {
-                setPassword(text);
-                if (errors.password) {
+                setEmail(text.toLowerCase());
+                if (errors.email) {
                   setErrors((prev) => {
                     const next = { ...prev };
-                    delete next.password;
+                    delete next.email;
                     return next;
                   });
                 }
               }}
-              secureTextEntry={!showPassword}
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="password-new"
-              textContentType="newPassword"
+              autoComplete="email"
+              textContentType="emailAddress"
               editable={!busy}
-              returnKeyType="go"
-              onSubmitEditing={handleSubmit}
             />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
-            </TouchableOpacity>
-          </View>
-          {errors.password ? (
-            <Text style={styles.errorText}>{errors.password}</Text>
-          ) : (
-            <Text style={styles.passwordHint}>
-              Almeno 8 caratteri. Più è lunga, meglio è.
-            </Text>
-          )}
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-          <TouchableOpacity
-            style={[styles.primaryButton, !canSubmit && styles.buttonDisabled]}
-            onPress={() => {
-              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              handleSubmit();
-            }}
-            disabled={!canSubmit}
-          >
-            {loading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color="#FFFFFF" size="small" />
-                <Text style={styles.primaryButtonText}>Creazione account…</Text>
-              </View>
+            {/* Password */}
+            <View style={[styles.passwordRow, errors.password && styles.inputError]}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Password"
+                placeholderTextColor="#9ca3af"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) {
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.password;
+                      return next;
+                    });
+                  }
+                }}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="password-new"
+                textContentType="newPassword"
+                editable={!busy}
+                returnKeyType="go"
+                onSubmitEditing={handleSubmit}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+            {errors.password ? (
+              <Text style={styles.errorText}>{errors.password}</Text>
             ) : (
-              <Text style={styles.primaryButtonText}>Continua</Text>
+              <Text style={styles.passwordHint}>
+                Almeno 8 caratteri. Più è lunga, meglio è.
+              </Text>
             )}
-          </TouchableOpacity>
 
-          {loading && (
-            <Text style={styles.loadingNote}>
-              Il server potrebbe metterci qualche istante. Attendi per favore…
-            </Text>
-          )}
-
-          <Text style={styles.loginText}>
-            Hai già un account?{' '}
-            <Text
-              style={styles.link}
+            <TouchableOpacity
+              style={[styles.primaryButton, !canSubmit && styles.buttonDisabled]}
               onPress={() => {
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onNavigate('Login');
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleSubmit();
               }}
+              disabled={!canSubmit}
             >
-              Accedi
+              {loading ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <Text style={styles.primaryButtonText}>Creazione account…</Text>
+                </View>
+              ) : (
+                <Text style={styles.primaryButtonText}>Continua</Text>
+              )}
+            </TouchableOpacity>
+
+            {loading && (
+              <Text style={styles.loadingNote}>
+                Il server potrebbe metterci qualche istante. Attendi per favore…
+              </Text>
+            )}
+
+            <Text style={styles.loginText}>
+              Hai già un account?{' '}
+              <Text
+                style={styles.link}
+                onPress={() => {
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onNavigate('Login');
+                }}
+              >
+                Accedi
+              </Text>
             </Text>
-          </Text>
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </SpazioTastiera>
     </LinearGradient>
   );
 }

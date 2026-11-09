@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useLeaguesStore } from '../../store/stores/useLeaguesStore';
@@ -58,10 +50,7 @@ export default function CreaLegaScreen({ navigation }: Props) {
     <View style={leagueStyles.screen}>
       <SubHeader title="Nuova lega" onBack={() => navigation?.goBack()} />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView
           contentContainerStyle={[leagueStyles.content, styles.scroll]}
           keyboardShouldPersistTaps="handled"

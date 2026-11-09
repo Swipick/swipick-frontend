@@ -17,6 +17,7 @@ import {
   normalizeSummaryResponse,
   calculateProfileKPIs,
 } from '../../utils/profileCalculations';
+import SpazioTastiera from '../../components/common/SpazioTastiera';
 
 type EliminaAccountScreenProps = {
   navigation?: { goBack: () => void };
@@ -115,71 +116,73 @@ export default function EliminaAccountScreen({
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
-      >
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Cosa viene cancellato</Text>
-          <Text style={styles.cardSubtitle}>
-            Definitivamente, senza possibilità di recupero.
-          </Text>
+      <SpazioTastiera>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+        >
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Cosa viene cancellato</Text>
+            <Text style={styles.cardSubtitle}>
+              Definitivamente, senza possibilità di recupero.
+            </Text>
 
-          <View style={styles.list}>
-            {righe.map((riga) => (
-              <View key={riga} style={styles.listRow}>
-                <Ionicons name="close" size={17} color="#b91c1c" style={styles.listIcon} />
-                <Text style={styles.listText}>{riga}</Text>
-              </View>
-            ))}
+            <View style={styles.list}>
+              {righe.map((riga) => (
+                <View key={riga} style={styles.listRow}>
+                  <Ionicons name="close" size={17} color="#b91c1c" style={styles.listIcon} />
+                  <Text style={styles.listText}>{riga}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.card}>
-          <Text style={styles.confirmIntro}>
-            Per confermare, scrivi{' '}
-            <Text style={styles.confirmWord}>{atteso}</Text> qui sotto.
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder={atteso}
-            placeholderTextColor="#c4c4cc"
-            value={conferma}
-            onChangeText={setConferma}
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!deleting}
-          />
-        </View>
+          <View style={styles.card}>
+            <Text style={styles.confirmIntro}>
+              Per confermare, scrivi{' '}
+              <Text style={styles.confirmWord}>{atteso}</Text> qui sotto.
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder={atteso}
+              placeholderTextColor="#c4c4cc"
+              value={conferma}
+              onChangeText={setConferma}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!deleting}
+            />
+          </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => navigation?.goBack()}
-            disabled={deleting}
-          >
-            <Text style={styles.cancelText}>Annulla</Text>
-          </TouchableOpacity>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => navigation?.goBack()}
+              disabled={deleting}
+            >
+              <Text style={styles.cancelText}>Annulla</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.deleteButton, !puoEliminare && styles.deleteButtonOff]}
-            onPress={handleDelete}
-            disabled={!puoEliminare}
-          >
-            {deleting ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text
-                style={[styles.deleteText, !puoEliminare && styles.deleteTextOff]}
-              >
-                Elimina definitivamente
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <TouchableOpacity
+              style={[styles.deleteButton, !puoEliminare && styles.deleteButtonOff]}
+              onPress={handleDelete}
+              disabled={!puoEliminare}
+            >
+              {deleting ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text
+                  style={[styles.deleteText, !puoEliminare && styles.deleteTextOff]}
+                >
+                  Elimina definitivamente
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SpazioTastiera>
     </View>
   );
 }
