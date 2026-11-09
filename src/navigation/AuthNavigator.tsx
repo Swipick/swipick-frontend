@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { BackHandler, View } from 'react-native';
 import { onboardingGiaVisto } from '../utils/onboardingVisto';
 import LandingScreen from '../screens/onboarding/LandingScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
@@ -32,6 +32,19 @@ export interface AuthNavParams {
   userId?: string;
 }
 
+/**
+ * Dove porta il tasto Indietro di Android. Le schermate assenti (Landing,
+ * Onboarding) lasciano uscire dall'app; `null` blocca il tasto: il nickname è
+ * il passo 2 di una registrazione già avviata e, come su iOS, non ha uscite.
+ */
+const INDIETRO: Partial<Record<AuthScreen, AuthScreen | null>> = {
+  Login: 'Landing',
+  Register: 'Landing',
+  Nickname: null,
+  EmailVerification: 'Register',
+  LoginVerified: 'Login',
+};
+
 interface NavigationState {
   screen: AuthScreen;
   params?: AuthNavParams;
@@ -52,6 +65,18 @@ export default function AuthNavigator() {
       vivo = false;
     };
   }, []);
+
+  const schermata = navigationState?.screen;
+  useEffect(() => {
+    if (!schermata) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!(schermata in INDIETRO)) return false;
+      const dietro = INDIETRO[schermata];
+      if (dietro) setNavigationState({ screen: dietro });
+      return true;
+    });
+    return () => sub.remove();
+  }, [schermata]);
 
   const navigate = (screen: AuthScreen, params?: AuthNavParams) => {
     setNavigationState({ screen, params });
