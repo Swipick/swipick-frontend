@@ -334,6 +334,15 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
             />
           )}
 
+          {/* Su Android Apple non c'è: chi si è registrato solo con Apple entra da
+              iPhone e collega un altro metodo, poi usa quello anche qui. */}
+          {Platform.OS === 'android' && (
+            <Text style={styles.appleNote}>
+              Ti sei registrato con Apple? Accedi da iPhone e collega Google o una password in
+              Impostazioni → Metodi di accesso.
+            </Text>
+          )}
+
           {/* Spacer to push forgot password to bottom */}
           <View style={styles.spacer} />
 
@@ -467,6 +476,12 @@ const styles = StyleSheet.create({
     width: '100%' as any,
     height: 56,
     marginBottom: 32,
+  },
+  appleNote: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#6B7280',
+    textAlign: 'center',
   },
   spacer: {
     flex: 1,
