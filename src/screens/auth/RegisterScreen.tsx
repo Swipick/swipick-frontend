@@ -24,12 +24,12 @@ import SpazioTastiera from '../../components/common/SpazioTastiera';
 type RegisterScreenProps = {
   onNavigate: (
     screen: 'Landing' | 'Onboarding' | 'Login' | 'Register' | 'Nickname' | 'EmailVerification',
-    params?: any
+    params?: any,
   ) => void;
 };
 
-const TERMS_URL = "https://www.swipick.com/termini-e-condizioni.html";
-const PRIVACY_URL = "https://www.swipick.com/privacy-e-cookie.html";
+const TERMS_URL = 'https://www.swipick.com/termini-e-condizioni.html';
+const PRIVACY_URL = 'https://www.swipick.com/privacy-e-cookie.html';
 
 /**
  * Passo 1 di 2: email e password, oppure Google/Apple.
@@ -113,8 +113,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       console.log('[RegisterScreen] Google sign-in initiated');
 
       const user = await authService.signInWithGoogle();
-      const idToken = await user.getIdToken();
-      const syncResult = await usersApi.syncGoogleUser(idToken);
+      const syncResult = await authService.sincronizzaGoogle(user);
 
       console.log('[RegisterScreen] User synced to backend:', syncResult);
 
@@ -147,10 +146,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       }
     } catch (error: any) {
       console.error('[RegisterScreen] Apple sign-in error:', error);
-      if (
-        error.code === 'ERR_REQUEST_CANCELED' ||
-        error.message === 'apple-sign-in-cancelled'
-      ) {
+      if (error.code === 'ERR_REQUEST_CANCELED' || error.message === 'apple-sign-in-cancelled') {
         return;
       }
       Alert.alert('Errore', error.message || 'Accesso con Apple non riuscito');
@@ -239,8 +235,8 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               Continuando accetti i{' '}
               <Text style={styles.link} onPress={openTerms}>
                 Termini di servizio
-              </Text>
-              {' '}e la{' '}
+              </Text>{' '}
+              e la{' '}
               <Text style={styles.link} onPress={openPrivacy}>
                 Privacy Policy
               </Text>
@@ -314,9 +310,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
             {errors.password ? (
               <Text style={styles.errorText}>{errors.password}</Text>
             ) : (
-              <Text style={styles.passwordHint}>
-                Almeno 8 caratteri. Più è lunga, meglio è.
-              </Text>
+              <Text style={styles.passwordHint}>Almeno 8 caratteri. Più è lunga, meglio è.</Text>
             )}
 
             <TouchableOpacity

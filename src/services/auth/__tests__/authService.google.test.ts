@@ -40,9 +40,7 @@ const signInMock = GoogleSignin.signIn as jest.Mock;
 
 describe('describeAuthError', () => {
   it('preferisce il codice quando c’è, che è la sigla più stabile', () => {
-    expect(describeAuthError({ code: 'SIGN_IN_REQUIRED', message: 'x' })).toBe(
-      'SIGN_IN_REQUIRED',
-    );
+    expect(describeAuthError({ code: 'SIGN_IN_REQUIRED', message: 'x' })).toBe('SIGN_IN_REQUIRED');
   });
 
   it('accetta anche i codici numerici degli SDK nativi', () => {
@@ -50,9 +48,9 @@ describe('describeAuthError', () => {
   });
 
   it('ripiega sul messaggio quando il codice manca', () => {
-    expect(
-      describeAuthError(new Error('A problem reading the keychain.')),
-    ).toBe('A problem reading the keychain.');
+    expect(describeAuthError(new Error('A problem reading the keychain.'))).toBe(
+      'A problem reading the keychain.',
+    );
   });
 
   it('tronca i messaggi lunghi, che in un alert non entrerebbero', () => {
@@ -74,14 +72,10 @@ describe('signInWithGoogle: diagnosi degli errori non mappati', () => {
   it('porta la causa nativa nel messaggio invece di ingoiarla', async () => {
     // Il caso reale: l'SDK Google non riesce a scrivere nel portachiavi.
     signInMock.mockRejectedValue(
-      new Error(
-        'RNGoogleSignIn: A problem reading or writing to the application keychain.',
-      ),
+      new Error('RNGoogleSignIn: A problem reading or writing to the application keychain.'),
     );
 
-    await expect(authService.signInWithGoogle()).rejects.toThrow(
-      /portachiavi|keychain/i,
-    );
+    await expect(authService.signInWithGoogle()).rejects.toThrow(/portachiavi|keychain/i);
   });
 
   it('allega l’errore originale come cause, per chi legge i log', async () => {
@@ -104,16 +98,42 @@ describe('signInWithGoogle: diagnosi degli errori non mappati', () => {
   it('continua a distinguere l’annullamento, che non è un errore', async () => {
     signInMock.mockRejectedValue({ code: 'SIGN_IN_CANCELLED' });
 
-    await expect(authService.signInWithGoogle()).rejects.toThrow(
-      'Google sign-in was cancelled',
-    );
+    await expect(authService.signInWithGoogle()).rejects.toThrow('Google sign-in was cancelled');
   });
 
   it('segnala il token mancante invece di un generico "riprova"', async () => {
     signInMock.mockResolvedValue({ data: {} }); // nessun idToken
 
-    await expect(authService.signInWithGoogle()).rejects.toThrow(
-      /No ID token/i,
+    await expect(authService.signInWithGoogle()).rejects.toThrow(/No ID token/i);
+  });
+});
+
+describe('authService.sincronizzaGoogle', () => {
+  const { usersApi } = jest.requireMock('../../api/users');
+  const { signOut: firebaseSignOut } = jest.requireMock('firebase/auth');
+  const utente = { getIdToken: jest.fn().mockResolvedValue('token') } as any;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('restituisce la risposta del BFF e resta dentro', async () => {
+    usersApi.syncGoogleUser.mockResolvedValue({ id: 'u1', needsProfileCompletion: false });
+
+    await expect(authService.sincronizzaGoogle(utente)).resolves.toEqual({
+      id: 'u1',
+      needsProfileCompletion: false,
+    });
+    expect(usersApi.syncGoogleUser).toHaveBeenCalledWith('token');
+    expect(firebaseSignOut).not.toHaveBeenCalled();
+  });
+
+  it('se il BFF non registra la persona, esce anche da Firebase', async () => {
+    usersApi.syncGoogleUser.mockRejectedValue(
+      new Error('Errore durante la sincronizzazione con Google'),
     );
+
+    await expect(authService.sincronizzaGoogle(utente)).rejects.toThrow(
+      'Errore durante la sincronizzazione con Google',
+    );
+    expect(firebaseSignOut).toHaveBeenCalled();
   });
 });
