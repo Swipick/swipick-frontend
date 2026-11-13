@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../theme';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 import GuestCTA from '../../components/common/GuestCTA';
+import AvvisoVerificaEmail from '../../components/common/AvvisoVerificaEmail';
 import { profileApi } from '../../services/api/profile';
 import { condividiEMisura } from '../../services/analytics';
 import { percentualeDa } from '../../utils/percentuale';
@@ -211,6 +212,8 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
         </LinearGradient>
 
         <View style={styles.content}>
+          <AvvisoVerificaEmail />
+
           {/* Media, con i numeri grezzi sotto: una percentuale senza
               denominatore non si puo' verificare. */}
           <View style={styles.card}>
