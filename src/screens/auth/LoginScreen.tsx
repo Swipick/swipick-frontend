@@ -65,28 +65,11 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         emailVerified: user.emailVerified,
       });
 
-      // Check email verification status
-      if (!user.emailVerified) {
-        console.log('[LoginScreen] Email not verified, showing verification prompt');
-
-        Alert.alert(
-          'Email Non Verificata',
-          'Devi verificare la tua email prima di accedere. Controlla la tua casella di posta.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate to email verification screen
-                onNavigate('EmailVerification', { email: email.trim().toLowerCase() });
-              },
-            },
-          ],
-        );
-        return;
-      }
-
-      // Utente verificato: la transizione alla home la fa AppNavigator
-      // via onAuthStateChanged (AuthNavigator viene smontato).
+      // La transizione alla home la fa AppNavigator via onAuthStateChanged
+      // (AuthNavigator viene smontato). Niente controllo sulla verifica qui:
+      // Firebase ha già fatto entrare, e un popup "devi verificare" seguito
+      // dall'ingresso si contraddiceva. Chi deve ancora verificare trova
+      // l'avviso con "Reinvia email" nel Profilo.
     } catch (error: any) {
       console.error('[LoginScreen] Login error:', error);
 
