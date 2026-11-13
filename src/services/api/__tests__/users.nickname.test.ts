@@ -15,7 +15,10 @@ describe('usersApi.registerUser — passo 1 senza nickname', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('manda solo email e password: il nickname arriva al passo 2', async () => {
-    mockApiClient.post.mockResolvedValue({ id: 'u-1', profileCompleted: false });
+    mockApiClient.post.mockResolvedValue({
+      success: true,
+      data: { id: 'u-1', profileCompleted: false },
+    });
 
     await usersApi.registerUser({ email: 'mario@example.com', password: 'lunghissima' });
 
@@ -23,6 +26,23 @@ describe('usersApi.registerUser — passo 1 senza nickname', () => {
       email: 'mario@example.com',
       password: 'lunghissima',
     });
+  });
+
+  it("restituisce l'utente dentro la busta del BFF, con l'id per il passo 2", async () => {
+    // Forma reale della risposta: il mock piatto di prima nascondeva il guasto.
+    mockApiClient.post.mockResolvedValue({
+      success: true,
+      data: { id: 'u-1', profileCompleted: false, verificationEmailSent: true },
+      message: 'Utente registrato con successo',
+    });
+
+    const utente = await usersApi.registerUser({
+      email: 'mario@example.com',
+      password: 'lunghissima',
+    });
+
+    expect(utente.id).toBe('u-1');
+    expect(utente.verificationEmailSent).toBe(true);
   });
 });
 
@@ -34,9 +54,7 @@ describe('usersApi.isNicknameAvailable', () => {
 
     const result = await usersApi.isNicknameAvailable('mario_rossi');
 
-    expect(mockApiClient.get).toHaveBeenCalledWith(
-      '/users/nickname-available/mario_rossi'
-    );
+    expect(mockApiClient.get).toHaveBeenCalledWith('/users/nickname-available/mario_rossi');
     expect(result).toBe(true);
   });
 
@@ -61,10 +79,9 @@ describe('usersApi.completeProfile', () => {
 
     await usersApi.completeProfile('u-1', 'mario_rossi');
 
-    expect(mockApiClient.post).toHaveBeenCalledWith(
-      '/users/complete-profile/u-1',
-      { nickname: 'mario_rossi' }
-    );
+    expect(mockApiClient.post).toHaveBeenCalledWith('/users/complete-profile/u-1', {
+      nickname: 'mario_rossi',
+    });
   });
 
   it('rilancia il messaggio del backend quando il nickname è occupato', async () => {
@@ -73,7 +90,7 @@ describe('usersApi.completeProfile', () => {
     });
 
     await expect(usersApi.completeProfile('u-1', 'mario_rossi')).rejects.toThrow(
-      'Questo nickname è già in uso'
+      'Questo nickname è già in uso',
     );
   });
 });
@@ -86,10 +103,9 @@ describe('usersApi.updateNickname', () => {
 
     await usersApi.updateNickname('u-1', 'nuovo_nick');
 
-    expect((mockApiClient as any).patch).toHaveBeenCalledWith(
-      '/users/u-1/nickname',
-      { nickname: 'nuovo_nick' }
-    );
+    expect((mockApiClient as any).patch).toHaveBeenCalledWith('/users/u-1/nickname', {
+      nickname: 'nuovo_nick',
+    });
   });
 
   it('rilancia il messaggio del backend quando il nickname è occupato', async () => {
@@ -98,7 +114,7 @@ describe('usersApi.updateNickname', () => {
     });
 
     await expect(usersApi.updateNickname('u-1', 'preso')).rejects.toThrow(
-      'Questo nickname è già in uso'
+      'Questo nickname è già in uso',
     );
   });
 });
