@@ -63,10 +63,9 @@ export const usersApi = {
     try {
       console.log('[UsersAPI] Syncing Apple user');
 
-      const response = await apiClient.post<SyncUserEnvelope>(
-        '/users/sync-apple',
-        { firebaseIdToken }
-      );
+      const response = await apiClient.post<SyncUserEnvelope>('/users/sync-apple', {
+        firebaseIdToken,
+      });
 
       console.log('[UsersAPI] Apple user synced:', response);
       return normalizeSync(response);
@@ -89,10 +88,16 @@ export const usersApi = {
     try {
       console.log('[UsersAPI] Registering user:', { email: data.email, name: data.name });
 
-      const response = await apiClient.post<UserResponseDto>('/users/register', data);
+      // Come i /users/sync-*, la registrazione incarta l'utente in
+      // { success, data, message }: leggere la risposta piatta dava un id
+      // undefined e il passo del nickname finiva su /complete-profile/.
+      const response = await apiClient.post<{ success: boolean; data: UserResponseDto }>(
+        '/users/register',
+        data,
+      );
 
-      console.log('[UsersAPI] User registered successfully:', response);
-      return response;
+      console.log('[UsersAPI] User registered successfully:', response.data.id);
+      return response.data;
     } catch (error: any) {
       console.error('[UsersAPI] Registration error:', error);
       console.error('[UsersAPI] Error response:', error.response?.data);
@@ -138,7 +143,7 @@ export const usersApi = {
   async isNicknameAvailable(nickname: string): Promise<boolean> {
     try {
       const response = await apiClient.get<{ available: boolean }>(
-        `/users/nickname-available/${encodeURIComponent(nickname)}`
+        `/users/nickname-available/${encodeURIComponent(nickname)}`,
       );
       return response.available;
     } catch (error: any) {
@@ -188,7 +193,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Impossibile inviare l\'email. Riprova più tardi.');
+      throw new Error("Impossibile inviare l'email. Riprova più tardi.");
     }
   },
 
@@ -211,7 +216,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Impossibile inviare l\'email. Riprova più tardi.');
+      throw new Error("Impossibile inviare l'email. Riprova più tardi.");
     }
   },
 
@@ -223,10 +228,9 @@ export const usersApi = {
     try {
       console.log('[UsersAPI] Syncing Google user');
 
-      const response = await apiClient.post<SyncUserEnvelope>(
-        '/users/sync-google',
-        { firebaseIdToken }
-      );
+      const response = await apiClient.post<SyncUserEnvelope>('/users/sync-google', {
+        firebaseIdToken,
+      });
 
       console.log('[UsersAPI] Google user synced:', response);
       return normalizeSync(response);
