@@ -17,14 +17,10 @@ import {
 } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  LoginCredentials,
-  RegisterCredentials,
-  AUTH_ERROR_MESSAGES,
-} from '../../types/auth.types';
+import { LoginCredentials, RegisterCredentials, AUTH_ERROR_MESSAGES } from '../../types/auth.types';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
-import { usersApi } from '../api/users';
+import { usersApi, SyncGoogleUserResponse } from '../api/users';
 import { ENV } from '../../config/env';
 
 const EMAIL_KEY = '@swipick:emailForSignIn';
@@ -52,9 +48,7 @@ export const describeAuthError = (error: unknown): string => {
   if (typeof code === 'number') return String(code);
 
   if (typeof message === 'string' && message.length > 0) {
-    return message.length > MAX_HINT_LENGTH
-      ? `${message.slice(0, MAX_HINT_LENGTH)}…`
-      : message;
+    return message.length > MAX_HINT_LENGTH ? `${message.slice(0, MAX_HINT_LENGTH)}…` : message;
   }
 
   return 'errore sconosciuto';
@@ -64,8 +58,7 @@ export const describeAuthError = (error: unknown): string => {
 // crasherebbe l'app al bundle (TurboModuleRegistry.getEnforcing). Require
 // difensivo: in Expo Go l'app parte e solo il login Google è indisponibile;
 // nei dev build e in produzione il comportamento è identico a prima.
-type GoogleSigninModule =
-  typeof import('@react-native-google-signin/google-signin').GoogleSignin;
+type GoogleSigninModule = typeof import('@react-native-google-signin/google-signin').GoogleSignin;
 
 let GoogleSignin: GoogleSigninModule | null = null;
 try {
@@ -103,7 +96,7 @@ class AuthService {
       const userCredential: UserCredential = await signInWithEmailAndPassword(
         auth,
         credentials.email,
-        credentials.password
+        credentials.password,
       );
 
       await this.saveEmailForSignIn(credentials.email);
@@ -112,9 +105,7 @@ class AuthService {
       return userCredential.user;
     } catch (error: any) {
       console.error('[AuthService] Sign in error:', error.code);
-      throw new Error(
-        AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default
-      );
+      throw new Error(AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default);
     }
   }
 
@@ -126,7 +117,7 @@ class AuthService {
       const userCredential: UserCredential = await createUserWithEmailAndPassword(
         auth,
         credentials.email,
-        credentials.password
+        credentials.password,
       );
 
       // Update display name if provided
@@ -148,9 +139,7 @@ class AuthService {
       return userCredential.user;
     } catch (error: any) {
       console.error('[AuthService] Sign up error:', error.code);
-      throw new Error(
-        AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default
-      );
+      throw new Error(AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default);
     }
   }
 
@@ -183,10 +172,7 @@ class AuthService {
       const googleCredential = GoogleAuthProvider.credential(idToken);
 
       // Sign in to Firebase with the Google credential
-      const userCredential: UserCredential = await signInWithCredential(
-        auth,
-        googleCredential
-      );
+      const userCredential: UserCredential = await signInWithCredential(auth, googleCredential);
 
       // Save email if available
       if (userCredential.user.email) {
@@ -212,10 +198,9 @@ class AuthService {
         throw new Error(known);
       }
 
-      throw new Error(
-        `Accesso con Google non riuscito. Riprova. [${describeAuthError(error)}]`,
-        { cause: error },
-      );
+      throw new Error(`Accesso con Google non riuscito. Riprova. [${describeAuthError(error)}]`, {
+        cause: error,
+      });
     }
   }
 
@@ -232,7 +217,7 @@ class AuthService {
     const rawNonce = Crypto.randomUUID();
     const hashedNonce = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
-      rawNonce
+      rawNonce,
     );
 
     // Native Apple authentication
@@ -252,17 +237,36 @@ class AuthService {
     });
 
     // Sign in to Firebase
-    const userCredential: UserCredential = await signInWithCredential(
-      auth,
-      firebaseCredential
-    );
+    const userCredential: UserCredential = await signInWithCredential(auth, firebaseCredential);
 
     // Sync user to backend
     const idToken = await userCredential.user.getIdToken();
-    await usersApi.syncAppleUser(idToken);
+    await this.annullaSeFallisce(usersApi.syncAppleUser(idToken));
 
     console.log('[AuthService] Apple Sign-In successful:', userCredential.user.uid);
     return userCredential.user;
+  }
+
+  /**
+   * Registra sul BFF chi è appena entrato con Google.
+   */
+  async sincronizzaGoogle(user: User): Promise<SyncGoogleUserResponse> {
+    const idToken = await user.getIdToken();
+    return this.annullaSeFallisce(usersApi.syncGoogleUser(idToken));
+  }
+
+  /**
+   * Firebase ha già fatto entrare, ma se il BFF non registra la persona l'app
+   * resta a metà: Gioca funziona, le leghe rispondono 401 e dopo due l'app
+   * disconnette senza spiegare perché. Meglio uscire subito e dire l'errore.
+   */
+  private async annullaSeFallisce<T>(sync: Promise<T>): Promise<T> {
+    try {
+      return await sync;
+    } catch (error) {
+      await this.signOut().catch(() => undefined);
+      throw error;
+    }
   }
 
   /**
@@ -459,14 +463,11 @@ class AuthService {
     } else if (providers.includes('apple.com')) {
       reauthCredential = await this.freshAppleCredential();
     } else {
-      throw new Error('Nessun metodo di accesso con cui confermare la tua identita\'');
+      throw new Error("Nessun metodo di accesso con cui confermare la tua identita'");
     }
 
     await reauthenticateWithCredential(user, reauthCredential);
-    await linkWithCredential(
-      user,
-      EmailAuthProvider.credential(user.email, password),
-    );
+    await linkWithCredential(user, EmailAuthProvider.credential(user.email, password));
     console.log('[AuthService] Password impostata');
   }
 

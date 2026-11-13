@@ -16,7 +16,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { authService } from '../../services/auth/authService';
-import { usersApi } from '../../services/api/users';
 import { profileApi, needsProfileCompletion } from '../../services/api/profile';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 import { AUTH_ERROR_MESSAGES } from '../../types/auth.types';
@@ -114,12 +113,8 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         displayName: user.displayName,
       });
 
-      // Get Firebase ID token to sync with backend
-      const idToken = await user.getIdToken();
-      console.log('[LoginScreen] Got Firebase ID token, syncing with backend...');
-
-      // Sync user to NeonDB via backend
-      const syncResult = await usersApi.syncGoogleUser(idToken);
+      // Sync user to NeonDB via backend (se fallisce, authService fa uscire)
+      const syncResult = await authService.sincronizzaGoogle(user);
       console.log('[LoginScreen] User synced to backend:', syncResult);
 
       // Utenti Google già verificati: la transizione alla home la fa
