@@ -58,6 +58,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "614934207425-3624mk67ilcr7bdghhne2n4p2iajdnts.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zenotomiolo.swipick",
+            "certificate_hash": "60686ad4c6dfd45f8e69705ffe8959c276d97698"
+          }
+        },
+        {
           "client_id": "614934207425-6lftdhaao569iet3o0k7ve3et1eo17p7.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
