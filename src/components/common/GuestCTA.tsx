@@ -77,7 +77,10 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
+    // In inglese "Sign up or sign in" non stava nella larghezza del contenitore.
+    minWidth: 260,
     maxWidth: 320,
+    paddingHorizontal: 24,
     height: 56,
     backgroundColor: colors.brand.purpleDark,
     borderRadius: 12,

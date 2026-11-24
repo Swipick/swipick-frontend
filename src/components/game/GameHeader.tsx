@@ -118,7 +118,9 @@ export default function GameHeader({
       {/* Week Header */}
       <View style={styles.weekHeader}>
         <Text style={styles.weekTitle}>
-          {t('gioca.giornata', { n: currentWeek })} {weekDateRange}
+          {weekDateRange
+            ? t('gioca.intestazione', { n: currentWeek, intervallo: weekDateRange })
+            : t('gioca.giornata', { n: currentWeek })}
         </Text>
       </View>
 

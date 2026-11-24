@@ -22,6 +22,8 @@ import {
   leagueColors,
 } from '../../components/leagues/LeagueUI';
 import { useTranslation } from 'react-i18next';
+import GuestCTA from '../../components/common/GuestCTA';
+import { useAuthStore } from '../../store/stores/useAuthStore';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void };
@@ -93,10 +95,24 @@ export default function LegheScreen({ navigation }: Props) {
   const loading = useLeaguesStore((s) => s.loading);
   const error = useLeaguesStore((s) => s.error);
   const loadLeagues = useLeaguesStore((s) => s.loadLeagues);
+  const user = useAuthStore((s) => s.user);
 
+  // Le leghe esistono solo con un account: senza, il server rispondeva
+  // "Token di accesso mancante" e l'ospite vedeva un errore invece di un invito.
   useEffect(() => {
-    loadLeagues();
-  }, [loadLeagues]);
+    if (user) loadLeagues();
+  }, [loadLeagues, user]);
+
+  if (!user) {
+    return (
+      <View style={[leagueStyles.screen, leagueStyles.center]}>
+        <GuestCTA
+          title={t('leghePagina.ospiteTitolo')}
+          message={t('leghePagina.ospiteMessaggio')}
+        />
+      </View>
+    );
+  }
 
   const apri = (leagueId: string) => navigation?.navigate('dettaglio-lega', { leagueId });
 

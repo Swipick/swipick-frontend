@@ -142,6 +142,7 @@ export const en: Testi = {
     registratiPerSalvare:
       'Sign up to save your predictions, see your score and climb the standings.',
     giornata: 'Matchday {{n}}',
+    intestazione: 'Matchday {{n}} · {{intervallo}}',
     dalAl: '{{dal}} to {{al}}',
     modalitaTest: 'TEST MODE',
     sfidaAmici: 'Challenge your friends',
@@ -225,6 +226,8 @@ export const en: Testi = {
   },
   leghePagina: {
     titolo: 'Leagues',
+    ospiteTitolo: 'Play with your friends',
+    ospiteMessaggio: 'Sign up to create a league or join one with an invite code.',
     membri_one: '{{count}} member',
     membri_other: '{{count}} members',
     inAttesa: 'pending',
@@ -492,6 +495,8 @@ export const en: Testi = {
     codice: 'code',
     notaClassifica: 'The standings add up over the whole season.',
     caricamentoApp: 'Loading Swipick…',
+    dataEsempio1: 'Sat, 22/11\n18:00',
+    dataEsempio2: 'Sun, 23/11\n15:00',
   },
   schede: {
     risultati: 'Results',

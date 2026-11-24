@@ -78,10 +78,16 @@ function MatchCard({
 }
 
 export function PredictSlide() {
+  const { t } = useTranslation();
   return (
     <View style={styles.slide}>
-      <MatchCard home="Juventus" away="Napoli" date={'sab, 22/11\n18:00'} selected="1" />
-      <MatchCard home="Atalanta" away="Fiorentina" date={'dom, 23/11\n15:00'} selected="X" />
+      <MatchCard home="Juventus" away="Napoli" date={t('benvenuto.dataEsempio1')} selected="1" />
+      <MatchCard
+        home="Atalanta"
+        away="Fiorentina"
+        date={t('benvenuto.dataEsempio2')}
+        selected="X"
+      />
     </View>
   );
 }

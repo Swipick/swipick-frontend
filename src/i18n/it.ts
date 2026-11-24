@@ -151,6 +151,7 @@ export const it = {
     registratiPerSalvare:
       'Registrati per salvare i tuoi pronostici, vedere il tuo punteggio e scalare la classifica.',
     giornata: 'Giornata {{n}}',
+    intestazione: 'Giornata {{n}} {{intervallo}}',
     dalAl: 'dal {{dal}} al {{al}}',
     modalitaTest: 'MODALITÀ TEST',
     sfidaAmici: 'Sfida i tuoi amici',
@@ -236,6 +237,8 @@ export const it = {
   },
   leghePagina: {
     titolo: 'Leghe',
+    ospiteTitolo: 'Gioca con i tuoi amici',
+    ospiteMessaggio: 'Registrati per creare una lega o entrare con un codice di invito.',
     membri_one: '{{count}} membro',
     membri_other: '{{count}} membri',
     inAttesa: 'in attesa',
@@ -502,6 +505,8 @@ export const it = {
     codice: 'codice',
     notaClassifica: 'La classifica si somma per tutta la stagione.',
     caricamentoApp: 'Caricamento di Swipick…',
+    dataEsempio1: 'sab, 22/11\n18:00',
+    dataEsempio2: 'dom, 23/11\n15:00',
   },
   schede: {
     risultati: 'Risultati',
