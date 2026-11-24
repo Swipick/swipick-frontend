@@ -292,6 +292,75 @@ export const it = {
     sicurezzaCodice:
       'Quattro caratteri si dettano al telefono, ma sono pochi contro i tentativi a caso: le 48 ore di validità e il limite di cinque tentativi al minuto sono quello che tiene chiusa la porta.',
   },
+  legaDettaglio: {
+    senzaNickname: 'senza nickname',
+    tu: ' · tu',
+    entraDalla: 'entra dalla giornata {{n}}',
+    dalla: 'dalla giornata {{n}}',
+    erroreGiornata: 'Non riesco a caricare la giornata',
+    giornataN: 'Giornata {{n}}',
+    giornata: 'Giornata',
+    caricamento: 'Caricamento lega…',
+    indietro: 'Indietro',
+    classificaStagione: 'classifica di stagione',
+    stagione: 'Stagione',
+    giocatore: 'Giocatore',
+    media: 'Media',
+    giusti: 'Giusti',
+    notaStagione:
+      'La classifica va per pronostici giusti. La media è sulle partite già scoperte, che per chi è entrato dopo sono meno.',
+    notaGiornata:
+      'Solo la giornata {{n}}: durante le partite i punti salgono man mano che arrivano i risultati.',
+    notaUnaGiornata: 'Solo una giornata.',
+    invitaAmico: 'Invita un amico',
+    gestisci: 'Gestisci',
+  },
+  legaGestione: {
+    titolo: 'Gestisci lega',
+    nonRiuscita: 'Operazione non riuscita',
+    rimuovereChi: 'Rimuovere @{{nickname}}?',
+    questoMembro: 'questo membro',
+    rimuovereTesto:
+      'Non potrà rientrare con il codice: dovrai riammetterlo tu, e ripartirà dalla giornata corrente.',
+    rimuovi: 'Rimuovi',
+    riammetti: 'Riammetti',
+    salva: 'Salva',
+    codiceInvito: "Codice d'invito",
+    chiusi: 'chiusi',
+    chiudiInviti: 'Chiudi inviti',
+    chiudendo: 'Chiudendo gli inviti nessuno può più entrare finché non generi un codice nuovo.',
+    gestisce: 'GESTISCE',
+    seiTu: 'sei tu',
+    rimosso: 'rimosso',
+    uscito: 'uscito',
+    notaRimozione:
+      'Chi rimuovi non può rientrare con il codice: solo tu puoi riammetterlo, e riparte dalla giornata corrente.',
+    passaGestione: 'Passa la gestione',
+    passaSpiegazione:
+      'Finché gestisci tu, non puoi uscire dalla lega. Passandola a qualcun altro resti dentro come membro.',
+    scegliChi: 'Scegli chi gestirà la lega',
+    eliminaLega: 'Elimina la lega',
+    eliminareNome: 'Eliminare «{{nome}}»?',
+    eliminaSpiegazione:
+      'Spariscono la classifica e tutte le iscrizioni. Gli altri membri non riceveranno nessun avviso: troveranno la lega sparita.',
+    nonSiTorna: 'Non si torna indietro.',
+    scriviNome: 'Scrivi «{{nome}}» per confermare',
+  },
+  legaPassa: {
+    passareA: 'Passare la gestione a {{nome}}?',
+    passareTesto:
+      'Da quel momento gestirà gli accessi: codice, membri, nome ed eliminazione. Tu resti nella lega come membro, e per tornare a gestirla dovrà ripassartela.',
+    avviso:
+      'Chi scegli potrà invitare, rimuovere membri ed eliminare {{lega}}. Tu resti nella lega come membro, ma non potrai più gestirla.',
+    laLega: 'la lega',
+    aChi: 'A chi la passi',
+    nessunAltro:
+      "Non c'è nessun altro membro attivo: invita qualcuno prima di passare la gestione.",
+    nellaLegaDalla: 'nella lega dalla giornata {{n}}',
+    soloAttivi: 'Solo i membri attivi. Chi è stato rimosso o è uscito non compare.',
+    passaA: 'Passa la gestione a @{{nickname}}',
+    scegliMembro: 'Scegli un membro',
+  },
   lingua: {
     titolo: 'Lingua',
     automatica: 'Automatica',
