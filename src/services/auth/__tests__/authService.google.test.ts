@@ -104,7 +104,7 @@ describe('signInWithGoogle: diagnosi degli errori non mappati', () => {
   it('segnala il token mancante invece di un generico "riprova"', async () => {
     signInMock.mockResolvedValue({ data: {} }); // nessun idToken
 
-    await expect(authService.signInWithGoogle()).rejects.toThrow(/No ID token/i);
+    await expect(authService.signInWithGoogle()).rejects.toThrow(/Nessun token ricevuto da Google/);
   });
 });
 

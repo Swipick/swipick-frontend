@@ -20,6 +20,7 @@ import { profileApi, needsProfileCompletion } from '../../services/api/profile';
 import { authService } from '../../services/auth/authService';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 import SpazioTastiera from '../../components/common/SpazioTastiera';
+import { useTranslation } from 'react-i18next';
 
 type RegisterScreenProps = {
   onNavigate: (
@@ -38,6 +39,7 @@ const PRIVACY_URL = 'https://www.swipick.com/privacy-e-cookie.html';
  * di iscriversi (consenso passivo), quindi niente casella da spuntare.
  */
 export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -53,16 +55,16 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
     const next: Record<string, string> = {};
 
     if (!email.trim()) {
-      next.email = 'Inserisci la tua email';
+      next.email = t('registrazione.inserisciEmail');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      next.email = 'Formato email non valido';
+      next.email = t('accesso.emailNonValida');
     }
 
     // Nessuna regola di composizione, come sul backend: conta la lunghezza.
     if (!password) {
-      next.password = 'Scegli una password';
+      next.password = t('registrazione.scegliPassword');
     } else if (password.length < 8) {
-      next.password = 'La password deve avere almeno 8 caratteri';
+      next.password = t('registrazione.passwordCorta');
     }
 
     setErrors(next);
@@ -92,7 +94,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       });
     } catch (error: any) {
       console.error('[RegisterScreen] Registration failed:', error);
-      const msg: string = error?.message || 'Registrazione non riuscita';
+      const msg: string = error?.message || t('registrazione.nonRiuscita');
       // Conflitti e validazioni del backend vanno sotto al campo giusto, così
       // l'utente può correggere senza uscire dal modulo.
       if (/email/i.test(msg)) {
@@ -100,7 +102,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       } else if (/password/i.test(msg)) {
         setErrors((prev) => ({ ...prev, password: msg }));
       } else {
-        Alert.alert('Errore', msg);
+        Alert.alert(t('comune.errore'), msg);
       }
     } finally {
       setLoading(false);
@@ -125,7 +127,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
     } catch (error: any) {
       console.error('[RegisterScreen] Google sign-in error:', error);
       if (error.message === 'Google sign-in was cancelled') return;
-      Alert.alert('Errore', error.message || 'Accesso con Google non riuscito');
+      Alert.alert(t('comune.errore'), error.message || t('accesso.googleNonRiuscito'));
     } finally {
       setSocialLoading(null);
     }
@@ -149,7 +151,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
       if (error.code === 'ERR_REQUEST_CANCELED' || error.message === 'apple-sign-in-cancelled') {
         return;
       }
-      Alert.alert('Errore', error.message || 'Accesso con Apple non riuscito');
+      Alert.alert(t('comune.errore'), error.message || t('accesso.appleNonRiuscito'));
     } finally {
       setSocialLoading(null);
     }
@@ -183,12 +185,14 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.wordmark}>SWIPICK</Text>
-            <Text style={[styles.headerSide, styles.stepLabel]}>Passo 1 di 2</Text>
+            <Text style={[styles.headerSide, styles.stepLabel]}>
+              {t('registrazione.passo', { n: 1 })}
+            </Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.title}>Crea account</Text>
-            <Text style={styles.subtitle}>Bastano dieci secondi</Text>
+            <Text style={styles.title}>{t('registrazione.titolo')}</Text>
+            <Text style={styles.subtitle}>{t('registrazione.sottotitolo')}</Text>
 
             {/* Apple per primo: su iOS è il percorso più breve e la 4.8 lo richiede */}
             {Platform.OS === 'ios' && (
@@ -216,7 +220,9 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               {socialLoading === 'google' ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator color="#374151" size="small" />
-                  <Text style={styles.googleButtonText}>Accesso con Google…</Text>
+                  <Text style={styles.googleButtonText}>
+                    {t('registrazione.accessoGoogleInCorso')}
+                  </Text>
                 </View>
               ) : (
                 <>
@@ -225,34 +231,34 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
                     style={styles.googleLogoImage}
                     resizeMode="contain"
                   />
-                  <Text style={styles.googleButtonText}>Continua con Google</Text>
+                  <Text style={styles.googleButtonText}>{t('registrazione.continuaGoogle')}</Text>
                 </>
               )}
             </TouchableOpacity>
 
             {/* Consenso passivo: nessuna casella, l'atto di iscriversi è l'assenso */}
             <Text style={styles.consent}>
-              Continuando accetti i{' '}
+              {t('registrazione.consensoPrima')}{' '}
               <Text style={styles.link} onPress={openTerms}>
-                Termini di servizio
+                {t('registrazione.termini')}
               </Text>{' '}
-              e la{' '}
+              {t('registrazione.consensoMezzo')}{' '}
               <Text style={styles.link} onPress={openPrivacy}>
-                Privacy Policy
+                {t('registrazione.privacy')}
               </Text>
               .
             </Text>
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>oppure</Text>
+              <Text style={styles.dividerText}>{t('accesso.oppure')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
             {/* Email */}
             <TextInput
               style={[styles.input, errors.email && styles.inputError]}
-              placeholder="La tua email"
+              placeholder={t('registrazione.tuaEmail')}
               placeholderTextColor="#9ca3af"
               value={email}
               onChangeText={(text) => {
@@ -278,7 +284,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
             <View style={[styles.passwordRow, errors.password && styles.inputError]}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Password"
+                placeholder={t('accesso.password')}
                 placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={(text) => {
@@ -310,7 +316,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
             {errors.password ? (
               <Text style={styles.errorText}>{errors.password}</Text>
             ) : (
-              <Text style={styles.passwordHint}>Almeno 8 caratteri. Più è lunga, meglio è.</Text>
+              <Text style={styles.passwordHint}>{t('registrazione.passwordSuggerimento')}</Text>
             )}
 
             <TouchableOpacity
@@ -324,21 +330,17 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               {loading ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator color="#FFFFFF" size="small" />
-                  <Text style={styles.primaryButtonText}>Creazione account…</Text>
+                  <Text style={styles.primaryButtonText}>{t('registrazione.creazione')}</Text>
                 </View>
               ) : (
-                <Text style={styles.primaryButtonText}>Continua</Text>
+                <Text style={styles.primaryButtonText}>{t('registrazione.continua')}</Text>
               )}
             </TouchableOpacity>
 
-            {loading && (
-              <Text style={styles.loadingNote}>
-                Il server potrebbe metterci qualche istante. Attendi per favore…
-              </Text>
-            )}
+            {loading && <Text style={styles.loadingNote}>{t('registrazione.attesaServer')}</Text>}
 
             <Text style={styles.loginText}>
-              Hai già un account?{' '}
+              {t('registrazione.haiAccount')}{' '}
               <Text
                 style={styles.link}
                 onPress={() => {
@@ -346,7 +348,7 @@ export default function RegisterScreen({ onNavigate }: RegisterScreenProps) {
                   onNavigate('Login');
                 }}
               >
-                Accedi
+                {t('accesso.accedi')}
               </Text>
             </Text>
           </View>

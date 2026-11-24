@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { usersApi } from '../../services/api/users';
 import SpazioTastiera from '../../components/common/SpazioTastiera';
+import { useTranslation } from 'react-i18next';
 
 type NicknameScreenProps = {
   /** Id utente sul backend (UUID), non l'uid Firebase. */
@@ -32,6 +33,7 @@ type Availability = 'idle' | 'checking' | 'free' | 'taken';
  * quindi non conosce il percorso da cui viene.
  */
 export default function NicknameScreen({ userId, onDone }: NicknameScreenProps) {
+  const { t } = useTranslation();
   const [nickname, setNickname] = useState('');
   const [availability, setAvailability] = useState<Availability>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -75,13 +77,13 @@ export default function NicknameScreen({ userId, onDone }: NicknameScreenProps) 
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onDone();
     } catch (e: any) {
-      const msg: string = e?.message || 'Non siamo riusciti a salvare il nickname';
+      const msg: string = e?.message || t('nickname.nonSalvato');
       // Il conflitto è l'errore atteso: va sotto al campo, non in un avviso.
       if (/nickname/i.test(msg)) {
         setError(msg);
         setAvailability('taken');
       } else {
-        Alert.alert('Errore', msg);
+        Alert.alert(t('comune.errore'), msg);
       }
     } finally {
       setSaving(false);
@@ -91,14 +93,15 @@ export default function NicknameScreen({ userId, onDone }: NicknameScreenProps) 
   const hint = () => {
     if (error) return { text: error, tone: styles.hintBad };
     if (nickname.length === 0) {
-      return { text: 'Da 3 a 50 caratteri: minuscole, numeri e underscore.', tone: styles.hintNeutral };
+      return { text: t('nickname.regola'), tone: styles.hintNeutral };
     }
     if (!formatOk) {
-      return { text: 'Solo minuscole, numeri e underscore (_), da 3 a 50 caratteri.', tone: styles.hintBad };
+      return { text: t('nickname.formatoErrato'), tone: styles.hintBad };
     }
-    if (availability === 'checking') return { text: 'Controllo…', tone: styles.hintNeutral };
-    if (availability === 'taken') return { text: 'Questo nickname è già in uso', tone: styles.hintBad };
-    if (availability === 'free') return { text: '✓ disponibile', tone: styles.hintOk };
+    if (availability === 'checking')
+      return { text: t('nickname.controllo'), tone: styles.hintNeutral };
+    if (availability === 'taken') return { text: t('nickname.inUso'), tone: styles.hintBad };
+    if (availability === 'free') return { text: t('nickname.disponibile'), tone: styles.hintOk };
     return { text: ' ', tone: styles.hintNeutral };
   };
 
@@ -118,23 +121,20 @@ export default function NicknameScreen({ userId, onDone }: NicknameScreenProps) 
           <View style={styles.header}>
             <View style={styles.headerSide} />
             <Text style={styles.wordmark}>SWIPICK</Text>
-            <Text style={[styles.headerSide, styles.stepLabel]}>Passo 2 di 2</Text>
+            <Text style={[styles.headerSide, styles.stepLabel]}>
+              {t('registrazione.passo', { n: 2 })}
+            </Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.title}>Scegli il tuo nickname</Text>
-            <Text style={styles.subtitle}>È il nome con cui ti vedono gli altri</Text>
+            <Text style={styles.title}>{t('nickname.titolo')}</Text>
+            <Text style={styles.subtitle}>{t('nickname.sottotitolo')}</Text>
 
-            <View
-              style={[
-                styles.inputRow,
-                availability === 'taken' && styles.inputRowError,
-              ]}
-            >
+            <View style={[styles.inputRow, availability === 'taken' && styles.inputRowError]}>
               <Text style={styles.at}>@</Text>
               <TextInput
                 style={styles.input}
-                placeholder="mario_rossi"
+                placeholder={t('nickname.esempio')}
                 placeholderTextColor="#9ca3af"
                 value={nickname}
                 onChangeText={(text) => {
@@ -149,9 +149,7 @@ export default function NicknameScreen({ userId, onDone }: NicknameScreenProps) 
                 returnKeyType="go"
                 onSubmitEditing={handleSubmit}
               />
-              {availability === 'checking' && (
-                <ActivityIndicator size="small" color="#9ca3af" />
-              )}
+              {availability === 'checking' && <ActivityIndicator size="small" color="#9ca3af" />}
             </View>
 
             <Text style={[styles.hint, hintTone]}>{hintText}</Text>
@@ -167,13 +165,11 @@ export default function NicknameScreen({ userId, onDone }: NicknameScreenProps) 
               {saving ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={styles.primaryButtonText}>Inizia a giocare</Text>
+                <Text style={styles.primaryButtonText}>{t('nickname.iniziaGiocare')}</Text>
               )}
             </TouchableOpacity>
 
-            <Text style={styles.footer}>
-              Puoi cambiarlo quando vuoi dalle impostazioni.
-            </Text>
+            <Text style={styles.footer}>{t('nickname.cambiaQuandoVuoi')}</Text>
           </View>
         </ScrollView>
       </SpazioTastiera>

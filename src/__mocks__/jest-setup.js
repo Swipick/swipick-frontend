@@ -45,3 +45,9 @@ jest.mock('expo-constants', () => ({
     },
   },
 }));
+
+// expo-localization è ESM e nei test non c'è un telefono: si parte in italiano,
+// la lingua di riferimento dei test esistenti.
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'it', languageTag: 'it-IT' }],
+}));

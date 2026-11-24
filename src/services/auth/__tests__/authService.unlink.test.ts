@@ -79,11 +79,11 @@ describe('unlinkProvider', () => {
     expect(mockUnlink).not.toHaveBeenCalled();
   });
 
-  it('rifiuta un provider che non e’ collegato', async () => {
+  it('rifiuta un provider che non è collegato', async () => {
     conProvider('google.com', 'password');
 
     await expect(authService.unlinkProvider('apple.com')).rejects.toThrow(
-      /non e’ collegato/,
+      /non è collegato/,
     );
     expect(mockUnlink).not.toHaveBeenCalled();
   });

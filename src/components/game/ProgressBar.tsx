@@ -7,11 +7,7 @@ interface ProgressBarProps {
   height?: number;
 }
 
-export default function ProgressBar({
-  completed,
-  total,
-  height = 24,
-}: ProgressBarProps) {
+export default function ProgressBar({ completed, total, height = 24 }: ProgressBarProps) {
   const percentage = total > 0 ? (completed / total) * 100 : 0;
 
   return (

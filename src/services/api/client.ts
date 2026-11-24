@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { authService } from '../auth/authService';
 import { ENV } from '../../config/env';
+import i18n from '../../i18n';
 import {
   reportRequestSuccess,
   reportUnauthorized,
@@ -30,6 +31,9 @@ class ApiClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        // La lingua dell'app, non quella del telefono: il server traduce i
+        // messaggi d'errore e sceglie la lingua delle email da qui.
+        config.headers['Accept-Language'] = i18n.language === 'en' ? 'en' : 'it';
         return config;
       },
       (error) => {

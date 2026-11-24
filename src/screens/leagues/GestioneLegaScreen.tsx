@@ -24,6 +24,7 @@ import {
   leagueStyles,
   leagueColors,
 } from '../../components/leagues/LeagueUI';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void; goBack: () => void };
@@ -37,6 +38,7 @@ type Props = {
  * codice, chi entra, chi esce, chi rientra, a chi passare la gestione.
  */
 export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
+  const { t } = useTranslation();
   const detail = useLeaguesStore((s) => s.detail);
   const openLeague = useLeaguesStore((s) => s.openLeague);
   const rename = useLeaguesStore((s) => s.rename);
@@ -59,7 +61,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
     try {
       setMembers(await leaguesApi.members(leagueId));
     } catch (err: any) {
-      setError(err?.message ?? 'Non riesco a caricare i membri');
+      setError(err?.message ?? t('leghe.errori.caricaMembri'));
     } finally {
       setMembersLoading(false);
     }
@@ -81,7 +83,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
       await azione();
       await caricaMembri();
     } catch (err: any) {
-      setError(err?.message ?? 'Operazione non riuscita');
+      setError(err?.message ?? t('legaGestione.nonRiuscita'));
     } finally {
       setBusy(null);
     }
@@ -89,12 +91,14 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
 
   const confermaRimozione = (member: LeagueMemberRow) =>
     Alert.alert(
-      `Rimuovere @${member.nickname ?? 'questo membro'}?`,
-      'Non potrà rientrare con il codice: dovrai riammetterlo tu, e ripartirà dalla giornata corrente.',
+      t('legaGestione.rimuovereChi', {
+        nickname: member.nickname ?? t('legaGestione.questoMembro'),
+      }),
+      t('legaGestione.rimuovereTesto'),
       [
-        { text: 'Annulla', style: 'cancel' },
+        { text: t('comune.annulla'), style: 'cancel' },
         {
-          text: 'Rimuovi',
+          text: t('legaGestione.rimuovi'),
           style: 'destructive',
           onPress: () => esegui(member.userId, () => removeMember(member.userId)),
         },
@@ -126,7 +130,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
   if (!detail || detail.id !== leagueId) {
     return (
       <View style={leagueStyles.screen}>
-        <SubHeader title="Gestisci lega" onBack={() => navigation?.goBack()} />
+        <SubHeader title={t('legaGestione.titolo')} onBack={() => navigation?.goBack()} />
         <View style={leagueStyles.center}>
           <ActivityIndicator size="large" color={leagueColors.primary} />
         </View>
@@ -140,13 +144,13 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
 
   return (
     <View style={leagueStyles.screen}>
-      <SubHeader title="Gestisci lega" onBack={() => navigation?.goBack()} />
+      <SubHeader title={t('legaGestione.titolo')} onBack={() => navigation?.goBack()} />
 
       <ScrollView contentContainerStyle={leagueStyles.content}>
         <ErrorNote message={error} />
 
         <View style={leagueStyles.card}>
-          <Text style={leagueStyles.label}>Nome della lega</Text>
+          <Text style={leagueStyles.label}>{t('leghePagina.nomeLega')}</Text>
           <View style={styles.renameRow}>
             <TextInput
               style={[leagueStyles.input, styles.renameInput]}
@@ -162,31 +166,33 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
               {busy === 'rename' ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.saveText}>Salva</Text>
+                <Text style={styles.saveText}>{t('legaGestione.salva')}</Text>
               )}
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={leagueStyles.card}>
-          <Text style={[leagueStyles.cardTitle, styles.codeTitle]}>Codice d'invito</Text>
+          <Text style={[leagueStyles.cardTitle, styles.codeTitle]}>
+            {t('legaGestione.codiceInvito')}
+          </Text>
           <View style={styles.codeRow}>
             <Text style={styles.code}>{detail.inviteCode ?? '— — — —'}</Text>
             {detail.invitesOpen ? (
               <Text style={styles.codeHours}>{testoScadenza(ore)}</Text>
             ) : (
-              <Text style={styles.codeClosed}>chiusi</Text>
+              <Text style={styles.codeClosed}>{t('legaGestione.chiusi')}</Text>
             )}
           </View>
           <View style={styles.codeButtons}>
             <GhostButton
-              label="Rigenera"
+              label={t('leghePagina.rigenera')}
               onPress={() => esegui('rotate', rotateCode)}
               busy={busy === 'rotate'}
               style={styles.codeButton}
             />
             <GhostButton
-              label="Chiudi inviti"
+              label={t('legaGestione.chiudiInviti')}
               danger
               onPress={() => esegui('close', closeInvites)}
               busy={busy === 'close'}
@@ -195,7 +201,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
             />
           </View>
           <Text style={[leagueStyles.footnote, styles.codeNote]}>
-            Chiudendo gli inviti nessuno può più entrare finché non generi un codice nuovo.
+            {t('legaGestione.chiudendo')}
           </Text>
         </View>
 
@@ -215,18 +221,20 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
                   <View style={styles.memberName}>
                     <View style={styles.memberNameRow}>
                       <Text style={[styles.memberNick, rimosso && styles.dim]} numberOfLines={1}>
-                        @{member.nickname ?? 'senza nickname'}
+                        @{member.nickname ?? t('legaDettaglio.senzaNickname')}
                       </Text>
-                      {member.role === 'owner' && <Text style={styles.ownerChip}>GESTISCE</Text>}
+                      {member.role === 'owner' && (
+                        <Text style={styles.ownerChip}>{t('legaGestione.gestisce')}</Text>
+                      )}
                     </View>
                     <Text style={styles.memberMeta}>
                       {member.isMe
-                        ? 'sei tu'
+                        ? t('legaGestione.seiTu')
                         : member.status === 'removed'
-                          ? 'rimosso'
+                          ? t('legaGestione.rimosso')
                           : member.status === 'left'
-                            ? 'uscito'
-                            : `dalla giornata ${member.joinedFromWeek}`}
+                            ? t('legaGestione.uscito')
+                            : t('legaDettaglio.dalla', { n: member.joinedFromWeek })}
                     </Text>
                   </View>
 
@@ -240,7 +248,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
                           }
                           disabled={busy === member.userId}
                         >
-                          <Text style={styles.actionText}>Riammetti</Text>
+                          <Text style={styles.actionText}>{t('legaGestione.riammetti')}</Text>
                         </TouchableOpacity>
                       ) : (
                         <TouchableOpacity
@@ -248,7 +256,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
                           onPress={() => confermaRimozione(member)}
                           disabled={busy === member.userId}
                         >
-                          <Text style={styles.actionTextDanger}>Rimuovi</Text>
+                          <Text style={styles.actionTextDanger}>{t('legaGestione.rimuovi')}</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -259,19 +267,15 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
           )}
 
           <Text style={[leagueStyles.footnote, styles.membersNote]}>
-            Chi rimuovi non può rientrare con il codice: solo tu puoi riammetterlo, e riparte dalla
-            giornata corrente.
+            {t('legaGestione.notaRimozione')}
           </Text>
         </View>
 
         <View style={[leagueStyles.card, leagueStyles.cardTight]}>
-          <Text style={styles.passaggioTitolo}>Passa la gestione</Text>
-          <Text style={styles.passaggioTesto}>
-            Finché gestisci tu, non puoi uscire dalla lega. Passandola a qualcun altro resti dentro
-            come membro.
-          </Text>
+          <Text style={styles.passaggioTitolo}>{t('legaGestione.passaGestione')}</Text>
+          <Text style={styles.passaggioTesto}>{t('legaGestione.passaSpiegazione')}</Text>
           <GhostButton
-            label="Scegli chi gestirà la lega"
+            label={t('legaGestione.scegliChi')}
             onPress={() => navigation?.navigate('passa-ruolo', { leagueId })}
             style={styles.passaggioBottone}
           />
@@ -282,7 +286,7 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
           onPress={apriEliminazione}
           disabled={busy === 'delete'}
         >
-          <Text style={styles.deleteText}>Elimina la lega</Text>
+          <Text style={styles.deleteText}>{t('legaGestione.eliminaLega')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -294,14 +298,15 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
       >
         <KeyboardAvoidingView style={styles.velo} behavior="padding">
           <View style={styles.finestra}>
-            <Text style={styles.finestraTitolo}>Eliminare «{detail.name}»?</Text>
-            <Text style={styles.finestraTesto}>
-              Spariscono la classifica e tutte le iscrizioni. Gli altri membri non riceveranno
-              nessun avviso: troveranno la lega sparita.
+            <Text style={styles.finestraTitolo}>
+              {t('legaGestione.eliminareNome', { nome: detail.name })}
             </Text>
-            <Text style={styles.finestraTesto}>Non si torna indietro.</Text>
+            <Text style={styles.finestraTesto}>{t('legaGestione.eliminaSpiegazione')}</Text>
+            <Text style={styles.finestraTesto}>{t('legaGestione.nonSiTorna')}</Text>
 
-            <Text style={styles.finestraEtichetta}>Scrivi «{detail.name}» per confermare</Text>
+            <Text style={styles.finestraEtichetta}>
+              {t('legaGestione.scriviNome', { nome: detail.name })}
+            </Text>
             <TextInput
               style={leagueStyles.input}
               value={nomeDigitato}
@@ -318,11 +323,11 @@ export default function GestioneLegaScreen({ navigation, leagueId }: Props) {
               onPress={elimina}
               disabled={!nomeCombacia}
             >
-              <Text style={styles.bottoneEliminaTesto}>Elimina la lega</Text>
+              <Text style={styles.bottoneEliminaTesto}>{t('legaGestione.eliminaLega')}</Text>
             </TouchableOpacity>
 
             <GhostButton
-              label="Annulla"
+              label={t('comune.annulla')}
               onPress={() => setEliminazioneAperta(false)}
               style={styles.annulla}
             />

@@ -11,6 +11,7 @@ import {
   ErrorNote,
   leagueColors,
 } from '../../components/leagues/LeagueUI';
+import { useTranslation } from 'react-i18next';
 
 const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
@@ -29,6 +30,7 @@ type Props = {
  * comincia, perché scoprirlo dopo sembrerebbe un errore dell'app.
  */
 export default function ConfermaInvitoScreen({ navigation, code, preview }: Props) {
+  const { t } = useTranslation();
   const loadLeagues = useLeaguesStore((s) => s.loadLeagues);
 
   const [busy, setBusy] = useState(false);
@@ -43,7 +45,7 @@ export default function ConfermaInvitoScreen({ navigation, code, preview }: Prop
       await loadLeagues();
       navigation?.navigate('dettaglio-lega', { leagueId });
     } catch (err: any) {
-      setError(err?.message ?? 'Non riesco a farti entrare');
+      setError(err?.message ?? t('leghePagina.nonEntrato'));
     } finally {
       setBusy(false);
     }
@@ -56,7 +58,7 @@ export default function ConfermaInvitoScreen({ navigation, code, preview }: Prop
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <Text style={styles.wordmark}>SWIPICK</Text>
-          <Text style={styles.step}>Invito</Text>
+          <Text style={styles.step}>{t('leghePagina.invito')}</Text>
         </View>
 
         <View style={styles.middle}>
@@ -67,8 +69,8 @@ export default function ConfermaInvitoScreen({ navigation, code, preview }: Prop
 
             <Text style={styles.from}>
               {preview.ownerNickname
-                ? `@${preview.ownerNickname} ti ha invitato in`
-                : 'Ti hanno invitato in'}
+                ? t('leghePagina.tiHaInvitato', { nickname: preview.ownerNickname })
+                : t('leghePagina.tiHannoInvitato')}
             </Text>
             <Text style={styles.title}>{preview.name}</Text>
             <Text style={styles.meta}>
@@ -77,15 +79,13 @@ export default function ConfermaInvitoScreen({ navigation, code, preview }: Prop
 
             <View style={styles.divider} />
 
-            <Text style={styles.body}>
-              Pronosticate le stesse partite e vi confrontate in classifica, giornata dopo giornata.
-            </Text>
+            <Text style={styles.body}>{t('leghePagina.comeFunzionaLega')}</Text>
 
             <ErrorNote message={error} />
 
             {giaDentro ? (
               <PrimaryButton
-                label="Vai alla lega"
+                label={t('leghePagina.vaiAllaLega')}
                 onPress={() =>
                   navigation?.navigate('dettaglio-lega', {
                     leagueId: preview.leagueId,
@@ -95,7 +95,7 @@ export default function ConfermaInvitoScreen({ navigation, code, preview }: Prop
               />
             ) : (
               <PrimaryButton
-                label="Entra nella lega"
+                label={t('leghePagina.entraNellaLega')}
                 onPress={entra}
                 busy={busy}
                 disabled={preview.full}
@@ -105,15 +105,15 @@ export default function ConfermaInvitoScreen({ navigation, code, preview }: Prop
 
             <Text style={styles.note}>
               {giaDentro
-                ? 'Sei già in questa lega.'
+                ? t('leghePagina.giaDentro')
                 : preview.full
-                  ? 'Questa lega è piena.'
-                  : `Entrerai in classifica dalla giornata ${preview.joinFromWeek}.`}
+                  ? t('leghePagina.piena')
+                  : t('leghePagina.entreraiDa', { n: preview.joinFromWeek })}
             </Text>
           </View>
 
           <TouchableOpacity style={styles.back} onPress={() => navigation?.goBack()}>
-            <Text style={styles.backText}>Non è questa, cambio codice</Text>
+            <Text style={styles.backText}>{t('leghePagina.cambioCodice')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

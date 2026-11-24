@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Swipick",
+    "NSPhotoLibraryUsageDescription": "Swipick ha bisogno di accedere alle tue foto per farti scegliere l'immagine del profilo.",
+    "NSCameraUsageDescription": "Swipick ha bisogno della fotocamera per farti scattare la foto del profilo."
+  }
+}

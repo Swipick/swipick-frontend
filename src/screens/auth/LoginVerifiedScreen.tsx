@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 interface LoginVerifiedScreenProps {
   onNavigate: (screen: 'Landing' | 'Onboarding' | 'Login' | 'Register') => void;
 }
 
 export default function LoginVerifiedScreen({ onNavigate }: LoginVerifiedScreenProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       {/* Success Icon */}
@@ -14,20 +16,14 @@ export default function LoginVerifiedScreen({ onNavigate }: LoginVerifiedScreenP
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Email Verificata!</Text>
+      <Text style={styles.title}>{t('verifica.verificataTitolo')}</Text>
 
       {/* Message */}
-      <Text style={styles.message}>
-        Il tuo account è stato verificato con successo.
-        Ora puoi accedere con la tua email e password.
-      </Text>
+      <Text style={styles.message}>{t('verifica.verificataTesto')}</Text>
 
       {/* Login Button */}
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={() => onNavigate('Login')}
-      >
-        <Text style={styles.loginButtonText}>Vai al Login</Text>
+      <TouchableOpacity style={styles.loginButton} onPress={() => onNavigate('Login')}>
+        <Text style={styles.loginButtonText}>{t('verifica.vaiAlLogin')}</Text>
       </TouchableOpacity>
     </View>
   );

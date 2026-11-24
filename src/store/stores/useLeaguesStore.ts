@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { leaguesApi } from '../../services/api/leagues';
 import { LeagueDetail, LeagueSummary } from '../../types/league.types';
+import i18n from '../../i18n';
 
 /**
  * Lo stato delle leghe.
@@ -62,7 +63,7 @@ export const useLeaguesStore = create<LeaguesState & LeaguesActions>((set, get) 
       const leagues = await leaguesApi.list();
       set({ leagues, loading: false });
     } catch (err: any) {
-      set({ loading: false, error: err?.message ?? 'Errore di caricamento' });
+      set({ loading: false, error: err?.message ?? i18n.t('leghe.errori.caricamento') });
     }
   },
 
@@ -81,7 +82,7 @@ export const useLeaguesStore = create<LeaguesState & LeaguesActions>((set, get) 
     } catch (err: any) {
       set({
         detailLoading: false,
-        detailError: err?.message ?? 'Errore di caricamento',
+        detailError: err?.message ?? i18n.t('leghe.errori.caricamento'),
       });
     }
   },

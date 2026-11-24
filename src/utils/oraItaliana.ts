@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 /**
  * L'ora italiana di un istante, calcolata senza dipendere dal fuso del
  * dispositivo né dai dati ICU del motore JavaScript.
@@ -21,6 +23,9 @@ export const FUSO_PARTITE = 'Europe/Rome';
 
 /** Giorni abbreviati come li scrive l'italiano, senza punto. */
 export const GIORNI_BREVI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+/** Gli stessi in inglese: l'ora resta italiana, cambia solo come si scrive il giorno. */
+export const GIORNI_BREVI_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const giorniBrevi = () => (i18n.language === 'en' ? GIORNI_BREVI_EN : GIORNI_BREVI);
 
 /**
  * Il giorno del mese dell'ultima domenica di un mese, in UTC.
@@ -93,5 +98,5 @@ export const giornoMeseItaliano = (istante: Date): string | null => {
 export const calcioDInizioItaliano = (istante: Date): string | null => {
   const p = partiItaliane(istante);
   if (!p) return null;
-  return `${GIORNI_BREVI[p.giornoSettimana]}, ${due(p.giorno)}/${due(p.mese)}, ${due(p.ore)}:${due(p.minuti)}`;
+  return `${giorniBrevi()[p.giornoSettimana]}, ${due(p.giorno)}/${due(p.mese)}, ${due(p.ore)}:${due(p.minuti)}`;
 };

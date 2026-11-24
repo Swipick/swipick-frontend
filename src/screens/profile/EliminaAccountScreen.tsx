@@ -13,11 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { profileApi } from '../../services/api/profile';
 import { authService } from '../../services/auth/authService';
 import { useAuthStore } from '../../store/stores/useAuthStore';
-import {
-  normalizeSummaryResponse,
-  calculateProfileKPIs,
-} from '../../utils/profileCalculations';
+import { normalizeSummaryResponse, calculateProfileKPIs } from '../../utils/profileCalculations';
 import SpazioTastiera from '../../components/common/SpazioTastiera';
+import { useTranslation } from 'react-i18next';
 
 type EliminaAccountScreenProps = {
   navigation?: { goBack: () => void };
@@ -30,6 +28,7 @@ export default function EliminaAccountScreen({
   userId,
   nickname,
 }: EliminaAccountScreenProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
   const [conferma, setConferma] = useState('');
@@ -64,7 +63,7 @@ export default function EliminaAccountScreen({
   // Scrivere il nickname rende l'eliminazione impossibile per sbaglio e
   // banale di proposito. Senza nickname si ripiega sulla parola "elimina":
   // un campo che accetta qualunque cosa non sarebbe una conferma.
-  const atteso = (nickname ?? 'elimina').toLowerCase();
+  const atteso = (nickname ?? t('elimina.parolaConferma')).toLowerCase();
   const puoEliminare = conferma.trim().toLowerCase() === atteso && !deleting;
 
   const handleDelete = async () => {
@@ -75,7 +74,7 @@ export default function EliminaAccountScreen({
 
       const token = await authService.getIdToken();
       if (!token) {
-        Alert.alert('Errore', "Serve un accesso valido per eliminare l'account.");
+        Alert.alert(t('comune.errore'), t('elimina.serveAccesso'));
         setDeleting(false);
         return;
       }
@@ -87,19 +86,19 @@ export default function EliminaAccountScreen({
       await authService.signOut();
     } catch (error: any) {
       console.error('[EliminaAccountScreen] Delete failed:', error);
-      Alert.alert('Errore', error?.message || 'Eliminazione non riuscita');
+      Alert.alert(t('comune.errore'), error?.message || t('elimina.nonRiuscita'));
       setDeleting(false);
     }
   };
 
   const righe = [
     totali && totali.predictions > 0
-      ? `I tuoi ${totali.predictions} pronostici e lo storico delle ${totali.weeks} giornate giocate`
-      : 'Il tuo storico di gioco',
+      ? t('elimina.storico', { pronostici: totali.predictions, giornate: totali.weeks })
+      : t('elimina.storicoVuoto'),
     nickname
-      ? `Il nickname @${nickname}, che tornerà disponibile per altri`
-      : 'Il tuo nickname, che tornerà disponibile per altri',
-    'La tua foto profilo e le preferenze',
+      ? t('elimina.nicknameDisponibile', { nickname })
+      : t('elimina.nicknameDisponibileSenza'),
+    t('elimina.fotoPreferenze'),
   ];
 
   return (
@@ -112,7 +111,7 @@ export default function EliminaAccountScreen({
         >
           <Ionicons name="chevron-back" size={26} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Elimina account</Text>
+        <Text style={styles.headerTitle}>{t('elimina.titolo')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -124,10 +123,8 @@ export default function EliminaAccountScreen({
           automaticallyAdjustKeyboardInsets
         >
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Cosa viene cancellato</Text>
-            <Text style={styles.cardSubtitle}>
-              Definitivamente, senza possibilità di recupero.
-            </Text>
+            <Text style={styles.cardTitle}>{t('elimina.cosaCancellato')}</Text>
+            <Text style={styles.cardSubtitle}>{t('elimina.definitivo')}</Text>
 
             <View style={styles.list}>
               {righe.map((riga) => (
@@ -141,8 +138,8 @@ export default function EliminaAccountScreen({
 
           <View style={styles.card}>
             <Text style={styles.confirmIntro}>
-              Per confermare, scrivi{' '}
-              <Text style={styles.confirmWord}>{atteso}</Text> qui sotto.
+              {t('elimina.perConfermare')} <Text style={styles.confirmWord}>{atteso}</Text>{' '}
+              {t('elimina.quiSotto')}
             </Text>
             <TextInput
               style={styles.input}
@@ -162,7 +159,7 @@ export default function EliminaAccountScreen({
               onPress={() => navigation?.goBack()}
               disabled={deleting}
             >
-              <Text style={styles.cancelText}>Annulla</Text>
+              <Text style={styles.cancelText}>{t('comune.annulla')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -173,10 +170,8 @@ export default function EliminaAccountScreen({
               {deleting ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text
-                  style={[styles.deleteText, !puoEliminare && styles.deleteTextOff]}
-                >
-                  Elimina definitivamente
+                <Text style={[styles.deleteText, !puoEliminare && styles.deleteTextOff]}>
+                  {t('elimina.eliminaDefinitivamente')}
                 </Text>
               )}
             </TouchableOpacity>

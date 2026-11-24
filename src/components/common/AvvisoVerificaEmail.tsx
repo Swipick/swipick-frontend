@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../config/firebase';
 import { usersApi } from '../../services/api/users';
 import { deveVerificareEmail } from '../../utils/verificaEmail';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Promemoria per chi è entrato con la password senza aver verificato l'email.
@@ -13,6 +14,7 @@ import { deveVerificareEmail } from '../../utils/verificaEmail';
  * entrare, senza più passare dalla schermata con "Reinvia".
  */
 export default function AvvisoVerificaEmail() {
+  const { t } = useTranslation();
   const [visibile, setVisibile] = useState(false);
   const [azione, setAzione] = useState<null | 'reinvia' | 'controlla'>(null);
   const [messaggio, setMessaggio] = useState<string | null>(null);
@@ -38,9 +40,9 @@ export default function AvvisoVerificaEmail() {
     setAzione('reinvia');
     try {
       await usersApi.resendVerificationEmail(email);
-      setMessaggio(`Ti abbiamo mandato il link a ${email}. Guarda anche nello spam.`);
+      setMessaggio(t('verifica.avvisoInviato', { email }));
     } catch (error: any) {
-      setMessaggio(error?.message ?? 'Non riesco a mandare la mail. Riprova tra poco.');
+      setMessaggio(error?.message ?? t('verifica.avvisoNonInviato'));
     } finally {
       setAzione(null);
     }
@@ -51,8 +53,7 @@ export default function AvvisoVerificaEmail() {
     setAzione('controlla');
     try {
       const serve = await aggiorna();
-      if (serve)
-        setMessaggio('Non risulta ancora verificata: apri il link nella mail, poi riprova.');
+      if (serve) setMessaggio(t('verifica.avvisoNonVerificata'));
     } finally {
       setAzione(null);
     }
@@ -64,12 +65,9 @@ export default function AvvisoVerificaEmail() {
     <View style={styles.card}>
       <View style={styles.titleRow}>
         <Ionicons name="mail-unread-outline" size={20} color="#92400e" />
-        <Text style={styles.title}>Verifica la tua email</Text>
+        <Text style={styles.title}>{t('verifica.avvisoTitolo')}</Text>
       </View>
-      <Text style={styles.body}>
-        Apri il link che ti abbiamo mandato: serve per entrare con email e password e per recuperare
-        l'account se dimentichi la password.
-      </Text>
+      <Text style={styles.body}>{t('verifica.avvisoTesto')}</Text>
 
       {messaggio && <Text style={styles.message}>{messaggio}</Text>}
 
@@ -78,14 +76,14 @@ export default function AvvisoVerificaEmail() {
           {azione === 'reinvia' ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.primaryText}>Reinvia email</Text>
+            <Text style={styles.primaryText}>{t('verifica.reinvia')}</Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondary} onPress={controlla} disabled={azione !== null}>
           {azione === 'controlla' ? (
             <ActivityIndicator color="#92400e" size="small" />
           ) : (
-            <Text style={styles.secondaryText}>Ho verificato</Text>
+            <Text style={styles.secondaryText}>{t('verifica.hoVerificato')}</Text>
           )}
         </TouchableOpacity>
       </View>

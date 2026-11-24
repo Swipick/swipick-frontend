@@ -7,6 +7,7 @@ import {
   ChartBar,
 } from '../types/profile';
 import { SWIPICK_URL } from '../config/links';
+import i18n from '../i18n';
 
 /**
  * Profile Calculation Utilities
@@ -47,8 +48,7 @@ interface RawSummary {
 export function normalizeSummaryResponse(response: unknown): UserSummary {
   // Handle double-wrapped response: { data: { data: { ... } } }
   const envelope = response as { data?: { data?: RawSummary } & RawSummary };
-  const rawData: RawSummary =
-    envelope.data?.data || envelope.data || (response as RawSummary);
+  const rawData: RawSummary = envelope.data?.data || envelope.data || (response as RawSummary);
 
   const weeklyStats: WeeklyStats[] = (rawData.weekly_stats || []).map((week: RawWeeklyStat) => {
     // Check if backend provides detailed predictions array
@@ -69,9 +69,8 @@ export function normalizeSummaryResponse(response: unknown): UserSummary {
       const finishedPredictions = predictions.filter((p) => p.result !== null);
       const finishedCorrect = finishedPredictions.filter((p) => p.is_correct === true).length;
       actualFinishedPredictions = finishedPredictions.length;
-      actualAccuracy = finishedPredictions.length > 0
-        ? (finishedCorrect / finishedPredictions.length) * 100
-        : 0;
+      actualAccuracy =
+        finishedPredictions.length > 0 ? (finishedCorrect / finishedPredictions.length) * 100 : 0;
     } else {
       // Use backend-provided values (summary endpoint)
       actualTotalPredictions = week.total_predictions || 0;
@@ -151,7 +150,7 @@ export function calculateWeightedAverage(weeklyStats: WeeklyStats[]): number {
       acc.correct += week.correctPredictions;
       return acc;
     },
-    { finished: 0, correct: 0 }
+    { finished: 0, correct: 0 },
   );
 
   return totals.finished > 0 ? (totals.correct / totals.finished) * 100 : 0;
@@ -239,7 +238,11 @@ export function findWorstWeek(weeklyStats: WeeklyStats[]): WeekPerformance {
  * Max 1 decimal place
  */
 export function formatItalianPercentage(value: number): string {
-  return `${value.toLocaleString('it-IT', { maximumFractionDigits: 1 })}%`;
+  // A mano, senza toLocaleString: su Hermes i dati di localizzazione non sono
+  // garantiti. Una cifra decimale al massimo, virgola in italiano e punto in inglese.
+  const arrotondato = Math.round(value * 10) / 10;
+  const testo = Number.isInteger(arrotondato) ? String(arrotondato) : arrotondato.toFixed(1);
+  return `${i18n.language === 'en' ? testo : testo.replace('.', ',')}%`;
 }
 
 /**
@@ -248,9 +251,7 @@ export function formatItalianPercentage(value: number): string {
  * non ha una percentuale da raccontare.
  */
 function playedWeeks(weeklyStats: WeeklyStats[]): WeeklyStats[] {
-  return weeklyStats
-    .filter((w) => w.finishedPredictions > 0)
-    .sort((a, b) => a.week - b.week);
+  return weeklyStats.filter((w) => w.finishedPredictions > 0).sort((a, b) => a.week - b.week);
 }
 
 /**
@@ -286,10 +287,7 @@ export function findLastWeek(weeklyStats: WeeklyStats[]): LastWeekPerformance {
  * Oltre `limit` si tengono le piu' recenti — a fine stagione trentotto barre
  * su uno schermo da 390 punti sarebbero linee illeggibili.
  */
-export function buildChartBars(
-  weeklyStats: WeeklyStats[],
-  limit: number = 8
-): ChartBar[] {
+export function buildChartBars(weeklyStats: WeeklyStats[], limit: number = 8): ChartBar[] {
   return playedWeeks(weeklyStats)
     .slice(-limit)
     .map((w) => ({
@@ -310,7 +308,7 @@ function rawTotals(weeklyStats: WeeklyStats[]): {
       acc.finished += week.finishedPredictions;
       return acc;
     },
-    { correct: 0, finished: 0 }
+    { correct: 0, finished: 0 },
   );
 }
 
@@ -358,7 +356,7 @@ export function calculateProfileKPIs(summary: UserSummary | null): ProfileKPI {
  * "2ª giornata" — l'ordinale che usa il resto dell'app.
  */
 export function ordinalWeek(week: number | null): string {
-  return week === null ? '' : `${week}ª giornata`;
+  return week === null ? '' : i18n.t('profilo.giornataOrdinale', { n: week });
 }
 
 // ============================================================================
@@ -392,17 +390,16 @@ export function getAvatarInitial(displayName: string, email: string): string {
  * chi riceve il messaggio non ha modo di arrivare al gioco.
  */
 export function generateShareMessage(kpi: ProfileKPI): string {
-  const giornate =
-    kpi.weeksPlayed === 1 ? '1 giornata' : `${kpi.weeksPlayed} giornate`;
+  const giornate = i18n.t('profilo.condividiGiornate', { count: kpi.weeksPlayed });
 
-  const righe = [`${giornate} su Swipick, ${kpi.average} di media.`];
+  const righe = [i18n.t('profilo.condividiRiga1', { giornate, media: kpi.average })];
 
   // Senza risultati il record non esiste: tacerlo è meglio che scrivere 0%.
   if (kpi.hasResults && kpi.best.week !== null) {
-    righe.push(`Il mio record è ${kpi.best.pct} in una giornata.`);
+    righe.push(i18n.t('profilo.condividiRecord', { record: kpi.best.pct }));
   }
 
-  righe.push('Prova a battermi.');
+  righe.push(i18n.t('profilo.condividiSfida'));
 
   return `${righe.join('\n')}\n\n${SWIPICK_URL.replace('https://', '')}`;
 }

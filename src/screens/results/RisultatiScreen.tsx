@@ -35,6 +35,7 @@ import { PixelPlayerLogo } from '../../components/game/PixelPlayerLogo';
 import { resolveTeamKey } from '../../utils/pixelPlayers';
 import { formatDateRange, getAdjacentWeekLabels } from '../../utils/dateRange';
 import GuestCTA from '../../components/common/GuestCTA';
+import { useTranslation } from 'react-i18next';
 
 type RisultatiScreenProps = {
   mode?: 'live' | 'test';
@@ -52,6 +53,7 @@ interface MatchResult {
 }
 
 export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps) {
+  const { t } = useTranslation();
   // Selettore: re-render solo quando cambia user (non loading/error auth)
   const user = useAuthStore((s) => s.user);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -209,7 +211,7 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
       }
     } catch (error) {
       console.error('[RisultatiScreen] Error loading data:', error);
-      Alert.alert('Errore', 'Impossibile caricare i risultati');
+      Alert.alert(t('comune.errore'), t('risultati.erroreCaricamento'));
     } finally {
       setLoading(false);
       setContentLoading(false);
@@ -309,19 +311,15 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
   // Handle share
   const handleShare = async () => {
     try {
-      let message = `Ho indovinato il ${meter.percent}% delle partite della ${selectedWeek}ª giornata.`;
-
-      // TODO: Add percentile data from API
-      // if (percentileData?.totalPlayers > 0 && percentileData.percentile > 0) {
-      //   message += ` Sono nel ${percentileData.percentile}% dei migliori.`;
-      // }
-
-      message += `\nE tu?`;
-      message += `\n\n${SWIPICK_URL}`;
+      const message = t('risultati.condividiMessaggio', {
+        percentuale: meter.percent,
+        n: selectedWeek,
+        url: SWIPICK_URL,
+      });
 
       await condividiEMisura({
         punto: 'risultati',
-        titolo: `Giornata ${selectedWeek} — Swipick`,
+        titolo: t('risultati.condividiTitolo', { n: selectedWeek }),
         messaggio: message,
         percentuale: meter.percent,
       });
@@ -338,7 +336,7 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
 
     // Check if match has finished
     if (!match?.actualResult) {
-      Alert.alert('Il risultato non è ancora disponibile', 'La partita non è ancora terminata.');
+      Alert.alert(t('risultati.nonDisponibileTitolo'), t('risultati.nonTerminata'));
       return;
     }
 
@@ -367,7 +365,7 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Caricamento risultati...</Text>
+        <Text style={styles.loadingText}>{t('risultati.caricamento')}</Text>
       </View>
     );
   }
@@ -409,11 +407,11 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
               <View style={styles.centerWeek}>
                 <View style={styles.weekTitleRow}>
                   <Text style={styles.currentWeekTitle} numberOfLines={1}>
-                    Giornata {selectedWeek}
+                    {t('risultati.giornata', { n: selectedWeek })}
                   </Text>
                   {meter.isLive && (
                     <View style={styles.liveBadge}>
-                      <Text style={styles.liveBadgeText}>IN CORSO</Text>
+                      <Text style={styles.liveBadgeText}>{t('risultati.inCorso')}</Text>
                     </View>
                   )}
                 </View>
@@ -453,16 +451,16 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
                 {meter.toPlay > 0 ? (
                   <Text style={styles.meterHint}>
                     <Text style={styles.meterHintStrong}>
-                      {meter.toPlay} {meter.toPlay === 1 ? 'partita' : 'partite'}
+                      {t('risultati.partite', { count: meter.toPlay })}
                     </Text>
-                    {' ancora da giocare'}
+                    {t('risultati.daGiocare')}
                   </Text>
                 ) : meter.toReveal > 0 ? (
                   <Text style={styles.meterHint}>
                     <Text style={styles.meterHintStrong}>
-                      {meter.toReveal} {meter.toReveal === 1 ? 'risultato' : 'risultati'}
+                      {t('risultati.risultatiDaScoprire', { count: meter.toReveal })}
                     </Text>
-                    {' da scoprire'}
+                    {t('risultati.daScoprire')}
                   </Text>
                 ) : null}
 
@@ -472,7 +470,7 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
                 {meter.isFinal && (
                   <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
                     <Ionicons name="share-outline" size={18} color="#fff" />
-                    <Text style={styles.shareText}>Condividi risultato</Text>
+                    <Text style={styles.shareText}>{t('risultati.condividi')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -480,8 +478,8 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
               // Modalità ospite: niente statistiche personali, invito a registrarsi.
               <GuestCTA
                 compact
-                title="Le tue statistiche, qui"
-                message="Registrati per pronosticare le partite e seguire la tua percentuale di risultati indovinati."
+                title={t('risultati.ospiteTitolo')}
+                message={t('risultati.ospiteMessaggio')}
               />
             )}
           </BlurView>
@@ -496,7 +494,7 @@ export default function RisultatiScreen({ mode = 'live' }: RisultatiScreenProps)
           <View style={styles.matchList}>
             {matchResults.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Nessuna predizione per questa settimana</Text>
+                <Text style={styles.emptyText}>{t('risultati.nessunPronostico')}</Text>
               </View>
             ) : (
               matchResults.map((match) => (
@@ -602,6 +600,7 @@ function MatchCard({
   isRevealed: boolean;
   onReveal: (fixtureId: string, origin: { x: number; y: number }) => void;
 }) {
+  const { t } = useTranslation();
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const buttonRef = useRef<View>(null);
 
@@ -643,7 +642,7 @@ function MatchCard({
         }),
       ]).start();
 
-      Alert.alert('Partita non terminata', 'Il risultato non è ancora disponibile');
+      Alert.alert(t('risultati.partitaNonTerminata'), t('risultati.risultatoNonDisponibile'));
       return;
     }
 
@@ -716,8 +715,8 @@ function MatchCard({
               onPress={handleRevealPress}
               activeOpacity={0.7}
             >
-              <Text style={styles.revealButtonText}>MOSTRA</Text>
-              <Text style={styles.revealButtonText}>RISULTATO</Text>
+              <Text style={styles.revealButtonText}>{t('risultati.mostra')}</Text>
+              <Text style={styles.revealButtonText}>{t('risultati.risultato')}</Text>
             </TouchableOpacity>
           ) : (
             // Partita non ancora giocata: senza pulsante non c'e' niente da
@@ -730,8 +729,8 @@ function MatchCard({
           )
         ) : (
           <View style={styles.finishedButton} pointerEvents="none">
-            <Text style={styles.finishedButtonText}>FINE</Text>
-            <Text style={styles.finishedButtonText}>PARTITA</Text>
+            <Text style={styles.finishedButtonText}>{t('risultati.fine')}</Text>
+            <Text style={styles.finishedButtonText}>{t('risultati.partita')}</Text>
           </View>
         )}
       </Animated.View>

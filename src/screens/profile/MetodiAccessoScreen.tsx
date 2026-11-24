@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../../services/auth/authService';
 import SpazioTastiera from '../../components/common/SpazioTastiera';
+import { useTranslation } from 'react-i18next';
 
 type MetodiAccessoScreenProps = {
   navigation?: { goBack: () => void };
@@ -29,13 +30,9 @@ type Azione = null | 'google' | 'apple' | 'password' | 'reset';
  * non la colonna authProvider del backend, che registra solo da dove si è
  * passati la prima volta.
  */
-export default function MetodiAccessoScreen({
-  navigation,
-  email,
-}: MetodiAccessoScreenProps) {
-  const [providers, setProviders] = useState<string[]>(() =>
-    authService.getLinkedProviders()
-  );
+export default function MetodiAccessoScreen({ navigation, email }: MetodiAccessoScreenProps) {
+  const { t } = useTranslation();
+  const [providers, setProviders] = useState<string[]>(() => authService.getLinkedProviders());
   const [azione, setAzione] = useState<Azione>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [password, setPassword] = useState('');
@@ -64,15 +61,12 @@ export default function MetodiAccessoScreen({
       }
 
       if (code === 'auth/credential-already-in-use') {
-        Alert.alert(
-          'Già in uso',
-          'Questo account è già collegato a un altro profilo Swipick.'
-        );
+        Alert.alert(t('metodi.giaInUsoTitolo'), t('metodi.giaInUsoTesto'));
         return;
       }
 
       console.error('[MetodiAccessoScreen] Azione non riuscita:', error);
-      Alert.alert('Errore', error?.message || 'Operazione non riuscita');
+      Alert.alert(t('comune.errore'), error?.message || t('metodi.nonRiuscita'));
     } finally {
       setAzione(null);
     }
@@ -80,7 +74,7 @@ export default function MetodiAccessoScreen({
 
   const handleAddPassword = () => {
     if (password.length < 8) {
-      Alert.alert('Password troppo corta', 'Servono almeno 8 caratteri.');
+      Alert.alert(t('metodi.passwordCortaTitolo'), t('metodi.passwordCortaTesto'));
       return;
     }
 
@@ -89,8 +83,8 @@ export default function MetodiAccessoScreen({
       setPassword('');
       setShowPasswordForm(false);
       Alert.alert(
-        'Password impostata',
-        `Da ora puoi entrare anche con ${email} e la password che hai scelto.`
+        t('metodi.passwordImpostataTitolo'),
+        t('metodi.passwordImpostataTesto', { email }),
       );
     });
   };
@@ -100,45 +94,31 @@ export default function MetodiAccessoScreen({
    * non la chiediamo, cosi' chi non se la ricorda piu' non resta bloccato.
    */
   const handleResetPassword = () => {
-    Alert.alert(
-      'Cambiare password',
-      `Ti mandiamo a ${email} un link per sceglierne una nuova.`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Mandami il link',
-          onPress: () =>
-            run('reset', async () => {
-              await authService.resetPassword(email.trim().toLowerCase());
-              Alert.alert(
-                'Link inviato',
-                'Controlla la posta, anche nello spam. Il link vale un\u2019ora.'
-              );
-            }),
-        },
-      ]
-    );
+    Alert.alert(t('metodi.cambiarePassword'), t('metodi.tiMandiamoLink', { email }), [
+      { text: t('comune.annulla'), style: 'cancel' },
+      {
+        text: t('metodi.mandamiLink'),
+        onPress: () =>
+          run('reset', async () => {
+            await authService.resetPassword(email.trim().toLowerCase());
+            Alert.alert(t('metodi.linkInviatoTitolo'), t('metodi.linkInviatoTesto'));
+          }),
+      },
+    ]);
   };
 
-  const handleUnlink = (
-    providerId: 'google.com' | 'apple.com',
-    nome: string
-  ) => {
-    Alert.alert(
-      `Scollegare ${nome}?`,
-      `Non potrai piu\u2019 entrare con ${nome}. Gli altri metodi restano come sono.`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Scollega',
-          style: 'destructive',
-          onPress: () =>
-            run(providerId === 'google.com' ? 'google' : 'apple', () =>
-              authService.unlinkProvider(providerId)
-            ),
-        },
-      ]
-    );
+  const handleUnlink = (providerId: 'google.com' | 'apple.com', nome: string) => {
+    Alert.alert(t('metodi.scollegareChi', { nome }), t('metodi.scollegareTesto', { nome }), [
+      { text: t('comune.annulla'), style: 'cancel' },
+      {
+        text: t('metodi.scollega'),
+        style: 'destructive',
+        onPress: () =>
+          run(providerId === 'google.com' ? 'google' : 'apple', () =>
+            authService.unlinkProvider(providerId),
+          ),
+      },
+    ]);
   };
 
   /** Con un metodo solo, staccarne uno chiuderebbe fuori l'utente. */
@@ -153,7 +133,7 @@ export default function MetodiAccessoScreen({
         >
           <Ionicons name="chevron-back" size={26} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Metodi di accesso</Text>
+        <Text style={styles.headerTitle}>{t('metodi.titolo')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -164,10 +144,7 @@ export default function MetodiAccessoScreen({
           keyboardDismissMode="interactive"
           automaticallyAdjustKeyboardInsets
         >
-          <Text style={styles.intro}>
-            Puoi entrare con uno qualsiasi dei metodi collegati. Averne più di uno
-            ti mette al riparo se perdi l’accesso a uno.
-          </Text>
+          <Text style={styles.intro}>{t('metodi.intro')}</Text>
 
           <View style={styles.card}>
             {/* Google */}
@@ -175,12 +152,12 @@ export default function MetodiAccessoScreen({
               <View style={styles.rowLeft}>
                 <Text style={styles.rowTitle}>Google</Text>
                 <Text style={styles.rowSubtitle}>
-                  {hasGoogle ? email : 'Non collegato'}
+                  {hasGoogle ? email : t('metodi.nonCollegato')}
                 </Text>
               </View>
               {hasGoogle ? (
                 <View style={styles.rowActions}>
-                  <Text style={styles.linked}>collegato</Text>
+                  <Text style={styles.linked}>{t('metodi.collegato')}</Text>
                   {metodiCollegati > 1 &&
                     (azione === 'google' ? (
                       <ActivityIndicator size="small" color="#5742a4" />
@@ -189,7 +166,7 @@ export default function MetodiAccessoScreen({
                         onPress={() => handleUnlink('google.com', 'Google')}
                         disabled={azione !== null}
                       >
-                        <Text style={styles.actionDanger}>Scollega</Text>
+                        <Text style={styles.actionDanger}>{t('metodi.scollega')}</Text>
                       </TouchableOpacity>
                     ))}
                 </View>
@@ -200,7 +177,7 @@ export default function MetodiAccessoScreen({
                   onPress={() => run('google', () => authService.linkGoogle())}
                   disabled={azione !== null}
                 >
-                  <Text style={styles.action}>Collega</Text>
+                  <Text style={styles.action}>{t('metodi.collega')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -211,12 +188,12 @@ export default function MetodiAccessoScreen({
                 <View style={styles.rowLeft}>
                   <Text style={styles.rowTitle}>Apple</Text>
                   <Text style={styles.rowSubtitle}>
-                    {hasApple ? 'Collegato' : 'Non collegato'}
+                    {hasApple ? t('metodi.collegatoMaiuscolo') : t('metodi.nonCollegato')}
                   </Text>
                 </View>
                 {hasApple ? (
                   <View style={styles.rowActions}>
-                    <Text style={styles.linked}>collegato</Text>
+                    <Text style={styles.linked}>{t('metodi.collegato')}</Text>
                     {metodiCollegati > 1 &&
                       (azione === 'apple' ? (
                         <ActivityIndicator size="small" color="#5742a4" />
@@ -225,7 +202,7 @@ export default function MetodiAccessoScreen({
                           onPress={() => handleUnlink('apple.com', 'Apple')}
                           disabled={azione !== null}
                         >
-                          <Text style={styles.actionDanger}>Scollega</Text>
+                          <Text style={styles.actionDanger}>{t('metodi.scollega')}</Text>
                         </TouchableOpacity>
                       ))}
                   </View>
@@ -236,7 +213,7 @@ export default function MetodiAccessoScreen({
                     onPress={() => run('apple', () => authService.linkApple())}
                     disabled={azione !== null}
                   >
-                    <Text style={styles.action}>Collega</Text>
+                    <Text style={styles.action}>{t('metodi.collega')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -245,22 +222,19 @@ export default function MetodiAccessoScreen({
             {/* Email e password */}
             <View style={[styles.row, styles.rowLast]}>
               <View style={styles.rowLeft}>
-                <Text style={styles.rowTitle}>Email e password</Text>
+                <Text style={styles.rowTitle}>{t('metodi.emailPassword')}</Text>
                 <Text style={styles.rowSubtitle}>
-                  {hasPassword ? email : 'Nessuna password impostata'}
+                  {hasPassword ? email : t('metodi.nessunaPassword')}
                 </Text>
               </View>
               {hasPassword ? (
                 <View style={styles.rowActions}>
-                  <Text style={styles.linked}>collegato</Text>
+                  <Text style={styles.linked}>{t('metodi.collegato')}</Text>
                   {azione === 'reset' ? (
                     <ActivityIndicator size="small" color="#5742a4" />
                   ) : (
-                    <TouchableOpacity
-                      onPress={handleResetPassword}
-                      disabled={azione !== null}
-                    >
-                      <Text style={styles.action}>Cambia</Text>
+                    <TouchableOpacity onPress={handleResetPassword} disabled={azione !== null}>
+                      <Text style={styles.action}>{t('metodi.cambia')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -271,9 +245,7 @@ export default function MetodiAccessoScreen({
                   onPress={() => setShowPasswordForm((v) => !v)}
                   disabled={azione !== null}
                 >
-                  <Text style={styles.action}>
-                    {showPasswordForm ? 'Chiudi' : 'Imposta'}
-                  </Text>
+                  <Text style={styles.action}>{showPasswordForm ? 'Chiudi' : 'Imposta'}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -281,10 +253,10 @@ export default function MetodiAccessoScreen({
 
           {showPasswordForm && !hasPassword && (
             <View style={styles.card}>
-              <Text style={styles.formLabel}>Scegli una password</Text>
+              <Text style={styles.formLabel}>{t('metodi.scegliPassword')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Almeno 8 caratteri"
+                placeholder={t('metodi.almeno8')}
                 placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
@@ -301,7 +273,7 @@ export default function MetodiAccessoScreen({
                 onPress={handleAddPassword}
                 disabled={password.length < 8 || azione !== null}
               >
-                <Text style={styles.primaryButtonText}>Imposta password</Text>
+                <Text style={styles.primaryButtonText}>{t('metodi.impostaPassword')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -315,19 +287,12 @@ export default function MetodiAccessoScreen({
             />
             <Text style={styles.noteText}>
               {hasPassword
-                ? 'Per cambiare la password ti mandiamo un link via email: non serve ricordare quella attuale.'
-                : `Per aggiungere una password ti chiederemo di rientrare con ${
-                    hasGoogle ? 'Google' : 'Apple'
-                  }: serve a impedire che qualcuno con il tuo telefono sbloccato si prenda l’account per sempre.`}
+                ? t('metodi.notaCambio')
+                : t('metodi.notaAggiunta', { metodo: hasGoogle ? 'Google' : 'Apple' })}
             </Text>
           </View>
 
-          {metodiCollegati === 1 && (
-            <Text style={styles.warning}>
-              Hai un solo metodo di accesso. Se lo perdi, perdi l’account:
-              collegarne un secondo richiede meno di un minuto.
-            </Text>
-          )}
+          {metodiCollegati === 1 && <Text style={styles.warning}>{t('metodi.unSoloMetodo')}</Text>}
         </ScrollView>
       </SpazioTastiera>
     </View>

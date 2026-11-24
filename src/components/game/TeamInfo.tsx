@@ -5,8 +5,9 @@ import { PixelPlayerLogo } from './PixelPlayerLogo';
 import { getTeamLogoFallback, formatWinRate } from '../../utils/formatters';
 import { resolveTeamKey } from '../../utils/pixelPlayers';
 import { FormEntry } from '../../types/game.types';
+import { useTranslation } from 'react-i18next';
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
 
 interface TeamInfoProps {
@@ -31,6 +32,7 @@ export function TeamInfo({
   form,
   isHomeTeam,
 }: TeamInfoProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       {/* Team Logo (sprite pixel-art generato dai colori maglia) */}
@@ -43,9 +45,7 @@ export function TeamInfo({
           />
         ) : (
           <View style={styles.logoFallback}>
-            <Text style={styles.logoFallbackText}>
-              {getTeamLogoFallback(team.name)}
-            </Text>
+            <Text style={styles.logoFallbackText}>{getTeamLogoFallback(team.name)}</Text>
           </View>
         )}
       </View>
@@ -57,7 +57,7 @@ export function TeamInfo({
 
       {/* Standing Position */}
       <View style={styles.statContainer}>
-        <Text style={styles.statLabel}>Posizione in classifica</Text>
+        <Text style={styles.statLabel}>{t('gioca.posizioneClassifica')}</Text>
         <Text style={styles.statValue}>
           {standingsPosition !== null && standingsPosition !== undefined ? standingsPosition : '—'}
         </Text>

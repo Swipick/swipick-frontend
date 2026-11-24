@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Swipick",
+    "NSPhotoLibraryUsageDescription": "Swipick needs access to your photos so you can choose your profile picture.",
+    "NSCameraUsageDescription": "Swipick needs the camera so you can take your profile photo."
+  }
+}

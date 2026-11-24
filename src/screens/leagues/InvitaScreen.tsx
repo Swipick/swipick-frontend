@@ -15,6 +15,7 @@ import {
 import { oreRimanenti, testoScadenza } from '../../utils/inviteCountdown';
 import { condividiEMisura } from '../../services/analytics';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void; goBack: () => void };
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export default function InvitaScreen({ navigation, leagueId }: Props) {
+  const { t } = useTranslation();
   const spazioInBasso = useSpazioInBasso(40);
   const detail = useLeaguesStore((s) => s.detail);
   const openLeague = useLeaguesStore((s) => s.openLeague);
@@ -43,7 +45,7 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
     await Clipboard.setStringAsync(code);
     // Negli appunti il codice da solo, senza la frase intorno: chi incolla
     // lo fa nelle quattro caselle, non in un messaggio.
-    setToast('Codice copiato');
+    setToast(t('leghePagina.codiceCopiato'));
     setTimeout(() => setToast(null), 2000);
   };
 
@@ -51,7 +53,11 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
     if (!code || !detail) return;
     await condividiEMisura({
       punto: 'lega',
-      messaggio: `Ti invito nella lega "${detail.name}" su Swipick. Apri l'app, vai in Leghe e inserisci il codice ${code}. Vale ancora ${testoScadenza(ore)}.`,
+      messaggio: t('leghePagina.messaggioInvito', {
+        nome: detail.name,
+        codice: code,
+        scadenza: testoScadenza(ore),
+      }),
     });
   };
 
@@ -61,7 +67,7 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
     try {
       await rotateCode();
     } catch (err: any) {
-      setError(err?.message ?? 'Non riesco a generare un codice nuovo');
+      setError(err?.message ?? t('leghe.errori.nuovoCodice'));
     } finally {
       setBusy(false);
     }
@@ -70,7 +76,7 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
   if (!detail || detail.id !== leagueId) {
     return (
       <View style={leagueStyles.screen}>
-        <SubHeader title="Invita" onBack={() => navigation?.goBack()} />
+        <SubHeader title={t('leghePagina.invita')} onBack={() => navigation?.goBack()} />
         <View style={leagueStyles.center}>
           <ActivityIndicator size="large" color={leagueColors.primary} />
         </View>
@@ -80,16 +86,14 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
 
   return (
     <View style={leagueStyles.screen}>
-      <SubHeader title="Invita" onBack={() => navigation?.goBack()} />
+      <SubHeader title={t('leghePagina.invita')} onBack={() => navigation?.goBack()} />
 
       <ScrollView contentContainerStyle={leagueStyles.content}>
         <ErrorNote message={error} />
 
         <View style={[leagueStyles.card, styles.codeCard]}>
           <Text style={styles.leagueName}>{detail.name}</Text>
-          <Text style={styles.intro}>
-            Detta questo codice a chi vuoi invitare. Lo inserisce in Swipick ed entra nella lega.
-          </Text>
+          <Text style={styles.intro}>{t('leghePagina.dettaCodice')}</Text>
 
           <View style={styles.codeBox}>
             {code ? (
@@ -101,21 +105,27 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
                 </View>
               </>
             ) : (
-              <Text style={styles.noCode}>
-                Gli inviti sono chiusi: genera un codice nuovo per riaprirli.
-              </Text>
+              <Text style={styles.noCode}>{t('leghePagina.invitiChiusi')}</Text>
             )}
           </View>
 
           {code ? (
-            <PrimaryButton label="Condividi invito" onPress={condividi} style={styles.share} />
+            <PrimaryButton
+              label={t('leghePagina.condividiInvito')}
+              onPress={condividi}
+              style={styles.share}
+            />
           ) : null}
 
           {code ? (
             <View style={styles.secondari}>
-              <GhostButton label="Copia" onPress={copia} style={styles.secondario} />
               <GhostButton
-                label="Rigenera"
+                label={t('leghePagina.copia')}
+                onPress={copia}
+                style={styles.secondario}
+              />
+              <GhostButton
+                label={t('leghePagina.rigenera')}
                 onPress={rigenera}
                 busy={busy}
                 style={styles.secondario}
@@ -123,16 +133,14 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
             </View>
           ) : (
             <GhostButton
-              label="Genera un codice"
+              label={t('leghePagina.generaCodice')}
               onPress={rigenera}
               busy={busy}
               style={styles.rotate}
             />
           )}
 
-          <Text style={[leagueStyles.footnote, styles.note]}>
-            Dopo 48 ore il codice smette di funzionare. Rigenerandolo, il vecchio muore subito.
-          </Text>
+          <Text style={[leagueStyles.footnote, styles.note]}>{t('leghePagina.dopo48')}</Text>
         </View>
 
         <View style={[leagueStyles.card, leagueStyles.cardTight, styles.info]}>
@@ -142,11 +150,7 @@ export default function InvitaScreen({ navigation, leagueId }: Props) {
             color={leagueColors.textMuted}
             style={styles.infoIcon}
           />
-          <Text style={styles.infoText}>
-            Quattro caratteri si dettano al telefono, ma sono pochi contro i tentativi a caso: le 48
-            ore di validità e il limite di cinque tentativi al minuto sono quello che tiene chiusa
-            la porta.
-          </Text>
+          <Text style={styles.infoText}>{t('leghePagina.sicurezzaCodice')}</Text>
         </View>
       </ScrollView>
 

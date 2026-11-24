@@ -21,6 +21,7 @@ import {
   leagueStyles,
   leagueColors,
 } from '../../components/leagues/LeagueUI';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   navigation?: {
@@ -39,6 +40,7 @@ type Props = {
  * la persona che riceve.
  */
 export default function PassaRuoloScreen({ navigation, leagueId }: Props) {
+  const { t } = useTranslation();
   const detail = useLeaguesStore((s) => s.detail);
   const transferOwner = useLeaguesStore((s) => s.transferOwner);
 
@@ -55,7 +57,7 @@ export default function PassaRuoloScreen({ navigation, leagueId }: Props) {
       // Solo chi è dentro adesso: a un rimosso non si passa la lega.
       setMembers(righe.filter((m) => m.status === 'active' && !m.isMe));
     } catch (err: any) {
-      setError(err?.message ?? 'Non riesco a caricare i membri');
+      setError(err?.message ?? t('leghe.errori.caricaMembri'));
     } finally {
       setLoading(false);
     }
@@ -69,15 +71,11 @@ export default function PassaRuoloScreen({ navigation, leagueId }: Props) {
 
   const conferma = () => {
     if (!destinatario) return;
-    const nome = `@${destinatario.nickname ?? 'questo membro'}`;
-    Alert.alert(
-      `Passare la gestione a ${nome}?`,
-      'Da quel momento gestisce lui gli accessi: codice, membri, nome ed eliminazione. Tu resti nella lega come membro, e per tornare a gestirla dovrà ripassartela lui.',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        { text: 'Passa la gestione', onPress: passa },
-      ],
-    );
+    const nome = `@${destinatario.nickname ?? t('legaGestione.questoMembro')}`;
+    Alert.alert(t('legaPassa.passareA', { nome }), t('legaPassa.passareTesto'), [
+      { text: t('comune.annulla'), style: 'cancel' },
+      { text: t('legaGestione.passaGestione'), onPress: passa },
+    ]);
   };
 
   const passa = async () => {
@@ -90,14 +88,14 @@ export default function PassaRuoloScreen({ navigation, leagueId }: Props) {
       // più sua.
       navigation?.navigate('dettaglio-lega', { leagueId });
     } catch (err: any) {
-      setError(err?.message ?? 'Non riesco a passare la gestione');
+      setError(err?.message ?? t('leghe.errori.passaGestione'));
       setBusy(false);
     }
   };
 
   return (
     <View style={leagueStyles.screen}>
-      <SubHeader title="Passa la gestione" onBack={() => navigation?.goBack()} />
+      <SubHeader title={t('legaGestione.passaGestione')} onBack={() => navigation?.goBack()} />
 
       <ScrollView contentContainerStyle={leagueStyles.content}>
         <ErrorNote message={error} />
@@ -110,23 +108,21 @@ export default function PassaRuoloScreen({ navigation, leagueId }: Props) {
             style={styles.avvisoIcona}
           />
           <Text style={styles.avvisoTesto}>
-            Chi scegli potrà invitare, rimuovere membri ed eliminare
-            {detail ? ` «${detail.name}»` : ' la lega'}. Tu resti nella lega come membro, ma non
-            potrai più gestirla.
+            {t('legaPassa.avviso', {
+              lega: detail ? `«${detail.name}»` : t('legaPassa.laLega'),
+            })}
           </Text>
         </View>
 
         <View style={[leagueStyles.card, leagueStyles.cardFlush]}>
-          <Text style={styles.titolo}>A chi la passi</Text>
+          <Text style={styles.titolo}>{t('legaPassa.aChi')}</Text>
 
           {loading ? (
             <View style={styles.caricamento}>
               <ActivityIndicator color={leagueColors.primary} />
             </View>
           ) : members.length === 0 ? (
-            <Text style={styles.vuoto}>
-              Non c'è nessun altro membro attivo: invita qualcuno prima di passare la gestione.
-            </Text>
+            <Text style={styles.vuoto}>{t('legaPassa.nessunAltro')}</Text>
           ) : (
             members.map((member) => {
               const selezionato = member.userId === scelto;
@@ -142,10 +138,10 @@ export default function PassaRuoloScreen({ navigation, leagueId }: Props) {
                   <LeagueAvatar nickname={member.nickname} />
                   <View style={styles.nomeBox}>
                     <Text style={styles.nome} numberOfLines={1}>
-                      @{member.nickname ?? 'senza nickname'}
+                      @{member.nickname ?? t('legaDettaglio.senzaNickname')}
                     </Text>
                     <Text style={styles.meta}>
-                      nella lega dalla giornata {member.joinedFromWeek}
+                      {t('legaPassa.nellaLegaDalla', { n: member.joinedFromWeek })}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -153,16 +149,16 @@ export default function PassaRuoloScreen({ navigation, leagueId }: Props) {
             })
           )}
 
-          <Text style={[leagueStyles.footnote, styles.nota]}>
-            Solo i membri attivi. Chi è stato rimosso o è uscito non compare.
-          </Text>
+          <Text style={[leagueStyles.footnote, styles.nota]}>{t('legaPassa.soloAttivi')}</Text>
         </View>
 
         <PrimaryButton
           label={
             destinatario
-              ? `Passa la gestione a @${destinatario.nickname ?? 'questo membro'}`
-              : 'Scegli un membro'
+              ? t('legaPassa.passaA', {
+                  nickname: destinatario.nickname ?? t('legaGestione.questoMembro'),
+                })
+              : t('legaPassa.scegliMembro')
           }
           onPress={conferma}
           busy={busy}

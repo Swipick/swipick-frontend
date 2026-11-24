@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { usersApi } from '../../services/api/users';
 import { ENV } from '../../config/env';
+import { useTranslation } from 'react-i18next';
 
 interface EmailVerificationScreenProps {
   route: {
@@ -23,13 +24,17 @@ interface EmailVerificationScreenProps {
       verificationEmailSent?: boolean;
     };
   };
-  onNavigate: (screen: 'Landing' | 'Onboarding' | 'Login' | 'Register' | 'LoginVerified', params?: any) => void;
+  onNavigate: (
+    screen: 'Landing' | 'Onboarding' | 'Login' | 'Register' | 'LoginVerified',
+    params?: any,
+  ) => void;
 }
 
 export default function EmailVerificationScreen({
   route,
-  onNavigate
+  onNavigate,
 }: EmailVerificationScreenProps) {
+  const { t } = useTranslation();
   const { email, verificationLink, verificationEmailSent } = route.params;
   // Il backend distingue "email inviata" da "account creato ma invio fallito".
   // `undefined` vale come inviata: e' quel che rispondeva prima del campo.
@@ -41,8 +46,8 @@ export default function EmailVerificationScreen({
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
   }, [cooldown]);
 
   const handleResendEmail = async () => {
@@ -56,11 +61,11 @@ export default function EmailVerificationScreen({
 
       setSendFailed(false);
       setCooldown(60);
-      Alert.alert('Email inviata', 'Controlla la tua casella di posta');
+      Alert.alert(t('verifica.emailInviataTitolo'), t('verifica.emailInviataTesto'));
     } catch (error: any) {
       console.error('[EmailVerification] Failed to resend email:', error);
       setCooldown(30);
-      Alert.alert('Errore', error.message || 'Impossibile inviare email');
+      Alert.alert(t('comune.errore'), error.message || t('verifica.invioNonRiuscito'));
     } finally {
       setResending(false);
     }
@@ -81,35 +86,26 @@ export default function EmailVerificationScreen({
 
           {/* Title */}
           <Text style={styles.title}>
-            {sendFailed
-              ? "Non siamo riusciti a inviare l'email"
-              : 'Controlla la tua email'}
+            {sendFailed ? t('verifica.titoloFallito') : t('verifica.titolo')}
           </Text>
 
           {/* Message */}
           {sendFailed ? (
             <>
               <Text style={styles.message}>
-                Il tuo account è stato creato, ma l'email di verifica per{' '}
-                <Text style={styles.emailText}>{email}</Text> non è partita.
+                {t('verifica.fallitoPrima')} <Text style={styles.emailText}>{email}</Text>{' '}
+                {t('verifica.fallitoDopo')}
               </Text>
 
-              <Text style={styles.message}>
-                Non registrarti di nuovo: tocca "Invia di nuovo" qui sotto per
-                ricevere il link di verifica.
-              </Text>
+              <Text style={styles.message}>{t('verifica.nonRiregistrarti')}</Text>
             </>
           ) : (
             <>
               <Text style={styles.message}>
-                Ti abbiamo inviato un'email di verifica all'indirizzo{' '}
-                <Text style={styles.emailText}>{email}</Text>
+                {t('verifica.inviataA')} <Text style={styles.emailText}>{email}</Text>
               </Text>
 
-              <Text style={styles.message}>
-                Apri l'email e clicca sul link per verificare il tuo account.
-                Dopo la verifica potrai accedere con email e password.
-              </Text>
+              <Text style={styles.message}>{t('verifica.apriLink')}</Text>
             </>
           )}
 
@@ -118,12 +114,10 @@ export default function EmailVerificationScreen({
             <Text style={styles.infoIcon}>{sendFailed ? '⚠️' : '💡'}</Text>
             <View style={styles.infoContent}>
               <Text style={styles.infoTitle}>
-                {sendFailed ? 'Cosa è successo?' : "Non vedi l'email?"}
+                {sendFailed ? t('verifica.cosaSuccesso') : t('verifica.nonVediEmail')}
               </Text>
               <Text style={styles.infoText}>
-                {sendFailed
-                  ? "L'invio non è riuscito per un problema temporaneo del servizio di posta. Il tuo account è al sicuro: riprova tra qualche istante."
-                  : 'Controlla la cartella spam o posta indesiderata. Può richiedere alcuni minuti per arrivare.'}
+                {sendFailed ? t('verifica.spiegazioneFallito') : t('verifica.spiegazioneSpam')}
               </Text>
             </View>
           </View>
@@ -166,31 +160,25 @@ export default function EmailVerificationScreen({
             {resending ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator color="#FFFFFF" size="small" />
-                <Text style={styles.primaryButtonText}>Invio in corso...</Text>
+                <Text style={styles.primaryButtonText}>{t('verifica.invioInCorso')}</Text>
               </View>
             ) : cooldown > 0 ? (
-              <Text style={styles.primaryButtonText}>Riprova tra {cooldown}s</Text>
-            ) : (
               <Text style={styles.primaryButtonText}>
-                Invia di nuovo l'email di verifica
+                {t('verifica.riprovaTra', { secondi: cooldown })}
               </Text>
+            ) : (
+              <Text style={styles.primaryButtonText}>{t('verifica.inviaDiNuovo')}</Text>
             )}
           </TouchableOpacity>
 
           {/* Back Button */}
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => onNavigate('Register')}
-          >
-            <Text style={styles.secondaryButtonText}>
-              Torna alla registrazione
-            </Text>
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => onNavigate('Register')}>
+            <Text style={styles.secondaryButtonText}>{t('verifica.tornaRegistrazione')}</Text>
           </TouchableOpacity>
 
           {/* Footer Note */}
-          <Text style={styles.footerNote}>
-            Il link di verifica è valido per 24 ore.
-          </Text>
+          {/* Firebase non documenta la durata del link: niente "24 ore". */}
+          <Text style={styles.footerNote}>{t('verifica.linkScaduto')}</Text>
         </View>
       </ScrollView>
     </LinearGradient>

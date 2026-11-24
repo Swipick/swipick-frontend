@@ -8,12 +8,14 @@ import NicknameScreen from '../screens/auth/NicknameScreen';
 import { profileApi, needsProfileCompletion } from '../services/api/profile';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuthStore } from '../store/stores/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Root navigator - switches between Auth and Main based on authentication
  * Syncs Firebase auth state with Zustand store
  */
 export default function AppNavigator() {
+  const { t } = useTranslation();
   const [initializing, setInitializing] = useState(true);
   const { user, isGuest, setUser, pendingNicknameUserId, setPendingNicknameUserId } =
     useAuthStore();
@@ -23,7 +25,7 @@ export default function AppNavigator() {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log(
         '[AppNavigator] Auth state changed:',
-        firebaseUser ? firebaseUser.uid : 'No user'
+        firebaseUser ? firebaseUser.uid : 'No user',
       );
       setUser(firebaseUser);
       if (initializing) {
@@ -69,7 +71,7 @@ export default function AppNavigator() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={styles.loadingText}>Loading Swipick...</Text>
+        <Text style={styles.loadingText}>{t('benvenuto.caricamentoApp')}</Text>
       </View>
     );
   }

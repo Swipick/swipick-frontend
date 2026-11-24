@@ -20,6 +20,9 @@ import { profileApi } from '../../services/api/profile';
 import { describeProviders } from '../../utils/authProviders';
 import { PRIVACY_URL, TERMS_URL } from '../../config/links';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
+import { useTranslation } from 'react-i18next';
+import { useLinguaStore } from '../../store/stores/useLinguaStore';
+import type { SceltaLingua } from '../../i18n';
 
 type ImpostazioniScreenProps = {
   navigation?: { navigate: (screen: any) => void; goBack: () => void };
@@ -66,17 +69,11 @@ function Riga({
       </View>
       {busy ? <ActivityIndicator size="small" color={colors.primary} /> : null}
       {value ? (
-        <Text
-          style={[styles.rowValue, valueStyle]}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
+        <Text style={[styles.rowValue, valueStyle]} numberOfLines={1} ellipsizeMode="tail">
           {value}
         </Text>
       ) : null}
-      {onPress ? (
-        <Ionicons name="chevron-forward" size={18} color="#c4c4cc" />
-      ) : null}
+      {onPress ? <Ionicons name="chevron-forward" size={18} color="#c4c4cc" /> : null}
     </View>
   );
 
@@ -89,11 +86,62 @@ function Riga({
   );
 }
 
+/**
+ * La scelta della lingua: una riga che si apre sulle tre opzioni, senza
+ * schermata a parte (sono tre voci, e il cambio si vede subito).
+ */
+function SceltaLinguaCard() {
+  const { t } = useTranslation();
+  const scelta = useLinguaStore((s) => s.scelta);
+  const imposta = useLinguaStore((s) => s.imposta);
+  const [aperta, setAperta] = useState(false);
+
+  const opzioni: { valore: SceltaLingua; label: string; note?: string }[] = [
+    { valore: 'auto', label: t('lingua.automatica'), note: t('lingua.automaticaNota') },
+    { valore: 'it', label: t('lingua.italiano') },
+    { valore: 'en', label: t('lingua.inglese') },
+  ];
+  const corrente = opzioni.find((o) => o.valore === scelta)?.label;
+
+  return (
+    <View style={styles.card}>
+      <Riga
+        label={t('lingua.titolo')}
+        value={corrente}
+        onPress={() => setAperta((v) => !v)}
+        last={!aperta}
+      />
+      {aperta
+        ? opzioni.map((o, i) => (
+            <TouchableOpacity
+              key={o.valore}
+              onPress={() => imposta(o.valore)}
+              activeOpacity={0.6}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: o.valore === scelta }}
+            >
+              <View style={[styles.row, i === opzioni.length - 1 && styles.rowLast]}>
+                <View style={[styles.rowLeft, styles.opzioneTesto]}>
+                  <Text style={styles.rowLabel}>{o.label}</Text>
+                  {o.note ? <Text style={styles.rowNote}>{o.note}</Text> : null}
+                </View>
+                {o.valore === scelta ? (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+          ))
+        : null}
+    </View>
+  );
+}
+
 export default function ImpostazioniScreen({
   navigation,
   nickname,
   onProfileLoaded,
 }: ImpostazioniScreenProps) {
+  const { t } = useTranslation();
   const spazioInBasso = useSpazioInBasso(40);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
@@ -114,7 +162,7 @@ export default function ImpostazioniScreen({
 
   const loadSettingsData = async () => {
     if (!user?.uid) {
-      setError('Utente non autenticato');
+      setError(t('profilo.nonAutenticato'));
       setLoading(false);
       return;
     }
@@ -137,7 +185,7 @@ export default function ImpostazioniScreen({
       setLoading(false);
     } catch (err: any) {
       console.error('[ImpostazioniScreen] Load error:', err);
-      setError(err.message || 'Errore nel caricamento delle impostazioni');
+      setError(err.message || t('impostazioni.erroreCaricamento'));
       setLoading(false);
     }
   };
@@ -154,10 +202,7 @@ export default function ImpostazioniScreen({
       if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert(
-            'Permesso richiesto',
-            "Swipick ha bisogno di accedere alle tue foto per cambiare l'immagine del profilo."
-          );
+          Alert.alert(t('impostazioni.permessoTitolo'), t('impostazioni.permessoTesto'));
           return;
         }
       }
@@ -173,16 +218,13 @@ export default function ImpostazioniScreen({
 
       const asset = result.assets[0];
 
-      if (
-        asset.mimeType &&
-        !['image/jpeg', 'image/png', 'image/webp'].includes(asset.mimeType)
-      ) {
-        Alert.alert('Formato non supportato', 'Usa una foto JPEG, PNG o WebP.');
+      if (asset.mimeType && !['image/jpeg', 'image/png', 'image/webp'].includes(asset.mimeType)) {
+        Alert.alert(t('impostazioni.formatoTitolo'), t('impostazioni.formatoTesto'));
         return;
       }
 
       if (asset.fileSize && asset.fileSize > MAX_UPLOAD_BYTES) {
-        Alert.alert('Foto troppo grande', 'Scegline una sotto i 5 MB.');
+        Alert.alert(t('impostazioni.fotoGrandeTitolo'), t('impostazioni.fotoGrandeTesto'));
         return;
       }
 
@@ -196,27 +238,27 @@ export default function ImpostazioniScreen({
       } as any);
 
       await profileApi.uploadUserAvatar(userId, formData);
-      showToast('Foto aggiornata');
+      showToast(t('impostazioni.fotoAggiornata'));
     } catch (err: any) {
       console.error('[ImpostazioniScreen] Avatar upload failed:', err);
-      Alert.alert('Errore', 'Caricamento della foto non riuscito');
+      Alert.alert(t('comune.errore'), t('impostazioni.fotoNonCaricata'));
     } finally {
       setUploading(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Disconnetti', 'Vuoi uscire dal tuo account?', [
-      { text: 'Annulla', style: 'cancel' },
+    Alert.alert(t('impostazioni.disconnetti'), t('impostazioni.vuoiUscire'), [
+      { text: t('comune.annulla'), style: 'cancel' },
       {
-        text: 'Disconnetti',
+        text: t('impostazioni.disconnetti'),
         style: 'destructive',
         onPress: async () => {
           try {
             await signOut();
           } catch (err: any) {
             console.error('[ImpostazioniScreen] Logout error:', err);
-            Alert.alert('Errore', err?.message || 'Uscita non riuscita');
+            Alert.alert(t('comune.errore'), err?.message || t('impostazioni.uscitaNonRiuscita'));
           }
         },
       },
@@ -235,7 +277,7 @@ export default function ImpostazioniScreen({
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Caricamento impostazioni…</Text>
+        <Text style={styles.loadingText}>{t('impostazioni.caricamento')}</Text>
       </View>
     );
   }
@@ -246,7 +288,7 @@ export default function ImpostazioniScreen({
         <Ionicons name="alert-circle-outline" size={64} color="#dc2626" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadSettingsData}>
-          <Text style={styles.retryButtonText}>Riprova</Text>
+          <Text style={styles.retryButtonText}>{t('comune.riprova')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -261,28 +303,32 @@ export default function ImpostazioniScreen({
         >
           <Ionicons name="chevron-back" size={26} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Impostazioni</Text>
+        <Text style={styles.headerTitle}>{t('impostazioni.titolo')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Le prime due righe sono come appari, le ultime due come entri. */}
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>{t('impostazioni.account')}</Text>
         <View style={styles.card}>
           <Riga
-            label="Nickname"
+            label={t('impostazioni.nickname')}
             value={nickname ? `@${nickname}` : '—'}
             onPress={() => navigation?.navigate('nickname')}
           />
           <Riga
-            label="Foto profilo"
-            note={`Ritagliata a ${AVATAR_PX} × ${AVATAR_PX} px`}
+            label={t('impostazioni.fotoProfilo')}
+            note={t('impostazioni.ritagliata', { px: AVATAR_PX })}
             onPress={handleAvatarUpload}
             busy={uploading}
           />
-          <Riga label="Email" note="Non modificabile" value={email} />
           <Riga
-            label="Metodi di accesso"
+            label={t('impostazioni.email')}
+            note={t('impostazioni.nonModificabile')}
+            value={email}
+          />
+          <Riga
+            label={t('impostazioni.metodiAccesso')}
             value={providers.label}
             valueStyle={providers.soloUno && styles.valueWarning}
             onPress={() => navigation?.navigate('accesso')}
@@ -290,32 +336,25 @@ export default function ImpostazioniScreen({
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Informazioni</Text>
+        <SceltaLinguaCard />
+
+        <Text style={styles.sectionTitle}>{t('impostazioni.informazioni')}</Text>
         <View style={styles.card}>
-          <Riga
-            label="Privacy e cookie"
-            onPress={() => Linking.openURL(PRIVACY_URL)}
-          />
-          <Riga
-            label="Termini e condizioni"
-            onPress={() => Linking.openURL(TERMS_URL)}
-          />
-          <Riga label="Versione" value={versione} last />
+          <Riga label={t('impostazioni.privacy')} onPress={() => Linking.openURL(PRIVACY_URL)} />
+          <Riga label={t('impostazioni.termini')} onPress={() => Linking.openURL(TERMS_URL)} />
+          <Riga label={t('impostazioni.versione')} value={versione} last />
         </View>
 
         <View style={[styles.card, styles.logoutCard]}>
           <TouchableOpacity onPress={handleLogout} activeOpacity={0.6}>
             <View style={[styles.row, styles.rowLast]}>
-              <Text style={styles.logoutLabel}>Disconnetti</Text>
+              <Text style={styles.logoutLabel}>{t('impostazioni.disconnetti')}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.deleteLink}
-          onPress={() => navigation?.navigate('elimina')}
-        >
-          <Text style={styles.deleteLinkText}>Elimina account</Text>
+        <TouchableOpacity style={styles.deleteLink} onPress={() => navigation?.navigate('elimina')}>
+          <Text style={styles.deleteLinkText}>{t('impostazioni.eliminaAccount')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -422,6 +461,11 @@ const styles = StyleSheet.create({
   },
   rowLast: {
     borderBottomWidth: 0,
+  },
+  // Le opzioni della lingua non hanno un valore a destra: il testo prende
+  // tutto lo spazio, così la spunta finisce sul bordo.
+  opzioneTesto: {
+    flex: 1,
   },
   rowLeft: {
     flexShrink: 0,

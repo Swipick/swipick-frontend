@@ -22,6 +22,7 @@ import {
   leagueStyles,
   leagueColors,
 } from '../../components/leagues/LeagueUI';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void; goBack: () => void };
@@ -33,6 +34,7 @@ type Props = {
 type Scope = 'season' | 'week';
 
 function Riga({ row, me }: { row: StandingRow; me: boolean }) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.row, me && styles.rowMe]}>
       <Text style={[styles.position, me && styles.positionMe]}>{row.position ?? '—'}</Text>
@@ -42,13 +44,15 @@ function Riga({ row, me }: { row: StandingRow; me: boolean }) {
           style={[styles.nickname, me && styles.nicknameMe, row.pending && styles.nicknameDim]}
           numberOfLines={1}
         >
-          {row.nickname ? `@${row.nickname}` : 'senza nickname'}
-          {me ? <Text style={styles.you}> · tu</Text> : null}
+          {row.nickname ? `@${row.nickname}` : t('legaDettaglio.senzaNickname')}
+          {me ? <Text style={styles.you}>{t('legaDettaglio.tu')}</Text> : null}
         </Text>
         {row.pending ? (
-          <Text style={styles.rowNote}>entra dalla giornata {row.joinedFromWeek}</Text>
+          <Text style={styles.rowNote}>
+            {t('legaDettaglio.entraDalla', { n: row.joinedFromWeek })}
+          </Text>
         ) : row.joinedFromWeek > 1 ? (
-          <Text style={styles.rowNote}>dalla giornata {row.joinedFromWeek}</Text>
+          <Text style={styles.rowNote}>{t('legaDettaglio.dalla', { n: row.joinedFromWeek })}</Text>
         ) : null}
       </View>
       <Text style={styles.percent}>{row.pending ? '—' : `${row.percent}%`}</Text>
@@ -60,6 +64,7 @@ function Riga({ row, me }: { row: StandingRow; me: boolean }) {
 }
 
 export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: Props) {
+  const { t } = useTranslation();
   const detail = useLeaguesStore((s) => s.detail);
   const detailLoading = useLeaguesStore((s) => s.detailLoading);
   const detailError = useLeaguesStore((s) => s.detailError);
@@ -86,20 +91,22 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
       const rows = await leaguesApi.standings(leagueId, 'week', detail?.standingsWeek);
       setWeekRows(rows);
     } catch (err: any) {
-      setWeekError(err?.message ?? 'Non riesco a caricare la giornata');
+      setWeekError(err?.message ?? t('legaDettaglio.erroreGiornata'));
     } finally {
       setWeekBusy(false);
     }
   };
 
   const rows = scope === 'season' ? (detail?.standings ?? []) : (weekRows ?? []);
-  const giornata = detail?.standingsWeek ? `Giornata ${detail.standingsWeek}` : 'Giornata';
+  const giornata = detail?.standingsWeek
+    ? t('legaDettaglio.giornataN', { n: detail.standingsWeek })
+    : t('legaDettaglio.giornata');
 
   if (detailLoading && !detail) {
     return (
       <View style={[leagueStyles.screen, leagueStyles.center]}>
         <ActivityIndicator size="large" color={leagueColors.primary} />
-        <Text style={styles.loadingText}>Caricamento lega…</Text>
+        <Text style={styles.loadingText}>{t('legaDettaglio.caricamento')}</Text>
       </View>
     );
   }
@@ -109,7 +116,11 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
       <View style={[leagueStyles.screen, leagueStyles.center]}>
         <Ionicons name="alert-circle-outline" size={56} color="#dc2626" />
         <Text style={styles.errorText}>{detailError}</Text>
-        <PrimaryButton label="Riprova" onPress={() => openLeague(leagueId)} style={styles.retry} />
+        <PrimaryButton
+          label={t('comune.riprova')}
+          onPress={() => openLeague(leagueId)}
+          style={styles.retry}
+        />
       </View>
     );
   }
@@ -123,7 +134,7 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
           <TouchableOpacity
             onPress={() => navigation?.goBack()}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityLabel="Indietro"
+            accessibilityLabel={t('legaDettaglio.indietro')}
           >
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -133,8 +144,8 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
               {detail.name}
             </Text>
             <Text style={styles.headerMeta}>
-              Serie A · {detail.memberCount} {detail.memberCount === 1 ? 'membro' : 'membri'} ·
-              classifica di stagione
+              Serie A · {t('leghePagina.membri', { count: detail.memberCount })} ·{' '}
+              {t('legaDettaglio.classificaStagione')}
             </Text>
           </View>
         </View>
@@ -144,7 +155,9 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
             style={[styles.tab, scope === 'season' && styles.tabOn]}
             onPress={() => setScope('season')}
           >
-            <Text style={[styles.tabText, scope === 'season' && styles.tabTextOn]}>Stagione</Text>
+            <Text style={[styles.tabText, scope === 'season' && styles.tabTextOn]}>
+              {t('legaDettaglio.stagione')}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, scope === 'week' && styles.tabOn]}
@@ -181,12 +194,12 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
             <View style={styles.intestazione}>
               <View style={styles.intestazionePos} />
               <View style={styles.intestazioneAvatar} />
-              <Text style={styles.etichettaNome}>Giocatore</Text>
+              <Text style={styles.etichettaNome}>{t('legaDettaglio.giocatore')}</Text>
               <Text style={styles.etichettaPercent} numberOfLines={1}>
-                Media
+                {t('legaDettaglio.media')}
               </Text>
               <Text style={styles.etichettaPunti} numberOfLines={1}>
-                Giusti
+                {t('legaDettaglio.giusti')}
               </Text>
             </View>
             {rows.map((row) => (
@@ -198,10 +211,10 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
             ))}
             <Text style={styles.tableNote}>
               {scope === 'season'
-                ? 'La classifica va per pronostici giusti. La media è sulle partite già scoperte, che per chi è entrato dopo sono meno.'
+                ? t('legaDettaglio.notaStagione')
                 : detail.standingsWeek
-                  ? `Solo la giornata ${detail.standingsWeek}: durante le partite i punti salgono man mano che arrivano i risultati.`
-                  : 'Solo una giornata.'}
+                  ? t('legaDettaglio.notaGiornata', { n: detail.standingsWeek })
+                  : t('legaDettaglio.notaUnaGiornata')}
             </Text>
           </View>
         )}
@@ -212,12 +225,12 @@ export default function DettaglioLegaScreen({ navigation, leagueId, nickname }: 
         {detail.isOwner && (
           <View style={styles.actions}>
             <PrimaryButton
-              label="Invita un amico"
+              label={t('legaDettaglio.invitaAmico')}
               onPress={() => navigation?.navigate('invita', { leagueId: detail.id })}
               style={styles.action}
             />
             <GhostButton
-              label="Gestisci"
+              label={t('legaDettaglio.gestisci')}
               onPress={() => navigation?.navigate('gestione-lega', { leagueId: detail.id })}
               style={styles.action}
             />

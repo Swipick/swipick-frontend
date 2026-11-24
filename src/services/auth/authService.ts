@@ -17,7 +17,13 @@ import {
 } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LoginCredentials, RegisterCredentials, AUTH_ERROR_MESSAGES } from '../../types/auth.types';
+import {
+  LoginCredentials,
+  RegisterCredentials,
+  authErrorMessage,
+  isKnownAuthError,
+} from '../../types/auth.types';
+import i18n from '../../i18n';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { usersApi, SyncGoogleUserResponse } from '../api/users';
@@ -51,7 +57,7 @@ export const describeAuthError = (error: unknown): string => {
     return message.length > MAX_HINT_LENGTH ? `${message.slice(0, MAX_HINT_LENGTH)}…` : message;
   }
 
-  return 'errore sconosciuto';
+  return i18n.t('servizi.erroreSconosciuto');
 };
 
 // RNGoogleSignin è un modulo NATIVO assente in Expo Go: l'import statico
@@ -105,7 +111,7 @@ class AuthService {
       return userCredential.user;
     } catch (error: any) {
       console.error('[AuthService] Sign in error:', error.code);
-      throw new Error(AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default);
+      throw new Error(authErrorMessage(error.code));
     }
   }
 
@@ -139,7 +145,7 @@ class AuthService {
       return userCredential.user;
     } catch (error: any) {
       console.error('[AuthService] Sign up error:', error.code);
-      throw new Error(AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default);
+      throw new Error(authErrorMessage(error.code));
     }
   }
 
@@ -148,9 +154,7 @@ class AuthService {
    */
   async signInWithGoogle(): Promise<User> {
     if (!GoogleSignin) {
-      throw new Error(
-        'Login Google non disponibile in questa build (Expo Go). Usa email e password, oppure un development build.',
-      );
+      throw new Error(i18n.t('errori.auth.googleNonInQuestaBuild'));
     }
     try {
       console.log('[AuthService] Starting Google Sign-In');
@@ -163,7 +167,7 @@ class AuthService {
       const idToken = response.data?.idToken;
 
       if (!idToken) {
-        throw new Error('No ID token received from Google Sign-In');
+        throw new Error(i18n.t('errori.auth.googleNessunToken'));
       }
 
       console.log('[AuthService] Google Sign-In successful, signing in to Firebase');
@@ -188,19 +192,21 @@ class AuthService {
       if (error.code === 'SIGN_IN_CANCELLED') {
         throw new Error('Google sign-in was cancelled');
       } else if (error.code === 'IN_PROGRESS') {
-        throw new Error('Google sign-in is already in progress');
+        throw new Error(i18n.t('errori.auth.googleInCorso'));
       } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
-        throw new Error('Google Play Services not available');
+        throw new Error(i18n.t('errori.auth.googlePlayServices'));
       }
 
-      const known = AUTH_ERROR_MESSAGES[error?.code];
-      if (known) {
-        throw new Error(known);
+      if (isKnownAuthError(error?.code)) {
+        throw new Error(authErrorMessage(error.code));
       }
 
-      throw new Error(`Accesso con Google non riuscito. Riprova. [${describeAuthError(error)}]`, {
-        cause: error,
-      });
+      throw new Error(
+        i18n.t('errori.auth.googleNonRiuscitoDettaglio', { dettaglio: describeAuthError(error) }),
+        {
+          cause: error,
+        },
+      );
     }
   }
 
@@ -288,7 +294,7 @@ class AuthService {
       console.log('[AuthService] Sign out successful');
     } catch (error: any) {
       console.error('[AuthService] Sign out error:', error);
-      throw new Error('Failed to sign out. Please try again.');
+      throw new Error(i18n.t('errori.auth.uscitaNonRiuscita'));
     }
   }
 
@@ -351,15 +357,13 @@ class AuthService {
   /** Credenziale Google fresca, chiedendo all'utente di rientrare. */
   private async freshGoogleCredential(): Promise<AuthCredential> {
     if (!GoogleSignin) {
-      throw new Error(
-        'Login Google non disponibile in questa build (Expo Go). Usa un development build.',
-      );
+      throw new Error(i18n.t('errori.auth.googleNonInQuestaBuild'));
     }
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     const response = await GoogleSignin.signIn();
     const idToken = response.data?.idToken;
     if (!idToken) {
-      throw new Error('Nessun token ricevuto da Google');
+      throw new Error(i18n.t('errori.auth.googleNessunToken'));
     }
     return GoogleAuthProvider.credential(idToken);
   }
@@ -395,7 +399,7 @@ class AuthService {
   /** Collega Google a un account che gia' esiste. */
   async linkGoogle(): Promise<void> {
     const user = auth.currentUser;
-    if (!user) throw new Error('Nessun utente collegato');
+    if (!user) throw new Error(i18n.t('errori.auth.nessunUtente'));
 
     const credential = await this.freshGoogleCredential();
     await linkWithCredential(user, credential);
@@ -405,7 +409,7 @@ class AuthService {
   /** Collega Apple a un account che gia' esiste. */
   async linkApple(): Promise<void> {
     const user = auth.currentUser;
-    if (!user) throw new Error('Nessun utente collegato');
+    if (!user) throw new Error(i18n.t('errori.auth.nessunUtente'));
 
     const credential = await this.freshAppleCredential();
     await linkWithCredential(user, credential);
@@ -422,16 +426,14 @@ class AuthService {
    */
   async unlinkProvider(providerId: 'google.com' | 'apple.com'): Promise<void> {
     const user = auth.currentUser;
-    if (!user) throw new Error('Nessun utente collegato');
+    if (!user) throw new Error(i18n.t('errori.auth.nessunUtente'));
 
     const providers = this.getLinkedProviders();
     if (!providers.includes(providerId)) {
-      throw new Error('Questo metodo non e\u2019 collegato al tuo account');
+      throw new Error(i18n.t('errori.auth.metodoNonCollegato'));
     }
     if (providers.length < 2) {
-      throw new Error(
-        'E\u2019 il tuo unico metodo di accesso: collegane un altro prima di staccare questo.',
-      );
+      throw new Error(i18n.t('errori.auth.unicoMetodo'));
     }
 
     await unlink(user, providerId);
@@ -448,11 +450,9 @@ class AuthService {
    */
   async addPassword(password: string): Promise<void> {
     const user = auth.currentUser;
-    if (!user) throw new Error('Nessun utente collegato');
+    if (!user) throw new Error(i18n.t('errori.auth.nessunUtente'));
     if (!user.email) {
-      throw new Error(
-        "Questo account non ha un indirizzo email: non e' possibile impostare una password.",
-      );
+      throw new Error(i18n.t('errori.auth.senzaEmail'));
     }
 
     const providers = this.getLinkedProviders();
@@ -463,7 +463,7 @@ class AuthService {
     } else if (providers.includes('apple.com')) {
       reauthCredential = await this.freshAppleCredential();
     } else {
-      throw new Error("Nessun metodo di accesso con cui confermare la tua identita'");
+      throw new Error(i18n.t('errori.auth.nessunMetodoConferma'));
     }
 
     await reauthenticateWithCredential(user, reauthCredential);

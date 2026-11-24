@@ -29,6 +29,7 @@ import {
   generateShareMessage,
   ordinalWeek,
 } from '../../utils/profileCalculations';
+import { useTranslation } from 'react-i18next';
 
 type ProfiloScreenProps = {
   navigation?: any;
@@ -36,6 +37,7 @@ type ProfiloScreenProps = {
 };
 
 export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenProps) {
+  const { t } = useTranslation();
   // Selettori: re-render solo su cambi effettivi (azioni Zustand sono stabili)
   const user = useAuthStore((s) => s.user);
 
@@ -65,7 +67,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
 
   const loadProfileData = async () => {
     if (!user?.uid) {
-      setError('Utente non autenticato');
+      setError(t('profilo.nonAutenticato'));
       setLoading(false);
       return;
     }
@@ -112,7 +114,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
       setLoading(false);
     } catch (err: any) {
       console.error('[ProfiloScreen] Load error:', err);
-      setError(err.message || 'Errore nel caricamento del profilo');
+      setError(err.message || t('profilo.erroreCaricamento'));
       setLoading(false);
     }
   };
@@ -129,7 +131,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
     if (navigation) {
       navigation.navigate('impostazioni');
     } else {
-      Alert.alert('Impostazioni', 'Navigazione alle impostazioni non ancora configurata');
+      Alert.alert(t('profilo.impostazioni'), t('profilo.impostazioniNonPronte'));
     }
   };
 
@@ -137,10 +139,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
   if (!user) {
     return (
       <View style={styles.centerContainer}>
-        <GuestCTA
-          title="Il tuo profilo Swipick"
-          message="Registrati per avere il tuo profilo, i punteggi, lo storico delle giornate e la classifica."
-        />
+        <GuestCTA title={t('profilo.ospiteTitolo')} message={t('profilo.ospiteMessaggio')} />
       </View>
     );
   }
@@ -150,7 +149,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Caricamento profilo...</Text>
+        <Text style={styles.loadingText}>{t('profilo.caricamento')}</Text>
       </View>
     );
   }
@@ -162,7 +161,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
         <Ionicons name="alert-circle-outline" size={64} color="#dc2626" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadProfileData}>
-          <Text style={styles.retryButtonText}>Riprova</Text>
+          <Text style={styles.retryButtonText}>{t('comune.riprova')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -204,10 +203,8 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
           </Text>
           <Text style={styles.userWeeks}>
             {kpi.weeksPlayed === 0
-              ? 'nessuna giornata giocata'
-              : kpi.weeksPlayed === 1
-                ? '1 giornata giocata'
-                : `${kpi.weeksPlayed} giornate giocate`}
+              ? t('profilo.nessunaGiornata')
+              : t('profilo.giornateGiocate', { count: kpi.weeksPlayed })}
           </Text>
         </LinearGradient>
 
@@ -219,25 +216,23 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
           <View style={styles.card}>
             <View style={styles.averageRow}>
               <Text style={styles.averageValue}>{kpi.hasResults ? kpi.average : '—'}</Text>
-              <Text style={styles.averageLabel}>di media</Text>
+              <Text style={styles.averageLabel}>{t('profilo.diMedia')}</Text>
             </View>
             <Text style={[styles.averageDetail, !kpi.hasResults && styles.muted]}>
               {kpi.hasResults
-                ? `${kpi.correct} ${kpi.correct === 1 ? 'pronostico indovinato' : 'pronostici indovinati'} su ${kpi.finished}`
-                : 'Nessun pronostico ancora'}
+                ? t('profilo.indovinatiSu', { count: kpi.correct, totale: kpi.finished })
+                : t('profilo.nessunPronostico')}
             </Text>
           </View>
 
           {/* Andamento */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Come stai andando</Text>
+            <Text style={styles.cardTitle}>{t('profilo.comeStaiAndando')}</Text>
 
             {kpi.chart.length === 0 ? (
               <View style={styles.emptyChart}>
                 <Ionicons name="stats-chart-outline" size={30} color="#b6abd8" />
-                <Text style={styles.emptyChartText}>
-                  Il grafico si riempirà dopo la tua prima giornata giocata.
-                </Text>
+                <Text style={styles.emptyChartText}>{t('profilo.graficoVuoto')}</Text>
               </View>
             ) : (
               <>
@@ -258,21 +253,21 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
                     </View>
                   ))}
                 </View>
-                <Text style={styles.chartCaption}>giornata</Text>
+                <Text style={styles.chartCaption}>{t('profilo.giornata')}</Text>
 
                 <View style={styles.statsRow}>
                   <View style={styles.statCell}>
-                    <Text style={styles.statLabel}>Migliore</Text>
+                    <Text style={styles.statLabel}>{t('profilo.migliore')}</Text>
                     <Text style={styles.statValue}>{kpi.best.pct}</Text>
                     <Text style={styles.statWeek}>{ordinalWeek(kpi.best.week)}</Text>
                   </View>
                   <View style={styles.statCell}>
-                    <Text style={styles.statLabel}>Peggiore</Text>
+                    <Text style={styles.statLabel}>{t('profilo.peggiore')}</Text>
                     <Text style={styles.statValue}>{kpi.worst.pct}</Text>
                     <Text style={styles.statWeek}>{ordinalWeek(kpi.worst.week)}</Text>
                   </View>
                   <View style={styles.statCell}>
-                    <Text style={styles.statLabel}>Ultima</Text>
+                    <Text style={styles.statLabel}>{t('profilo.ultima')}</Text>
                     <Text
                       style={[
                         styles.statValue,
@@ -293,7 +288,7 @@ export default function ProfiloScreen({ navigation, onLogout }: ProfiloScreenPro
 
           <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
             <Ionicons name="share-social-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.shareButtonText}>Condividi profilo</Text>
+            <Text style={styles.shareButtonText}>{t('profilo.condividi')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

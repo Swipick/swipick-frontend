@@ -8,6 +8,7 @@ import ProgressBar from './ProgressBar';
 import { MatchCard } from '../../types/game.types';
 import { condividiEMisura } from '../../services/analytics';
 import { SWIPICK_URL } from '../../config/links';
+import { useTranslation } from 'react-i18next';
 
 const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
@@ -37,6 +38,7 @@ export default function GameHeader({
   sticky = false,
   onHeightChange,
 }: GameHeaderProps) {
+  const { t } = useTranslation();
   const [headerHeight, setHeaderHeight] = useState(0);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -46,8 +48,8 @@ export default function GameHeader({
     try {
       await condividiEMisura({
         punto: 'fine_mazzo',
-        titolo: 'Swipick - Previsioni Calcio',
-        messaggio: `Ho fatto su Swipick le mie previsioni per la prossima giornata di calcio. Puoi battermi? ${SWIPICK_URL}`,
+        titolo: t('gioca.condividiTitolo'),
+        messaggio: t('gioca.condividiMessaggio', { url: SWIPICK_URL }),
       });
     } finally {
       setShareLoading(false);
@@ -71,7 +73,7 @@ export default function GameHeader({
       return `${day}/${month}`;
     };
 
-    return `dal ${formatDate(firstDate)} al ${formatDate(lastDate)}`;
+    return t('gioca.dalAl', { dal: formatDate(firstDate), al: formatDate(lastDate) });
   };
 
   // Find next match kickoff time
@@ -109,14 +111,16 @@ export default function GameHeader({
       {/* Mode Badge */}
       {mode === 'test' && (
         <View style={styles.modeBadge}>
-          <Text style={styles.modeText}>MODALITÀ TEST</Text>
+          <Text style={styles.modeText}>{t('gioca.modalitaTest')}</Text>
         </View>
       )}
 
       {/* Week Header */}
       <View style={styles.weekHeader}>
         <Text style={styles.weekTitle}>
-          Giornata {currentWeek} {weekDateRange}
+          {weekDateRange
+            ? t('gioca.intestazione', { n: currentWeek, intervallo: weekDateRange })
+            : t('gioca.giornata', { n: currentWeek })}
         </Text>
       </View>
 
@@ -142,7 +146,7 @@ export default function GameHeader({
             disabled={shareLoading}
           >
             <Ionicons name="share-social-outline" size={16} color="#7a57f6" />
-            <Text style={styles.shareButtonText}>Sfida i tuoi amici</Text>
+            <Text style={styles.shareButtonText}>{t('gioca.sfidaAmici')}</Text>
           </TouchableOpacity>
         </View>
       )}

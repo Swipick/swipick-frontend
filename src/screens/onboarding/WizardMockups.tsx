@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { PixelPlayerLogo } from '../../components/game/PixelPlayerLogo';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Mockup "vivi" per le slide 2 e 3 del wizard di onboarding (LandingScreen).
@@ -77,10 +78,16 @@ function MatchCard({
 }
 
 export function PredictSlide() {
+  const { t } = useTranslation();
   return (
     <View style={styles.slide}>
-      <MatchCard home="Juventus" away="Napoli" date={'sab, 22/11\n18:00'} selected="1" />
-      <MatchCard home="Atalanta" away="Fiorentina" date={'dom, 23/11\n15:00'} selected="X" />
+      <MatchCard home="Juventus" away="Napoli" date={t('benvenuto.dataEsempio1')} selected="1" />
+      <MatchCard
+        home="Atalanta"
+        away="Fiorentina"
+        date={t('benvenuto.dataEsempio2')}
+        selected="X"
+      />
     </View>
   );
 }
@@ -141,6 +148,7 @@ function ResultRow({ team, score, mirror }: { team: string; score: number; mirro
 }
 
 export function ResultSlide() {
+  const { t } = useTranslation();
   return (
     <View style={styles.slide}>
       <View style={styles.card}>
@@ -149,16 +157,16 @@ export function ResultSlide() {
           <ResultRow team="Inter" score={1} mirror />
         </View>
         <View style={styles.finalPill}>
-          <Text style={styles.finalTxt}>FINE{'\n'}PARTITA</Text>
+          <Text style={styles.finalTxt}>{t('benvenuto.finePartita')}</Text>
         </View>
       </View>
 
       <MiniMeter percent={70} />
-      <Text style={styles.meterDidascalia}>7 giusti su 10 in questa giornata</Text>
+      <Text style={styles.meterDidascalia}>{t('benvenuto.giustiSu')}</Text>
 
       <View style={styles.shareBtn}>
         <Ionicons name="share-outline" size={18} color="#fff" />
-        <Text style={styles.shareTxt}>Condividi risultato</Text>
+        <Text style={styles.shareTxt}>{t('risultati.condividi')}</Text>
       </View>
     </View>
   );
@@ -200,17 +208,18 @@ function RigaClassifica({
  * una freccia in mezzo, così il meccanismo si legge senza didascalia.
  */
 export function LeagueSlide() {
+  const { t } = useTranslation();
   return (
     <View style={styles.slide}>
       <View style={styles.codiceBox}>
-        <Text style={styles.codiceEtichetta}>codice</Text>
+        <Text style={styles.codiceEtichetta}>{t('benvenuto.codice')}</Text>
         <Text style={styles.codice}>K7M2</Text>
       </View>
 
       <Ionicons name="arrow-down" size={22} color="#c4b5fd" />
 
       <View style={styles.legaCard}>
-        <Text style={styles.legaTitolo}>Amici del bar</Text>
+        <Text style={styles.legaTitolo}>{t('leghePagina.esempioNome')}</Text>
         <RigaClassifica posizione="1" iniziale="M" tinta="#8b5cf6" nickname="@marti" giusti={47} />
         <RigaClassifica
           posizione="2"
@@ -221,7 +230,7 @@ export function LeagueSlide() {
           io
         />
         <RigaClassifica posizione="3" iniziale="L" tinta="#6366f1" nickname="@luca" giusti={42} />
-        <Text style={styles.legaNota}>La classifica si somma per tutta la stagione.</Text>
+        <Text style={styles.legaNota}>{t('benvenuto.notaClassifica')}</Text>
       </View>
     </View>
   );

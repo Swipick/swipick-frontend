@@ -1,7 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { colors, spacing } from "../../theme";
-import { useAuthStore } from "../../store/stores/useAuthStore";
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { colors, spacing } from '../../theme';
+import { useAuthStore } from '../../store/stores/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 interface GuestCTAProps {
   title?: string;
@@ -17,30 +18,25 @@ interface GuestCTAProps {
  * in stile Landing). Il bottone esce dalla modalità ospite (setGuest(false))
  * riportando al flusso di registrazione/login.
  */
-export default function GuestCTA({
-  title = "Crea un account",
-  message = "Registrati per salvare i tuoi pronostici, vedere i tuoi punteggi e scalare la classifica.",
-  compact = false,
-}: GuestCTAProps) {
+export default function GuestCTA({ title, message, compact = false }: GuestCTAProps) {
+  const { t } = useTranslation();
   const setGuest = useAuthStore((s) => s.setGuest);
 
   return (
     <View style={[styles.container, compact && styles.containerCompact]}>
       {!compact && (
         <Image
-          source={require("../../../assets/icon.png")}
+          source={require('../../../assets/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
       )}
-      <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => setGuest(false)}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.buttonText}>Registrati o accedi</Text>
+      <Text style={[styles.title, compact && styles.titleCompact]}>
+        {title ?? t('ospite.titolo')}
+      </Text>
+      <Text style={styles.message}>{message ?? t('ospite.messaggio')}</Text>
+      <TouchableOpacity style={styles.button} onPress={() => setGuest(false)} activeOpacity={0.85}>
+        <Text style={styles.buttonText}>{t('ospite.pulsante')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -48,8 +44,8 @@ export default function GuestCTA({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.xl,
     gap: spacing.sm,
   },
@@ -64,9 +60,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.brand.purpleDeep,
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: spacing.sm,
   },
   titleCompact: {
@@ -76,21 +72,24 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 14,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.sm,
   },
   button: {
-    width: "100%",
+    width: '100%',
+    // In inglese "Sign up or sign in" non stava nella larghezza del contenitore.
+    minWidth: 260,
     maxWidth: 320,
+    paddingHorizontal: 24,
     height: 56,
     backgroundColor: colors.brand.purpleDark,
     borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
 });

@@ -76,15 +76,46 @@ const IDLE: Row[] = [
   [4, [[4, 5, 'skin']]],
   [5, [[2, 7, 'torso']]],
   [6, [[1, 8, 'torso']]],
-  [7, [[1, 1, 'skin'], [2, 7, 'torso'], [8, 8, 'skin']]],
+  [
+    7,
+    [
+      [1, 1, 'skin'],
+      [2, 7, 'torso'],
+      [8, 8, 'skin'],
+    ],
+  ],
   [8, [[2, 7, 'torso']]],
   [9, [[2, 7, 'torso']]],
   [10, [[2, 7, 'shorts']]],
   [11, [[2, 7, 'shorts']]],
-  [12, [[2, 3, 'skin'], [6, 7, 'skin']]],
-  [13, [[2, 3, 'skin'], [6, 7, 'skin']]],
-  [14, [[2, 3, 'trim'], [6, 7, 'trim']]],
-  [15, [[2, 3, 'boot'], [6, 7, 'boot']]],
+  [
+    12,
+    [
+      [2, 3, 'skin'],
+      [6, 7, 'skin'],
+    ],
+  ],
+  [
+    13,
+    [
+      [2, 3, 'skin'],
+      [6, 7, 'skin'],
+    ],
+  ],
+  [
+    14,
+    [
+      [2, 3, 'trim'],
+      [6, 7, 'trim'],
+    ],
+  ],
+  [
+    15,
+    [
+      [2, 3, 'boot'],
+      [6, 7, 'boot'],
+    ],
+  ],
 ];
 
 const KICK: Row[] = [
@@ -95,15 +126,46 @@ const KICK: Row[] = [
   [4, [[4, 5, 'skin']]],
   [5, [[2, 7, 'torso']]],
   [6, [[1, 8, 'torso']]],
-  [7, [[1, 1, 'skin'], [2, 7, 'torso'], [8, 8, 'skin']]],
+  [
+    7,
+    [
+      [1, 1, 'skin'],
+      [2, 7, 'torso'],
+      [8, 8, 'skin'],
+    ],
+  ],
   [8, [[2, 7, 'torso']]],
   [9, [[2, 7, 'torso']]],
   [10, [[2, 7, 'shorts']]],
   [11, [[2, 7, 'shorts']]],
-  [12, [[2, 3, 'skin'], [6, 7, 'skin']]],
-  [13, [[2, 3, 'skin'], [7, 8, 'skin']]],
-  [14, [[2, 3, 'trim'], [8, 9, 'trim']]],
-  [15, [[2, 3, 'boot'], [8, 9, 'boot']]],
+  [
+    12,
+    [
+      [2, 3, 'skin'],
+      [6, 7, 'skin'],
+    ],
+  ],
+  [
+    13,
+    [
+      [2, 3, 'skin'],
+      [7, 8, 'skin'],
+    ],
+  ],
+  [
+    14,
+    [
+      [2, 3, 'trim'],
+      [8, 9, 'trim'],
+    ],
+  ],
+  [
+    15,
+    [
+      [2, 3, 'boot'],
+      [8, 9, 'boot'],
+    ],
+  ],
 ];
 
 const POSES: Record<Pose, Row[]> = { idle: IDLE, kick: KICK };
@@ -114,7 +176,7 @@ function patCell(
   col: number,
   segStart: number,
   segEnd: number,
-  torsoTop: number
+  torsoTop: number,
 ): string {
   const a = t.c[0];
   const b = t.c[1] ?? t.c[0];
@@ -156,14 +218,10 @@ export function pixelPlayerSvg(teamKey: string, opts: PixelPlayerOptions = {}): 
     segs.forEach(([s, e, mat]) => {
       for (let c = s; c <= e; c++) {
         const color =
-          mat === 'torso'
-            ? patCell(team, r, c, s, e, 5)
-            : mat === 'trim'
-              ? team.t
-              : NEUTRAL[mat];
+          mat === 'torso' ? patCell(team, r, c, s, e, 5) : mat === 'trim' ? team.t : NEUTRAL[mat];
         rects += `<rect x="${c}" y="${r}" width="1.02" height="1.02" fill="${color}"/>`;
       }
-    })
+    }),
   );
 
   const body = mirror ? `<g transform="translate(10,0) scale(-1,1)">${rects}</g>` : rects;
