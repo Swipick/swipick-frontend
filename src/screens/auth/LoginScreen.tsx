@@ -18,7 +18,8 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { authService } from '../../services/auth/authService';
 import { profileApi, needsProfileCompletion } from '../../services/api/profile';
 import { useAuthStore } from '../../store/stores/useAuthStore';
-import { AUTH_ERROR_MESSAGES } from '../../types/auth.types';
+import { authErrorMessage } from '../../types/auth.types';
+import { useTranslation } from 'react-i18next';
 import SpazioTastiera from '../../components/common/SpazioTastiera';
 
 type LoginScreenProps = {
@@ -29,6 +30,7 @@ type LoginScreenProps = {
 };
 
 export default function LoginScreen({ onNavigate }: LoginScreenProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,14 +41,14 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   const handleLogin = async () => {
     // Validate inputs
     if (!email || !password) {
-      Alert.alert('Errore', 'Inserisci email e password');
+      Alert.alert(t('comune.errore'), t('accesso.inserisciEmailPassword'));
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Errore', 'Formato email non valido');
+      Alert.alert(t('comune.errore'), t('accesso.emailNonValida'));
       return;
     }
 
@@ -73,10 +75,9 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
     } catch (error: any) {
       console.error('[LoginScreen] Login error:', error);
 
-      // Get user-friendly error message
-      const errorMessage = AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default;
-
-      Alert.alert('Errore di Accesso', errorMessage);
+      // authService.signIn rilancia un Error con il messaggio già tradotto
+      // (e senza `code`): quello è il testo giusto da mostrare.
+      Alert.alert(t('accesso.erroreAccesso'), error?.message || authErrorMessage(error?.code));
     } finally {
       setLoading(false);
     }
@@ -115,7 +116,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         return;
       }
 
-      Alert.alert('Errore', error.message || 'Accesso con Google non riuscito');
+      Alert.alert(t('comune.errore'), error.message || t('accesso.googleNonRiuscito'));
     } finally {
       setLoading(false);
     }
@@ -143,11 +144,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         return;
       }
 
-      const errorMessage =
-        AUTH_ERROR_MESSAGES[error.code] ||
-        AUTH_ERROR_MESSAGES[error.message] ||
-        AUTH_ERROR_MESSAGES.default;
-      Alert.alert('Errore', errorMessage);
+      Alert.alert(t('comune.errore'), authErrorMessage(error.code, error.message));
     } finally {
       setLoading(false);
     }
@@ -156,18 +153,18 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
   const handleForgotPassword = async () => {
     // Prompt user for email
     Alert.prompt(
-      'Recupera Password',
-      'Inserisci il tuo indirizzo email per ricevere il link di reset password',
+      t('accesso.recuperaPassword'),
+      t('accesso.recuperoTesto'),
       [
         {
-          text: 'Annulla',
+          text: t('comune.annulla'),
           style: 'cancel',
         },
         {
-          text: 'Invia',
+          text: t('accesso.invia'),
           onPress: async (emailInput?: string) => {
             if (!emailInput || !emailInput.trim()) {
-              Alert.alert('Errore', 'Inserisci un indirizzo email valido');
+              Alert.alert(t('comune.errore'), t('accesso.inserisciEmailValida'));
               return;
             }
 
@@ -175,16 +172,11 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               setLoading(true);
               await authService.resetPassword(emailInput.trim().toLowerCase());
 
-              Alert.alert(
-                'Email Inviata',
-                "Ti abbiamo inviato un'email con le istruzioni per reimpostare la password. Controlla anche la cartella spam.",
-                [{ text: 'OK' }],
-              );
+              Alert.alert(t('accesso.emailInviataTitolo'), t('accesso.emailInviataTesto'), [
+                { text: 'OK' },
+              ]);
             } catch (error: any) {
-              Alert.alert(
-                'Errore',
-                error.message || "Impossibile inviare l'email. Riprova più tardi.",
-              );
+              Alert.alert(t('comune.errore'), error.message || t('accesso.invioNonRiuscito'));
             } finally {
               setLoading(false);
             }
@@ -206,7 +198,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           onNavigate('Landing');
         }}
       >
-        <Text style={styles.backButtonText}>← Indietro</Text>
+        <Text style={styles.backButtonText}>{t('accesso.indietro')}</Text>
       </TouchableOpacity>
 
       <SpazioTastiera>
@@ -228,7 +220,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('accesso.email')}
               placeholderTextColor="#9ca3af"
               value={email}
               onChangeText={setEmail}
@@ -244,7 +236,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t('accesso.password')}
                 placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
@@ -274,12 +266,12 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.loginButtonText}>Accedi</Text>
+              <Text style={styles.loginButtonText}>{t('accesso.accedi')}</Text>
             )}
           </TouchableOpacity>
 
           {/* Divider */}
-          <Text style={styles.divider}>oppure</Text>
+          <Text style={styles.divider}>{t('accesso.oppure')}</Text>
 
           {/* Google Button */}
           <TouchableOpacity
@@ -295,7 +287,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               style={styles.googleLogoImage}
               resizeMode="contain"
             />
-            <Text style={styles.googleButtonText}>Accedi con Google</Text>
+            <Text style={styles.googleButtonText}>{t('accesso.accediGoogle')}</Text>
           </TouchableOpacity>
 
           {/* Apple Sign-In Button — iOS only (required by App Store guideline 4.8) */}
@@ -315,10 +307,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           {/* Su Android Apple non c'è: chi si è registrato solo con Apple entra da
               iPhone e collega un altro metodo, poi usa quello anche qui. */}
           {Platform.OS === 'android' && (
-            <Text style={styles.appleNote}>
-              Ti sei registrato con Apple? Accedi da iPhone e collega Google o una password in
-              Impostazioni → Metodi di accesso.
-            </Text>
+            <Text style={styles.appleNote}>{t('accesso.notaApple')}</Text>
           )}
 
           {/* Spacer to push forgot password to bottom */}
@@ -326,7 +315,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
 
           {/* Forgot Password */}
           <View style={styles.forgotPasswordContainer}>
-            <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
+            <Text style={styles.forgotPasswordText}>{t('accesso.passwordDimenticata')}</Text>
             <TouchableOpacity
               style={styles.forgotPasswordButton}
               onPress={async () => {
@@ -335,7 +324,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               }}
               disabled={loading}
             >
-              <Text style={styles.forgotPasswordButtonText}>Recupera password</Text>
+              <Text style={styles.forgotPasswordButtonText}>{t('accesso.recuperaPassword')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

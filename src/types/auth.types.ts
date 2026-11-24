@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { User } from 'firebase/auth';
 
 /**
@@ -66,26 +67,31 @@ export enum FirebaseAuthError {
 }
 
 // User-friendly error messages (Italian)
-export const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  [FirebaseAuthError.EMAIL_ALREADY_IN_USE]:
-    'Questa email è già registrata. Effettua il login.',
-  [FirebaseAuthError.INVALID_EMAIL]:
-    'Formato email non valido.',
-  [FirebaseAuthError.USER_DISABLED]:
-    'Questo account è stato disabilitato.',
-  [FirebaseAuthError.USER_NOT_FOUND]:
-    'Utente non trovato. Verifica l\'indirizzo email.',
-  [FirebaseAuthError.WRONG_PASSWORD]:
-    'Password errata. Riprova.',
-  [FirebaseAuthError.WEAK_PASSWORD]:
-    'Password troppo debole. Usa almeno 6 caratteri.',
-  [FirebaseAuthError.NETWORK_REQUEST_FAILED]:
-    'Errore di rete. Controlla la connessione.',
-  [FirebaseAuthError.TOO_MANY_REQUESTS]:
-    'Troppi tentativi falliti. Riprova più tardi.',
-  'auth/invalid-credential': 'Credenziali non valide. Verifica email e password.',
-  'apple-sign-in-cancelled': 'Accesso con Apple annullato.',
-  'apple-sign-in-unavailable': 'Accesso con Apple non disponibile su questo dispositivo.',
-  'ERR_REQUEST_CANCELED': 'Accesso con Apple annullato.',
-  default: 'Errore durante l\'accesso. Riprova.',
+/** Il codice d'errore (di Firebase o nostro) → la chiave del testo in `errori.auth`. */
+const CHIAVI_ERRORE_AUTH: Record<string, string> = {
+  [FirebaseAuthError.EMAIL_ALREADY_IN_USE]: 'emailGiaUsata',
+  [FirebaseAuthError.INVALID_EMAIL]: 'emailNonValida',
+  [FirebaseAuthError.USER_DISABLED]: 'accountDisabilitato',
+  [FirebaseAuthError.USER_NOT_FOUND]: 'utenteNonTrovato',
+  [FirebaseAuthError.WRONG_PASSWORD]: 'passwordErrata',
+  [FirebaseAuthError.WEAK_PASSWORD]: 'passwordDebole',
+  [FirebaseAuthError.NETWORK_REQUEST_FAILED]: 'rete',
+  [FirebaseAuthError.TOO_MANY_REQUESTS]: 'troppiTentativi',
+  'auth/invalid-credential': 'credenzialiNonValide',
+  'apple-sign-in-cancelled': 'appleAnnullato',
+  'apple-sign-in-unavailable': 'appleNonDisponibile',
+  ERR_REQUEST_CANCELED: 'appleAnnullato',
 };
+
+/** Il codice ha un messaggio suo? Serve a chi deve distinguere un errore noto da uno generico. */
+export const isKnownAuthError = (code?: string): boolean => !!code && code in CHIAVI_ERRORE_AUTH;
+
+/**
+ * Il messaggio per l'utente di un errore di accesso, nella lingua dell'app.
+ * Accetta più candidati (es. `error.code` ed `error.message`): vale il primo
+ * riconosciuto, altrimenti il messaggio generico.
+ */
+export function authErrorMessage(...codici: (string | undefined)[]): string {
+  const chiave = codici.map((c) => c && CHIAVI_ERRORE_AUTH[c]).find(Boolean) ?? 'generico';
+  return i18n.t(`errori.auth.${chiave}`);
+}

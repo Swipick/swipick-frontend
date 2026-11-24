@@ -5,7 +5,9 @@ import { categoriaPlurale } from '../pluralRules';
 /** Tutte le chiavi foglia, come "lingua.titolo". */
 function chiavi(o: Record<string, unknown>, prefisso = ''): string[] {
   return Object.entries(o).flatMap(([k, v]) =>
-    typeof v === 'string' ? [`${prefisso}${k}`] : chiavi(v as Record<string, unknown>, `${prefisso}${k}.`),
+    typeof v === 'string'
+      ? [`${prefisso}${k}`]
+      : chiavi(v as Record<string, unknown>, `${prefisso}${k}.`),
   );
 }
 
