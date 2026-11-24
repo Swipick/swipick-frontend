@@ -20,6 +20,9 @@ import { profileApi } from '../../services/api/profile';
 import { describeProviders } from '../../utils/authProviders';
 import { PRIVACY_URL, TERMS_URL } from '../../config/links';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
+import { useTranslation } from 'react-i18next';
+import { useLinguaStore } from '../../store/stores/useLinguaStore';
+import type { SceltaLingua } from '../../i18n';
 
 type ImpostazioniScreenProps = {
   navigation?: { navigate: (screen: any) => void; goBack: () => void };
@@ -86,6 +89,56 @@ function Riga({
     <TouchableOpacity onPress={onPress} activeOpacity={0.6} disabled={busy}>
       {content}
     </TouchableOpacity>
+  );
+}
+
+/**
+ * La scelta della lingua: una riga che si apre sulle tre opzioni, senza
+ * schermata a parte (sono tre voci, e il cambio si vede subito).
+ */
+function SceltaLinguaCard() {
+  const { t } = useTranslation();
+  const scelta = useLinguaStore((s) => s.scelta);
+  const imposta = useLinguaStore((s) => s.imposta);
+  const [aperta, setAperta] = useState(false);
+
+  const opzioni: { valore: SceltaLingua; label: string; note?: string }[] = [
+    { valore: 'auto', label: t('lingua.automatica'), note: t('lingua.automaticaNota') },
+    { valore: 'it', label: t('lingua.italiano') },
+    { valore: 'en', label: t('lingua.inglese') },
+  ];
+  const corrente = opzioni.find((o) => o.valore === scelta)?.label;
+
+  return (
+    <View style={styles.card}>
+      <Riga
+        label={t('lingua.titolo')}
+        value={corrente}
+        onPress={() => setAperta((v) => !v)}
+        last={!aperta}
+      />
+      {aperta
+        ? opzioni.map((o, i) => (
+            <TouchableOpacity
+              key={o.valore}
+              onPress={() => imposta(o.valore)}
+              activeOpacity={0.6}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: o.valore === scelta }}
+            >
+              <View style={[styles.row, i === opzioni.length - 1 && styles.rowLast]}>
+                <View style={styles.rowLeft}>
+                  <Text style={styles.rowLabel}>{o.label}</Text>
+                  {o.note ? <Text style={styles.rowNote}>{o.note}</Text> : null}
+                </View>
+                {o.valore === scelta ? (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+          ))
+        : null}
+    </View>
   );
 }
 
@@ -289,6 +342,8 @@ export default function ImpostazioniScreen({
             last
           />
         </View>
+
+        <SceltaLinguaCard />
 
         <Text style={styles.sectionTitle}>Informazioni</Text>
         <View style={styles.card}>
