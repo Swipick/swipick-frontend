@@ -1,7 +1,7 @@
 import { it as testiIt } from '../it';
 import { en } from '../en';
 import { categoriaPlurale } from '../pluralRules';
-import i18n from '../index';
+import i18n, { suffissoOrdinale } from '../index';
 import { formatItalianPercentage } from '../../utils/profileCalculations';
 import { formatDateRange } from '../../utils/dateRange';
 
@@ -67,5 +67,14 @@ describe('formati per lingua', () => {
     expect(formatDateRange(date)).toBe('21/11 to 23/11');
     expect(i18n.t('risultati.partite', { count: 1 })).toBe('1 match');
     expect(i18n.t('risultati.partite', { count: 3 })).toBe('3 matches');
+  });
+});
+
+describe('suffisso ordinale', () => {
+  it('º in italiano, st/nd/rd/th in inglese', () => {
+    expect(suffissoOrdinale(5, 'it')).toBe('º');
+    expect(
+      [1, 2, 3, 4, 11, 12, 13, 21, 22, 101].map((n) => `${n}${suffissoOrdinale(n, 'en')}`),
+    ).toEqual(['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd', '101st']);
   });
 });

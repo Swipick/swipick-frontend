@@ -121,7 +121,7 @@ function SceltaLinguaCard() {
               accessibilityState={{ checked: o.valore === scelta }}
             >
               <View style={[styles.row, i === opzioni.length - 1 && styles.rowLast]}>
-                <View style={styles.rowLeft}>
+                <View style={[styles.rowLeft, styles.opzioneTesto]}>
                   <Text style={styles.rowLabel}>{o.label}</Text>
                   {o.note ? <Text style={styles.rowNote}>{o.note}</Text> : null}
                 </View>
@@ -461,6 +461,11 @@ const styles = StyleSheet.create({
   },
   rowLast: {
     borderBottomWidth: 0,
+  },
+  // Le opzioni della lingua non hanno un valore a destra: il testo prende
+  // tutto lo spazio, così la spunta finisce sul bordo.
+  opzioneTesto: {
+    flex: 1,
   },
   rowLeft: {
     flexShrink: 0,

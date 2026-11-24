@@ -40,3 +40,14 @@ i18n.use(initReactI18next).init({
 });
 
 export default i18n;
+
+/**
+ * Il suffisso ordinale di una posizione in classifica: "º" in italiano,
+ * "st/nd/rd/th" in inglese (11, 12 e 13 fanno eccezione: 11th, non 11st).
+ */
+export function suffissoOrdinale(n: number, lingua: string = i18n.language): string {
+  if (lingua !== 'en') return 'º';
+  const decine = n % 100;
+  if (decine >= 11 && decine <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
+}

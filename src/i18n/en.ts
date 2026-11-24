@@ -298,7 +298,8 @@ export const en: Testi = {
     classificaStagione: 'season standings',
     stagione: 'Season',
     giocatore: 'Player',
-    media: 'Average',
+    // La colonna è stretta: "Average" veniva troncato in "AVERA…".
+    media: 'Avg',
     giusti: 'Correct',
     notaStagione:
       'The standings rank correct predictions. The average is over the matches already revealed, which are fewer for those who joined later.',
@@ -447,7 +448,7 @@ export const en: Testi = {
       "To add a password we'll ask you to sign in again with {{metodo}}: this stops anyone with your unlocked phone from taking over your account for good.",
     unSoloMetodo:
       'You have only one sign-in method. If you lose it, you lose the account: linking a second one takes less than a minute.',
-    solo: '{{metodo}} only',
+    solo: 'Only {{metodo}}',
     elenco: '{{primi}} and {{ultimo}}',
     password: 'password',
   },

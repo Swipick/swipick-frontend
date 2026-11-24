@@ -24,6 +24,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import GuestCTA from '../../components/common/GuestCTA';
 import { useAuthStore } from '../../store/stores/useAuthStore';
+import { suffissoOrdinale } from '../../i18n';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void };
@@ -54,7 +55,9 @@ function LeagueRow({ league, onPress }: { league: LeagueSummary; onPress: () => 
           <View style={styles.positionBox}>
             <Text style={styles.position}>
               {league.myPosition ?? '—'}
-              <Text style={styles.positionOrdinal}>º</Text>
+              {league.myPosition !== null && league.myPosition !== undefined ? (
+                <Text style={styles.positionOrdinal}>{suffissoOrdinale(league.myPosition)}</Text>
+              ) : null}
             </Text>
           </View>
         )}
