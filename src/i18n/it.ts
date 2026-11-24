@@ -36,6 +36,9 @@ export const it = {
     emailInviataTesto:
       "Ti abbiamo inviato un'email con le istruzioni per reimpostare la password. Controlla anche la cartella spam.",
     invioNonRiuscito: "Impossibile inviare l'email. Riprova più tardi.",
+    recuperoScriviEmail:
+      'Scrivi la tua email nel campo qui sopra, poi tocca di nuovo "Recupera password".',
+    recuperoConferma: 'Ti mandiamo il link per reimpostare la password a {{email}}.',
   },
   registrazione: {
     passo: 'Passo {{n}} di 2',

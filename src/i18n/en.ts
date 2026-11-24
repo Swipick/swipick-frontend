@@ -31,6 +31,8 @@ export const en: Testi = {
     emailInviataTesto:
       "We've sent you an email with instructions to reset your password. Check your spam folder too.",
     invioNonRiuscito: "Couldn't send the email. Please try again later.",
+    recuperoScriviEmail: 'Type your email in the field above, then tap "Reset password" again.',
+    recuperoConferma: "We'll send the password reset link to {{email}}.",
   },
   registrazione: {
     passo: 'Step {{n}} of 2',

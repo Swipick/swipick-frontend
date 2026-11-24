@@ -150,8 +150,42 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
     }
   };
 
+  /** Manda il link di reset all'indirizzo dato, con l'esito in un avviso. */
+  const inviaReset = async (indirizzo: string) => {
+    try {
+      setLoading(true);
+      await authService.resetPassword(indirizzo.trim().toLowerCase());
+      Alert.alert(t('accesso.emailInviataTitolo'), t('accesso.emailInviataTesto'), [
+        { text: 'OK' },
+      ]);
+    } catch (error: any) {
+      Alert.alert(t('comune.errore'), error.message || t('accesso.invioNonRiuscito'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleForgotPassword = async () => {
-    // Prompt user for email
+    // Alert.prompt esiste solo su iOS: su Android React Native lo ignora in
+    // silenzio, e il pulsante non faceva nulla. Lì si usa l'email già scritta
+    // nel campo della schermata, chiedendo conferma prima di inviare.
+    if (Platform.OS !== 'ios') {
+      const indirizzo = email.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(indirizzo)) {
+        Alert.alert(t('accesso.recuperaPassword'), t('accesso.recuperoScriviEmail'));
+        return;
+      }
+      Alert.alert(
+        t('accesso.recuperaPassword'),
+        t('accesso.recuperoConferma', { email: indirizzo.toLowerCase() }),
+        [
+          { text: t('comune.annulla'), style: 'cancel' },
+          { text: t('accesso.invia'), onPress: () => inviaReset(indirizzo) },
+        ],
+      );
+      return;
+    }
+
     Alert.prompt(
       t('accesso.recuperaPassword'),
       t('accesso.recuperoTesto'),
@@ -167,19 +201,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               Alert.alert(t('comune.errore'), t('accesso.inserisciEmailValida'));
               return;
             }
-
-            try {
-              setLoading(true);
-              await authService.resetPassword(emailInput.trim().toLowerCase());
-
-              Alert.alert(t('accesso.emailInviataTitolo'), t('accesso.emailInviataTesto'), [
-                { text: 'OK' },
-              ]);
-            } catch (error: any) {
-              Alert.alert(t('comune.errore'), error.message || t('accesso.invioNonRiuscito'));
-            } finally {
-              setLoading(false);
-            }
+            await inviaReset(emailInput);
           },
         },
       ],
