@@ -40,13 +40,12 @@ export const hasKickedOff = (
   kickoff: string,
   now: number = Date.now(),
 ): boolean => {
-  if (status === "LIVE" || status === "FINISHED") return true;
+  if (status === 'LIVE' || status === 'FINISHED') return true;
   const start = new Date(kickoff).getTime();
   return Number.isFinite(start) && start <= now;
 };
 
-const isFinished = (m: WeekMeterMatch): boolean =>
-  m.status === "FINISHED" && !!m.actualResult;
+const isFinished = (m: WeekMeterMatch): boolean => m.status === 'FINISHED' && !!m.actualResult;
 
 export const computeWeekMeter = (
   matches: WeekMeterMatch[],

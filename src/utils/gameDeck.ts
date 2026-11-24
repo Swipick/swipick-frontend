@@ -27,13 +27,8 @@ export const hasStarted = (fixture: MatchCard, now: Date): boolean =>
   new Date(fixture.kickoff.iso).getTime() <= now.getTime();
 
 /** Una partita è giocabile se non è iniziata e non è già stata giocata. */
-export const isPlayable = (
-  fixture: MatchCard,
-  predictions: Predictions,
-  now: Date,
-): boolean =>
-  !hasStarted(fixture, now) &&
-  !isAnswered(predictions.get(fixture.fixtureId));
+export const isPlayable = (fixture: MatchCard, predictions: Predictions, now: Date): boolean =>
+  !hasStarted(fixture, now) && !isAnswered(predictions.get(fixture.fixtureId));
 
 /**
  * Le card da mostrare, in ordine di scadenza: la prima è quella che sta per
@@ -46,10 +41,7 @@ export const getPlayableDeck = (
 ): MatchCard[] =>
   fixtures
     .filter((fixture) => isPlayable(fixture, predictions, now))
-    .sort(
-      (a, b) =>
-        new Date(a.kickoff.iso).getTime() - new Date(b.kickoff.iso).getTime(),
-    );
+    .sort((a, b) => new Date(a.kickoff.iso).getTime() - new Date(b.kickoff.iso).getTime());
 
 export interface RoundProgress {
   /** Partite non più in sospeso: pronosticate oppure scadute. */
@@ -84,13 +76,8 @@ export const getRoundProgress = (
  * partite non è "conclusa": è vuota, e va distinta perché merita un altro
  * messaggio.
  */
-export const isRoundOver = (
-  fixtures: MatchCard[],
-  predictions: Predictions,
-  now: Date,
-): boolean =>
-  fixtures.length > 0 &&
-  getPlayableDeck(fixtures, predictions, now).length === 0;
+export const isRoundOver = (fixtures: MatchCard[], predictions: Predictions, now: Date): boolean =>
+  fixtures.length > 0 && getPlayableDeck(fixtures, predictions, now).length === 0;
 
 /** La prossima scadenza fra le card giocabili, o null se non ne restano. */
 export const getNextDeadline = (deck: MatchCard[]): Date | null =>
@@ -100,10 +87,7 @@ export const getNextDeadline = (deck: MatchCard[]): Date | null =>
  * La card successiva nel mazzo, ciclando. Serve allo skip: rimanda la scelta
  * senza uscire dall'insieme di quelle ancora giocabili.
  */
-export const getNextInDeck = (
-  deck: MatchCard[],
-  currentId: string | null,
-): string | null => {
+export const getNextInDeck = (deck: MatchCard[], currentId: string | null): string | null => {
   if (deck.length === 0) return null;
 
   const index = deck.findIndex((fixture) => fixture.fixtureId === currentId);

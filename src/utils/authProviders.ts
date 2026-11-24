@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 /**
  * Come si riassumono i metodi di accesso collegati a un account.
  *
@@ -9,7 +11,6 @@
 const NOMI: Record<string, string> = {
   'google.com': 'Google',
   'apple.com': 'Apple',
-  password: 'password',
 };
 
 export function describeProviders(providers: string[]): {
@@ -19,13 +20,17 @@ export function describeProviders(providers: string[]): {
 } {
   const nomi = ['google.com', 'apple.com', 'password']
     .filter((id) => providers.includes(id))
-    .map((id) => NOMI[id]);
+    .map((id) => NOMI[id] ?? i18n.t('metodi.password'));
 
   if (nomi.length === 0) return { label: '—', soloUno: false };
-  if (nomi.length === 1) return { label: `Solo ${nomi[0]}`, soloUno: true };
+  if (nomi.length === 1)
+    return { label: i18n.t('metodi.solo', { metodo: nomi[0] }), soloUno: true };
 
   return {
-    label: `${nomi.slice(0, -1).join(', ')} e ${nomi[nomi.length - 1]}`,
+    label: i18n.t('metodi.elenco', {
+      primi: nomi.slice(0, -1).join(', '),
+      ultimo: nomi[nomi.length - 1],
+    }),
     soloUno: false,
   };
 }

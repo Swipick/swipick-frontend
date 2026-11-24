@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { usersApi } from '../../services/api/users';
 import SpazioTastiera from '../../components/common/SpazioTastiera';
+import { useTranslation } from 'react-i18next';
 
 type CambiaNicknameScreenProps = {
   navigation?: { goBack: () => void };
@@ -31,6 +32,7 @@ export default function CambiaNicknameScreen({
   current,
   onChanged,
 }: CambiaNicknameScreenProps) {
+  const { t } = useTranslation();
   const [nickname, setNickname] = useState(current ?? '');
   const [availability, setAvailability] = useState<Availability>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -71,12 +73,12 @@ export default function CambiaNicknameScreen({
       onChanged(nickname);
       navigation?.goBack();
     } catch (e: any) {
-      const msg: string = e?.message || 'Non siamo riusciti a salvare il nickname';
+      const msg: string = e?.message || t('nickname.nonSalvato');
       if (/nickname/i.test(msg)) {
         setError(msg);
         setAvailability('taken');
       } else {
-        Alert.alert('Errore', msg);
+        Alert.alert(t('comune.errore'), msg);
       }
     } finally {
       setSaving(false);
@@ -86,17 +88,18 @@ export default function CambiaNicknameScreen({
   const hint = () => {
     if (error) return { text: error, tone: styles.hintBad };
     if (unchanged) {
-      return { text: 'È il tuo nickname attuale.', tone: styles.hintNeutral };
+      return { text: t('cambiaNickname.attuale'), tone: styles.hintNeutral };
     }
     if (!formatOk) {
       return {
-        text: 'Solo minuscole, numeri e underscore (_), da 3 a 50 caratteri.',
+        text: t('nickname.formatoErrato'),
         tone: styles.hintBad,
       };
     }
-    if (availability === 'checking') return { text: 'Controllo…', tone: styles.hintNeutral };
-    if (availability === 'taken') return { text: 'Questo nickname è già in uso', tone: styles.hintBad };
-    if (availability === 'free') return { text: '✓ disponibile', tone: styles.hintOk };
+    if (availability === 'checking')
+      return { text: t('nickname.controllo'), tone: styles.hintNeutral };
+    if (availability === 'taken') return { text: t('nickname.inUso'), tone: styles.hintBad };
+    if (availability === 'free') return { text: t('nickname.disponibile'), tone: styles.hintOk };
     return { text: ' ', tone: styles.hintNeutral };
   };
 
@@ -112,7 +115,7 @@ export default function CambiaNicknameScreen({
         >
           <Ionicons name="chevron-back" size={26} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nickname</Text>
+        <Text style={styles.headerTitle}>{t('impostazioni.nickname')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -123,18 +126,14 @@ export default function CambiaNicknameScreen({
           keyboardDismissMode="interactive"
           automaticallyAdjustKeyboardInsets
         >
-          <Text style={styles.intro}>
-            È il nome con cui ti vedono gli altri giocatori.
-          </Text>
+          <Text style={styles.intro}>{t('cambiaNickname.intro')}</Text>
 
           <View style={styles.card}>
-            <View
-              style={[styles.inputRow, availability === 'taken' && styles.inputRowError]}
-            >
+            <View style={[styles.inputRow, availability === 'taken' && styles.inputRowError]}>
               <Text style={styles.at}>@</Text>
               <TextInput
                 style={styles.input}
-                placeholder="mario_rossi"
+                placeholder={t('nickname.esempio')}
                 placeholderTextColor="#9ca3af"
                 value={nickname}
                 onChangeText={(text) => {
@@ -148,9 +147,7 @@ export default function CambiaNicknameScreen({
                 returnKeyType="done"
                 onSubmitEditing={handleSave}
               />
-              {availability === 'checking' && (
-                <ActivityIndicator size="small" color="#9ca3af" />
-              )}
+              {availability === 'checking' && <ActivityIndicator size="small" color="#9ca3af" />}
             </View>
             <Text style={[styles.hint, hintTone]}>{hintText}</Text>
           </View>
@@ -163,7 +160,7 @@ export default function CambiaNicknameScreen({
             {saving ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.primaryButtonText}>Salva</Text>
+              <Text style={styles.primaryButtonText}>{t('cambiaNickname.salva')}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>

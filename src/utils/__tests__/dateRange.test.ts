@@ -14,11 +14,7 @@ describe('formatDateRange', () => {
   });
 
   it('uses min and max regardless of input order', () => {
-    const dates = [
-      '2026-04-26T14:00:00Z',
-      '2026-04-24T18:30:00Z',
-      '2026-04-27T20:45:00Z',
-    ];
+    const dates = ['2026-04-26T14:00:00Z', '2026-04-24T18:30:00Z', '2026-04-27T20:45:00Z'];
     expect(formatDateRange(dates)).toBe('dal 24/04 al 27/04');
   });
 

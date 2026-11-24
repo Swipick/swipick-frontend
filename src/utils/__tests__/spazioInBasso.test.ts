@@ -19,7 +19,7 @@ describe('useSpazioInBasso', () => {
     expect(useSpazioInBasso(16)).toBe(64);
   });
 
-  it('su iOS lascia il margine com\'era', () => {
+  it("su iOS lascia il margine com'era", () => {
     Platform.OS = 'ios';
     expect(useSpazioInBasso(16)).toBe(16);
   });

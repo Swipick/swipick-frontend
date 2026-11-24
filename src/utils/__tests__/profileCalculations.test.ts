@@ -39,7 +39,13 @@ describe('calculateWeightedAverage', () => {
   it('weights weeks by finished predictions', () => {
     const stats = [
       week({ week: 1, correctPredictions: 10, finishedPredictions: 10, accuracy: 100 }),
-      week({ week: 2, totalPredictions: 5, correctPredictions: 0, finishedPredictions: 5, accuracy: 0 }),
+      week({
+        week: 2,
+        totalPredictions: 5,
+        correctPredictions: 0,
+        finishedPredictions: 5,
+        accuracy: 0,
+      }),
     ];
     // 10 corrette su 15 finite
     expect(calculateWeightedAverage(stats)).toBeCloseTo(66.67, 1);
@@ -96,7 +102,7 @@ describe('calculateProfileKPIs — empty state inizio stagione', () => {
   });
 });
 
-describe('findLastWeek — l\'ultima giornata e il suo andamento', () => {
+describe("findLastWeek — l'ultima giornata e il suo andamento", () => {
   it('confronta con la precedente conclusa, non con quella prima in ordine di array', () => {
     const last = findLastWeek([
       week({ week: 4, accuracy: 70, correctPredictions: 7 }),
@@ -107,7 +113,7 @@ describe('findLastWeek — l\'ultima giornata e il suo andamento', () => {
     expect(last.trend).toBe('up'); // 70 dopo il 40 della terza
   });
 
-  it('non inventa un andamento quando la giornata conclusa e\' una sola', () => {
+  it("non inventa un andamento quando la giornata conclusa e' una sola", () => {
     const last = findLastWeek([week({ week: 1, accuracy: 60 })]);
     expect(last.week).toBe(1);
     expect(last.trend).toBeNull();
@@ -123,10 +129,8 @@ describe('findLastWeek — l\'ultima giornata e il suo andamento', () => {
 });
 
 describe('buildChartBars', () => {
-  it('tiene le giornate piu\' recenti quando sono troppe', () => {
-    const stats = Array.from({ length: 12 }, (_, i) =>
-      week({ week: i + 1, accuracy: 50 })
-    );
+  it("tiene le giornate piu' recenti quando sono troppe", () => {
+    const stats = Array.from({ length: 12 }, (_, i) => week({ week: i + 1, accuracy: 50 }));
     const bars = buildChartBars(stats, 8);
     expect(bars).toHaveLength(8);
     expect(bars[0].week).toBe(5);
@@ -143,11 +147,11 @@ describe('buildChartBars', () => {
 });
 
 describe('ordinalWeek', () => {
-  it('usa l\'ordinale come il resto dell\'app', () => {
+  it("usa l'ordinale come il resto dell'app", () => {
     expect(ordinalWeek(2)).toBe('2ª giornata');
   });
 
-  it('non scrive niente quando la giornata non c\'e\'', () => {
+  it("non scrive niente quando la giornata non c'e'", () => {
     expect(ordinalWeek(null)).toBe('');
   });
 });

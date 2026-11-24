@@ -12,5 +12,4 @@ import { PredictionChoice } from '../types/game.types';
  */
 export const isAnswered = (
   choice: PredictionChoice | undefined | null,
-): choice is '1' | 'X' | '2' =>
-  choice === '1' || choice === 'X' || choice === '2';
+): choice is '1' | 'X' | '2' => choice === '1' || choice === 'X' || choice === '2';
