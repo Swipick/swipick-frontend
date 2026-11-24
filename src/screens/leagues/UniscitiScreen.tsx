@@ -10,6 +10,7 @@ import {
   leagueStyles,
   leagueColors,
 } from '../../components/leagues/LeagueUI';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void; goBack: () => void };
@@ -24,6 +25,7 @@ const LENGTH = 4;
  * battitura si corregge sul carattere sbagliato invece che riscrivendo tutto.
  */
 export default function UniscitiScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const [chars, setChars] = useState<string[]>(Array(LENGTH).fill(''));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export default function UniscitiScreen({ navigation }: Props) {
       const preview = await leaguesApi.previewInvite(code);
       navigation?.navigate('conferma-invito', { code, preview });
     } catch (err: any) {
-      setError(err?.message ?? 'Codice non valido');
+      setError(err?.message ?? t('leghe.errori.codiceNonValido'));
     } finally {
       setBusy(false);
     }
@@ -71,15 +73,15 @@ export default function UniscitiScreen({ navigation }: Props) {
 
   return (
     <View style={leagueStyles.screen}>
-      <SubHeader title="Ho un invito" onBack={() => navigation?.goBack()} />
+      <SubHeader title={t('leghePagina.hoUnInvito')} onBack={() => navigation?.goBack()} />
 
       <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView
           contentContainerStyle={[leagueStyles.content, styles.scroll]}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>Inserisci il codice</Text>
-          <Text style={styles.subtitle}>Quattro caratteri, te li dà chi ti ha invitato.</Text>
+          <Text style={styles.title}>{t('leghePagina.inserisciCodice')}</Text>
+          <Text style={styles.subtitle}>{t('leghePagina.quattroCaratteri')}</Text>
 
           <View style={styles.cells}>
             {chars.map((char, index) => (
@@ -100,19 +102,22 @@ export default function UniscitiScreen({ navigation }: Props) {
                 keyboardType="default"
                 returnKeyType={index === LENGTH - 1 ? 'done' : 'next'}
                 onSubmitEditing={cerca}
-                accessibilityLabel={`Carattere ${index + 1}`}
+                accessibilityLabel={t('leghePagina.carattere', { n: index + 1 })}
                 selectTextOnFocus
               />
             ))}
           </View>
 
-          <Text style={styles.alphabet}>
-            Nel codice non compaiono mai 0, O, 1, I ed L: si somigliano troppo.
-          </Text>
+          <Text style={styles.alphabet}>{t('leghePagina.caratteriEsclusi')}</Text>
 
           <ErrorNote message={error} />
 
-          <PrimaryButton label="Cerca la lega" onPress={cerca} busy={busy} disabled={!completo} />
+          <PrimaryButton
+            label={t('leghePagina.cercaLega')}
+            onPress={cerca}
+            busy={busy}
+            disabled={!completo}
+          />
 
           <View style={[leagueStyles.card, styles.info]}>
             <Ionicons
@@ -121,9 +126,7 @@ export default function UniscitiScreen({ navigation }: Props) {
               color={leagueColors.textMuted}
               style={styles.infoIcon}
             />
-            <Text style={styles.infoText}>
-              Prima di entrare vedrai nome, campionato e membri della lega.
-            </Text>
+            <Text style={styles.infoText}>{t('leghePagina.primaDiEntrare')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

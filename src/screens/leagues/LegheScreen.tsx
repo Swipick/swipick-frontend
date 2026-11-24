@@ -21,6 +21,7 @@ import {
   leagueStyles,
   leagueColors,
 } from '../../components/leagues/LeagueUI';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void };
@@ -28,6 +29,7 @@ type Props = {
 
 /** Una riga dell'elenco: nome, posizione, punti. */
 function LeagueRow({ league, onPress }: { league: LeagueSummary; onPress: () => void }) {
+  const { t } = useTranslation();
   return (
     <TouchableOpacity
       style={[leagueStyles.card, styles.leagueCard]}
@@ -40,12 +42,12 @@ function LeagueRow({ league, onPress }: { league: LeagueSummary; onPress: () => 
             {league.name}
           </Text>
           <Text style={styles.leagueMeta}>
-            Serie A · {league.memberCount} {league.memberCount === 1 ? 'membro' : 'membri'}
+            Serie A · {t('leghePagina.membri', { count: league.memberCount })}
           </Text>
         </View>
 
         {league.myPending ? (
-          <Text style={styles.pendingBadge}>in attesa</Text>
+          <Text style={styles.pendingBadge}>{t('leghePagina.inAttesa')}</Text>
         ) : (
           <View style={styles.positionBox}>
             <Text style={styles.position}>
@@ -76,8 +78,8 @@ function LeagueRow({ league, onPress }: { league: LeagueSummary; onPress: () => 
         </View>
         <Text style={styles.leaguePoints}>
           {league.myPending
-            ? 'parti dalla prossima giornata'
-            : `${league.myPoints} punti in stagione`}
+            ? t('leghePagina.partiProssima')
+            : t('leghePagina.puntiStagione', { punti: league.myPoints })}
         </Text>
         <Ionicons name="chevron-forward" size={18} color="#b9b9c2" />
       </View>
@@ -86,6 +88,7 @@ function LeagueRow({ league, onPress }: { league: LeagueSummary; onPress: () => 
 }
 
 export default function LegheScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const leagues = useLeaguesStore((s) => s.leagues);
   const loading = useLeaguesStore((s) => s.loading);
   const error = useLeaguesStore((s) => s.error);
@@ -104,11 +107,11 @@ export default function LegheScreen({ navigation }: Props) {
       <GradientHeader>
         <View style={styles.header}>
           <View style={styles.headerSide} />
-          <Text style={styles.headerTitle}>Leghe</Text>
+          <Text style={styles.headerTitle}>{t('leghePagina.titolo')}</Text>
           <TouchableOpacity
             style={styles.headerSide}
             onPress={() => navigation?.navigate('crea-lega')}
-            accessibilityLabel="Crea una lega"
+            accessibilityLabel={t('leghePagina.creaLega')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.addButton}>
@@ -135,11 +138,8 @@ export default function LegheScreen({ navigation }: Props) {
             <View style={styles.emptyIcon}>
               <Ionicons name="people" size={30} color="#7c3aed" />
             </View>
-            <Text style={styles.emptyTitle}>Non sei in nessuna lega</Text>
-            <Text style={styles.emptyText}>
-              Una lega è un gruppo di amici che pronostica la Serie A. Si entra solo con un codice
-              di invito.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('leghePagina.nessunaLega')}</Text>
+            <Text style={styles.emptyText}>{t('leghePagina.cosaELega')}</Text>
           </View>
         )}
 
@@ -148,18 +148,16 @@ export default function LegheScreen({ navigation }: Props) {
         ))}
 
         <PrimaryButton
-          label="Crea una lega"
+          label={t('leghePagina.creaLega')}
           onPress={() => navigation?.navigate('crea-lega')}
           style={styles.cta}
         />
         <GhostButton
-          label="Ho ricevuto un invito"
+          label={t('leghePagina.hoInvito')}
           onPress={() => navigation?.navigate('unisciti')}
         />
 
-        <Text style={[leagueStyles.footnote, styles.note]}>
-          Si entra solo su invito: nessuno può trovarti per caso.
-        </Text>
+        <Text style={[leagueStyles.footnote, styles.note]}>{t('leghePagina.soloInvito')}</Text>
       </ScrollView>
     </View>
   );

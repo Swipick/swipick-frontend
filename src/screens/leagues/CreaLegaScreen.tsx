@@ -11,6 +11,7 @@ import {
   leagueColors,
 } from '../../components/leagues/LeagueUI';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   navigation?: { navigate: (screen: any, params?: any) => void; goBack: () => void };
@@ -20,6 +21,7 @@ const MIN = 3;
 const MAX = 40;
 
 export default function CreaLegaScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const spazioInBasso = useSpazioInBasso(16);
   const createLeague = useLeaguesStore((s) => s.createLeague);
 
@@ -40,7 +42,7 @@ export default function CreaLegaScreen({ navigation }: Props) {
       // codice è la prima cosa che serve.
       navigation?.navigate('invita', { leagueId: league.id });
     } catch (err: any) {
-      setError(err?.message ?? 'Non riesco a creare la lega');
+      setError(err?.message ?? t('leghe.errori.crea'));
     } finally {
       setBusy(false);
     }
@@ -48,7 +50,7 @@ export default function CreaLegaScreen({ navigation }: Props) {
 
   return (
     <View style={leagueStyles.screen}>
-      <SubHeader title="Nuova lega" onBack={() => navigation?.goBack()} />
+      <SubHeader title={t('leghePagina.nuovaLega')} onBack={() => navigation?.goBack()} />
 
       <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView
@@ -58,35 +60,33 @@ export default function CreaLegaScreen({ navigation }: Props) {
           <ErrorNote message={error} />
 
           <View>
-            <Text style={leagueStyles.label}>Nome della lega</Text>
+            <Text style={leagueStyles.label}>{t('leghePagina.nomeLega')}</Text>
             <TextInput
               style={leagueStyles.input}
               value={name}
               onChangeText={setName}
-              placeholder="Amici del bar"
+              placeholder={t('leghePagina.esempioNome')}
               placeholderTextColor="#9ca3af"
               maxLength={MAX}
               autoCapitalize="sentences"
               returnKeyType="done"
               onSubmitEditing={crea}
             />
-            <Text style={leagueStyles.hint}>Lo vedono tutti i membri. Potrai cambiarlo.</Text>
+            <Text style={leagueStyles.hint}>{t('leghePagina.nomeVisibile')}</Text>
           </View>
 
           <View>
-            <Text style={leagueStyles.label}>Campionato</Text>
+            <Text style={leagueStyles.label}>{t('leghePagina.campionato')}</Text>
             <View style={[leagueStyles.card, styles.competition]}>
               <View style={styles.competitionBadge}>
                 <Text style={styles.competitionBadgeText}>ITA</Text>
               </View>
               <View style={styles.flex}>
                 <Text style={styles.competitionName}>Serie A</Text>
-                <Text style={styles.competitionMeta}>10 partite a giornata</Text>
+                <Text style={styles.competitionMeta}>{t('leghePagina.partiteGiornata')}</Text>
               </View>
             </View>
-            <Text style={leagueStyles.hint}>
-              Per ora Swipick segue solo la Serie A, quindi non c'è niente da scegliere.
-            </Text>
+            <Text style={leagueStyles.hint}>{t('leghePagina.soloSerieA')}</Text>
           </View>
 
           <View style={[leagueStyles.card, styles.info]}>
@@ -97,17 +97,19 @@ export default function CreaLegaScreen({ navigation }: Props) {
               style={styles.infoIcon}
             />
             <View style={styles.flex}>
-              <Text style={styles.infoTitle}>Come funziona il punteggio</Text>
-              <Text style={styles.infoText}>
-                I punti si sommano per tutta la stagione. Chi entra a giornata iniziata conta dalla
-                giornata successiva.
-              </Text>
+              <Text style={styles.infoTitle}>{t('leghePagina.comePunteggio')}</Text>
+              <Text style={styles.infoText}>{t('leghePagina.spiegaPunteggio')}</Text>
             </View>
           </View>
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: spazioInBasso }]}>
-          <PrimaryButton label="Crea lega" onPress={crea} busy={busy} disabled={!valido} />
+          <PrimaryButton
+            label={t('leghePagina.crea')}
+            onPress={crea}
+            busy={busy}
+            disabled={!valido}
+          />
         </View>
       </KeyboardAvoidingView>
     </View>

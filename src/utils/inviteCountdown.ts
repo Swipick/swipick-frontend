@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 /**
  * Quanto resta a un codice d'invito.
  *
@@ -25,7 +27,7 @@ export function oreRimanenti(
  * un utente suona come "scaduto" quando invece c'è ancora tempo.
  */
 export function testoScadenza(ore: number): string {
-  if (ore <= 0) return 'meno di un’ora';
-  if (ore === 1) return 'un’ora';
-  return `${ore} ore`;
+  if (ore <= 0) return i18n.t('leghe.scadenza.menoDiUnOra');
+  if (ore === 1) return i18n.t('leghe.scadenza.unOra');
+  return i18n.t('leghe.scadenza.ore', { ore });
 }

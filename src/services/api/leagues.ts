@@ -8,6 +8,7 @@ import {
   LeagueSummary,
   StandingRow,
 } from '../../types/league.types';
+import i18n from '../../i18n';
 
 /**
  * Leghe private.
@@ -31,7 +32,7 @@ export const leaguesApi = {
     try {
       return await apiClient.get<LeagueSummary[]>(ENDPOINTS.LEAGUES.LIST);
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a caricare le tue leghe');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.caricaLeghe'));
     }
   },
 
@@ -41,7 +42,7 @@ export const leaguesApi = {
         name,
       });
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a creare la lega');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.crea'));
     }
   },
 
@@ -49,7 +50,7 @@ export const leaguesApi = {
     try {
       return await apiClient.get<LeagueDetail>(ENDPOINTS.LEAGUES.BY_ID(leagueId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a caricare la lega');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.caricaLega'));
     }
   },
 
@@ -61,7 +62,7 @@ export const leaguesApi = {
     try {
       return await apiClient.get<StandingRow[]>(ENDPOINTS.LEAGUES.STANDINGS(leagueId, scope, week));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a caricare la classifica');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.caricaClassifica'));
     }
   },
 
@@ -70,7 +71,7 @@ export const leaguesApi = {
     try {
       return await apiClient.get<LeagueMemberRow[]>(ENDPOINTS.LEAGUES.MEMBERS(leagueId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a caricare i membri');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.caricaMembri'));
     }
   },
 
@@ -78,7 +79,7 @@ export const leaguesApi = {
     try {
       return await apiClient.patch<LeagueSummary>(ENDPOINTS.LEAGUES.RENAME(leagueId), { name });
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a cambiare il nome');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.rinomina'));
     }
   },
 
@@ -86,7 +87,7 @@ export const leaguesApi = {
     try {
       return await apiClient.post<LeagueSummary>(ENDPOINTS.LEAGUES.ROTATE_CODE(leagueId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a generare un codice nuovo');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.nuovoCodice'));
     }
   },
 
@@ -94,7 +95,7 @@ export const leaguesApi = {
     try {
       return await apiClient.delete<LeagueSummary>(ENDPOINTS.LEAGUES.CLOSE_INVITES(leagueId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a chiudere gli inviti');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.chiudiInviti'));
     }
   },
 
@@ -102,7 +103,7 @@ export const leaguesApi = {
     try {
       await apiClient.delete(ENDPOINTS.LEAGUES.LEAVE(leagueId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a farti uscire dalla lega');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.esci'));
     }
   },
 
@@ -110,7 +111,7 @@ export const leaguesApi = {
     try {
       await apiClient.delete(ENDPOINTS.LEAGUES.REMOVE_MEMBER(leagueId, userId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a rimuovere il membro');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.rimuovi'));
     }
   },
 
@@ -118,7 +119,7 @@ export const leaguesApi = {
     try {
       await apiClient.post(ENDPOINTS.LEAGUES.REINSTATE_MEMBER(leagueId, userId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a riammettere il membro');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.riammetti'));
     }
   },
 
@@ -128,7 +129,7 @@ export const leaguesApi = {
         userId,
       });
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a passare la gestione');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.passaGestione'));
     }
   },
 
@@ -136,7 +137,7 @@ export const leaguesApi = {
     try {
       await apiClient.delete(ENDPOINTS.LEAGUES.DELETE(leagueId));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a eliminare la lega');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.elimina'));
     }
   },
 
@@ -145,7 +146,7 @@ export const leaguesApi = {
     try {
       return await apiClient.get<InvitePreview>(ENDPOINTS.INVITES.PREVIEW(code));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Codice non valido');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.codiceNonValido'));
     }
   },
 
@@ -153,7 +154,7 @@ export const leaguesApi = {
     try {
       return await apiClient.post<AcceptedInvite>(ENDPOINTS.INVITES.ACCEPT(code));
     } catch (error: any) {
-      throw erroreLeggibile(error, 'Non riesco a farti entrare nella lega');
+      throw erroreLeggibile(error, i18n.t('leghe.errori.entra'));
     }
   },
 };
