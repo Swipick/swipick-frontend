@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import {
   offsetItalianoMinuti,
   partiItaliane,
@@ -106,5 +107,15 @@ describe('calcioDInizioItaliano', () => {
     expect(GIORNI_BREVI).toHaveLength(7);
     expect(GIORNI_BREVI[0]).toBe('dom');
     expect(GIORNI_BREVI[6]).toBe('sab');
+  });
+});
+
+describe('calcioDInizioItaliano in inglese', () => {
+  afterEach(() => i18n.changeLanguage('it'));
+
+  it("scrive il giorno in inglese e lascia l'ora italiana", async () => {
+    await i18n.changeLanguage('en');
+    // 21/11/2026 alle 14:00 UTC = sabato 15:00 a Roma.
+    expect(calcioDInizioItaliano(new Date('2026-11-21T14:00:00Z'))).toBe('Sat, 21/11, 15:00');
   });
 });

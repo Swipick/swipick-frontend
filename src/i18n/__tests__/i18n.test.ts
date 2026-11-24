@@ -1,6 +1,9 @@
 import { it as testiIt } from '../it';
 import { en } from '../en';
 import { categoriaPlurale } from '../pluralRules';
+import i18n from '../index';
+import { formatItalianPercentage } from '../../utils/profileCalculations';
+import { formatDateRange } from '../../utils/dateRange';
 
 /** Tutte le chiavi foglia, come "lingua.titolo". */
 function chiavi(o: Record<string, unknown>, prefisso = ''): string[] {
@@ -42,5 +45,27 @@ describe('plurali senza Intl.PluralRules', () => {
     expect(categoriaPlurale(2)).toBe('other');
     expect(categoriaPlurale(1.5)).toBe('other');
     expect(categoriaPlurale(-1)).toBe('one');
+  });
+});
+
+describe('formati per lingua', () => {
+  afterEach(() => i18n.changeLanguage('it'));
+
+  it('percentuali: virgola in italiano, punto in inglese', async () => {
+    expect(formatItalianPercentage(65.54)).toBe('65,5%');
+    expect(formatItalianPercentage(70)).toBe('70%');
+    await i18n.changeLanguage('en');
+    expect(formatItalianPercentage(65.54)).toBe('65.5%');
+  });
+
+  it('intervallo della giornata e plurali nelle due lingue', async () => {
+    const date = ['2026-11-21T14:00:00Z', '2026-11-23T19:45:00Z'];
+    expect(formatDateRange(date)).toBe('dal 21/11 al 23/11');
+    expect(i18n.t('risultati.partite', { count: 1 })).toBe('1 partita');
+    expect(i18n.t('risultati.partite', { count: 3 })).toBe('3 partite');
+    await i18n.changeLanguage('en');
+    expect(formatDateRange(date)).toBe('21/11 to 23/11');
+    expect(i18n.t('risultati.partite', { count: 1 })).toBe('1 match');
+    expect(i18n.t('risultati.partite', { count: 3 })).toBe('3 matches');
   });
 });
