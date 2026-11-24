@@ -153,10 +153,49 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
     }
   };
 
+  /** Manda il link di reset all'indirizzo dato, con l'esito in un avviso. */
+  const inviaReset = async (indirizzo: string) => {
+    try {
+      setLoading(true);
+      await authService.resetPassword(indirizzo.trim().toLowerCase());
+      Alert.alert(
+        'Email inviata',
+        "Ti abbiamo inviato un'email con le istruzioni per reimpostare la password. Controlla anche la cartella spam.",
+        [{ text: 'OK' }],
+      );
+    } catch (error: any) {
+      Alert.alert('Errore', error.message || "Impossibile inviare l'email. Riprova più tardi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleForgotPassword = async () => {
-    // Prompt user for email
+    // Alert.prompt esiste solo su iOS: su Android React Native lo ignora in
+    // silenzio, e il pulsante non faceva nulla. Lì si usa l'email già scritta
+    // nel campo della schermata, chiedendo conferma prima di inviare.
+    if (Platform.OS !== 'ios') {
+      const indirizzo = email.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(indirizzo)) {
+        Alert.alert(
+          'Recupera password',
+          'Scrivi la tua email nel campo qui sopra, poi tocca di nuovo "Recupera password".',
+        );
+        return;
+      }
+      Alert.alert(
+        'Recupera password',
+        `Ti mandiamo il link per reimpostare la password a ${indirizzo.toLowerCase()}.`,
+        [
+          { text: 'Annulla', style: 'cancel' },
+          { text: 'Invia', onPress: () => inviaReset(indirizzo) },
+        ],
+      );
+      return;
+    }
+
     Alert.prompt(
-      'Recupera Password',
+      'Recupera password',
       'Inserisci il tuo indirizzo email per ricevere il link di reset password',
       [
         {
@@ -170,24 +209,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               Alert.alert('Errore', 'Inserisci un indirizzo email valido');
               return;
             }
-
-            try {
-              setLoading(true);
-              await authService.resetPassword(emailInput.trim().toLowerCase());
-
-              Alert.alert(
-                'Email Inviata',
-                "Ti abbiamo inviato un'email con le istruzioni per reimpostare la password. Controlla anche la cartella spam.",
-                [{ text: 'OK' }],
-              );
-            } catch (error: any) {
-              Alert.alert(
-                'Errore',
-                error.message || "Impossibile inviare l'email. Riprova più tardi.",
-              );
-            } finally {
-              setLoading(false);
-            }
+            await inviaReset(emailInput);
           },
         },
       ],
