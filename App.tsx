@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,6 +19,16 @@ avviaAnalisi();
 useLinguaStore.getState().carica();
 
 export default function App() {
+  // Con "Automatica", la lingua del telefono si rilegge quando l'app torna in
+  // primo piano: su Android la si può cambiare (anche solo per Swipick) senza
+  // che l'app si riavvii.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (stato) => {
+      if (stato === 'active') useLinguaStore.getState().riallinea();
+    });
+    return () => sub.remove();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>

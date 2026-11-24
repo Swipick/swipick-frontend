@@ -2,7 +2,7 @@
   "expo": {
     "name": "Swipick",
     "slug": "swipick",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -79,7 +79,16 @@
           }
         }
       ],
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": [
+            "it",
+            "en"
+          ],
+          "allowDynamicLocaleChangesAndroid": true
+        }
+      ],
       "./plugins/withPodfilePatches"
     ],
     "runtimeVersion": {
@@ -88,6 +97,10 @@
     "owner": "zenotomiolos-organization",
     "updates": {
       "url": "https://u.expo.dev/cf2a1dfa-b50c-4f70-bd99-1adf5f00e724"
+    },
+    "locales": {
+      "it": "./locales/it.json",
+      "en": "./locales/en.json"
     }
   }
 }

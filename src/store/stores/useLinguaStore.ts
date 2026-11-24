@@ -15,12 +15,14 @@ interface LinguaState {
   lingua: Lingua;
   carica: () => Promise<void>;
   imposta: (scelta: SceltaLingua) => Promise<void>;
+  /** Con "automatica", si rimette in pari con la lingua attuale del telefono. */
+  riallinea: () => void;
 }
 
 const valida = (v: string | null): SceltaLingua | null =>
   v === 'auto' || v === 'it' || v === 'en' ? v : null;
 
-export const useLinguaStore = create<LinguaState>((set) => ({
+export const useLinguaStore = create<LinguaState>((set, get) => ({
   scelta: 'auto',
   lingua: risolviLingua('auto'),
 
@@ -34,6 +36,14 @@ export const useLinguaStore = create<LinguaState>((set) => ({
     const lingua = risolviLingua(scelta);
     set({ scelta, lingua });
     if (i18n.language !== lingua) await i18n.changeLanguage(lingua);
+  },
+
+  riallinea: () => {
+    if (get().scelta !== 'auto') return;
+    const lingua = risolviLingua('auto');
+    if (lingua === get().lingua) return;
+    set({ lingua });
+    void i18n.changeLanguage(lingua);
   },
 
   imposta: async (scelta) => {
