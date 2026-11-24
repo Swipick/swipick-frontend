@@ -2,6 +2,7 @@
  * Date range and week navigation helpers for the Risultati screen.
  */
 import { giornoMeseItaliano } from './oraItaliana';
+import i18n from '../i18n';
 
 /**
  * Format the date range of a giornata as "dal DD/MM al DD/MM".
@@ -24,7 +25,7 @@ export const formatDateRange = (isoDates: string[]): string | null => {
   const ultimo = giornoMeseItaliano(new Date(Math.max(...times)));
   if (!primo || !ultimo) return null;
 
-  return `dal ${primo} al ${ultimo}`;
+  return i18n.t('gioca.dalAl', { dal: primo, al: ultimo });
 };
 
 export interface AdjacentWeekLabels {
