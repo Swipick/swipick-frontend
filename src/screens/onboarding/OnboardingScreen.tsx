@@ -13,6 +13,7 @@ import {
 import { PredictSlide, ResultSlide, LeagueSlide } from './WizardMockups';
 import { segnaOnboardingVisto } from '../../utils/onboardingVisto';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
+import { useTranslation } from 'react-i18next';
 
 const { width: larghezzaSchermo, height: altezzaSchermo } = Dimensions.get('window');
 const schermoPiccolo = altezzaSchermo < 750;
@@ -22,22 +23,21 @@ type Props = {
   onFine: () => void;
 };
 
+// Chiavi dei testi, non testi: la lingua si sceglie al momento di disegnare.
 const PAGINE = [
   {
-    titolo: 'Dieci partite, una giornata',
-    testo:
-      'Scegli 1, X o 2 su ogni partita del turno. Niente schedine e niente soldi: conta solo quante ne prendi.',
+    titolo: 'benvenuto.pagina1Titolo',
+    testo: 'benvenuto.pagina1Testo',
     Illustrazione: PredictSlide,
   },
   {
-    titolo: 'Poi scopri com’è andata',
-    testo:
-      'A partita finita vedi il risultato e se l’avevi presa. A fine giornata, quante ne hai indovinate.',
+    titolo: 'benvenuto.pagina2Titolo',
+    testo: 'benvenuto.pagina2Testo',
     Illustrazione: ResultSlide,
   },
   {
-    titolo: 'E sfidi i tuoi amici',
-    testo: 'Crea una lega, manda il codice a chi vuoi, e vi confrontate giornata dopo giornata.',
+    titolo: 'benvenuto.pagina3Titolo',
+    testo: 'benvenuto.pagina3Testo',
     Illustrazione: LeagueSlide,
   },
 ];
@@ -51,6 +51,7 @@ const PAGINE = [
  * «Salta» — che deve esserci, altrimenti diventa un pedaggio.
  */
 export default function OnboardingScreen({ onFine }: Props) {
+  const { t } = useTranslation();
   const spazioInBasso = useSpazioInBasso(40);
   const [pagina, setPagina] = useState(0);
   const scorrevole = useRef<ScrollView>(null);
@@ -85,7 +86,7 @@ export default function OnboardingScreen({ onFine }: Props) {
             riga senza aggiungere niente. */}
         {pagina === 0 ? <Text style={styles.wordmark}>swipick</Text> : <View />}
         <TouchableOpacity onPress={chiudi} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Text style={styles.salta}>Salta</Text>
+          <Text style={styles.salta}>{t('benvenuto.salta')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -104,8 +105,8 @@ export default function OnboardingScreen({ onFine }: Props) {
               <Illustrazione />
             </View>
             <View>
-              <Text style={styles.titolo}>{titolo}</Text>
-              <Text style={styles.testo}>{testo}</Text>
+              <Text style={styles.titolo}>{t(titolo)}</Text>
+              <Text style={styles.testo}>{t(testo)}</Text>
             </View>
           </View>
         ))}
@@ -118,7 +119,9 @@ export default function OnboardingScreen({ onFine }: Props) {
       </View>
 
       <TouchableOpacity style={styles.avanti} onPress={avanti}>
-        <Text style={styles.avantiTesto}>{ultima ? 'Comincia' : 'Avanti'}</Text>
+        <Text style={styles.avantiTesto}>
+          {ultima ? t('benvenuto.comincia') : t('benvenuto.avanti')}
+        </Text>
       </TouchableOpacity>
     </View>
   );

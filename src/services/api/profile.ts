@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import i18n from '../../i18n';
 
 /**
  * Profile API Service
@@ -17,20 +18,18 @@ import { apiClient } from './client';
  * Nel dubbio si passa: se il campo manca (backend piu' vecchio, risposta parziale)
  * non sbarriamo la strada, come gia' faceva il catch del gate in AppNavigator.
  */
-export function needsProfileCompletion(
-  profile?: { profileCompleted?: boolean } | null
-): boolean {
+export function needsProfileCompletion(profile?: { profileCompleted?: boolean } | null): boolean {
   return profile?.profileCompleted === false;
 }
 
 export interface UserProfileResponse {
   success: boolean;
   data: {
-    id: string;                      // Backend user UUID
+    id: string; // Backend user UUID
     firebaseUid: string;
     email: string;
-    name: string | null;             // Full name
-    nickname: string | null;         // Nickname/username
+    name: string | null; // Full name
+    nickname: string | null; // Nickname/username
     googleProfileUrl: string | null;
     profileCompleted: boolean;
     createdAt: string;
@@ -93,7 +92,7 @@ export const profileApi = {
       console.log('[ProfileAPI] Getting user by Firebase UID:', firebaseUid);
 
       const response = await apiClient.get<UserProfileResponse>(
-        `/users/profile/firebase/${firebaseUid}`
+        `/users/profile/firebase/${firebaseUid}`,
       );
 
       console.log('[ProfileAPI] User profile retrieved:', response);
@@ -103,14 +102,14 @@ export const profileApi = {
       console.error('[ProfileAPI] Error response:', error.response?.data);
 
       if (error.response?.status === 404) {
-        throw new Error('Utente non trovato');
+        throw new Error(i18n.t('servizi.utenteNonTrovato'));
       }
 
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Impossibile caricare il profilo utente');
+      throw new Error(i18n.t('servizi.profiloNonCaricato'));
     }
   },
 
@@ -120,13 +119,13 @@ export const profileApi = {
    */
   async getUserSummary(
     firebaseUid: string,
-    mode: 'live' | 'test' = 'live'
+    mode: 'live' | 'test' = 'live',
   ): Promise<UserSummaryResponse> {
     try {
       console.log('[ProfileAPI] Getting user summary:', { firebaseUid, mode });
 
       const response = await apiClient.get<UserSummaryResponse>(
-        `/predictions/user/${firebaseUid}/summary?mode=${mode}`
+        `/predictions/user/${firebaseUid}/summary?mode=${mode}`,
       );
 
       console.log('[ProfileAPI] User summary retrieved:', response);
@@ -155,7 +154,7 @@ export const profileApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Impossibile caricare le statistiche');
+      throw new Error(i18n.t('servizi.statisticheNonCaricate'));
     }
   },
 
@@ -167,9 +166,7 @@ export const profileApi = {
     try {
       console.log('[ProfileAPI] Getting user avatar:', userId);
 
-      const response = await apiClient.get<UserAvatarResponse>(
-        `/users/${userId}/avatar`
-      );
+      const response = await apiClient.get<UserAvatarResponse>(`/users/${userId}/avatar`);
 
       console.log('[ProfileAPI] Avatar retrieved');
       return response;
@@ -195,9 +192,7 @@ export const profileApi = {
     try {
       console.log('[ProfileAPI] Getting user preferences:', userId);
 
-      const response = await apiClient.get<UserPreferencesResponse>(
-        `/users/${userId}/preferences`
-      );
+      const response = await apiClient.get<UserPreferencesResponse>(`/users/${userId}/preferences`);
 
       console.log('[ProfileAPI] Preferences retrieved:', response);
       return response;
@@ -217,7 +212,7 @@ export const profileApi = {
         };
       }
 
-      throw new Error('Impossibile caricare le preferenze');
+      throw new Error(i18n.t('servizi.preferenzeNonCaricate'));
     }
   },
 
@@ -226,14 +221,14 @@ export const profileApi = {
    */
   async updateUserPreferences(
     userId: string,
-    preferences: PreferencesUpdate
+    preferences: PreferencesUpdate,
   ): Promise<{ success: boolean; message: string }> {
     try {
       console.log('[ProfileAPI] Updating preferences:', { userId, preferences });
 
       const response = await apiClient.patch<{ success: boolean; message: string }>(
         `/users/${userId}/preferences`,
-        preferences
+        preferences,
       );
 
       console.log('[ProfileAPI] Preferences updated:', response);
@@ -246,7 +241,7 @@ export const profileApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Impossibile aggiornare le preferenze');
+      throw new Error(i18n.t('servizi.preferenzeNonAggiornate'));
     }
   },
 
@@ -255,7 +250,7 @@ export const profileApi = {
    */
   async uploadUserAvatar(
     userId: string,
-    formData: FormData
+    formData: FormData,
   ): Promise<{ success: boolean; message: string }> {
     try {
       console.log('[ProfileAPI] Uploading avatar for user:', userId);
@@ -267,7 +262,7 @@ export const profileApi = {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
-        }
+        },
       );
 
       console.log('[ProfileAPI] Avatar uploaded successfully');
@@ -280,7 +275,7 @@ export const profileApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Caricamento avatar fallito');
+      throw new Error(i18n.t('servizi.avatarFallito'));
     }
   },
 
@@ -290,7 +285,7 @@ export const profileApi = {
    */
   async deleteAccount(
     userId: string,
-    firebaseIdToken: string
+    firebaseIdToken: string,
   ): Promise<{ success: boolean; message: string }> {
     try {
       console.log('[ProfileAPI] Deleting account:', userId);
@@ -301,7 +296,7 @@ export const profileApi = {
           headers: {
             Authorization: `Bearer ${firebaseIdToken}`,
           },
-        }
+        },
       );
 
       console.log('[ProfileAPI] Account deleted successfully');
@@ -311,14 +306,14 @@ export const profileApi = {
       console.error('[ProfileAPI] Error response:', error.response?.data);
 
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('Autenticazione richiesta per eliminare l\'account');
+        throw new Error(i18n.t('servizi.serveAccesso'));
       }
 
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Eliminazione account fallita');
+      throw new Error(i18n.t('servizi.eliminazioneFallita'));
     }
   },
 };

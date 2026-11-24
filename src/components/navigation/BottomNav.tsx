@@ -3,8 +3,9 @@ import { View, TouchableOpacity, Text, StyleSheet, Dimensions } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
 
 interface BottomNavProps {
@@ -26,15 +27,11 @@ export default function BottomNav({
   onNavigateToProfile,
   activeTab = 'gioca',
 }: BottomNavProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingBottom: Math.max(insets.bottom, 8) }
-      ]}
-    >
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       <View style={styles.tabsContainer}>
         {/* Risultati Tab */}
         <TouchableOpacity
@@ -53,13 +50,8 @@ export default function BottomNav({
               color={activeTab === 'risultati' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text
-            style={[
-              styles.label,
-              activeTab === 'risultati' && styles.labelActive
-            ]}
-          >
-            Risultati
+          <Text style={[styles.label, activeTab === 'risultati' && styles.labelActive]}>
+            {t('schede.risultati')}
           </Text>
         </TouchableOpacity>
 
@@ -81,13 +73,8 @@ export default function BottomNav({
               color={activeTab === 'gioca' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text
-            style={[
-              styles.label,
-              activeTab === 'gioca' && styles.labelActive
-            ]}
-          >
-            Gioca
+          <Text style={[styles.label, activeTab === 'gioca' && styles.labelActive]}>
+            {t('schede.gioca')}
           </Text>
         </TouchableOpacity>
 
@@ -109,13 +96,8 @@ export default function BottomNav({
               color={activeTab === 'leghe' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text
-            style={[
-              styles.label,
-              activeTab === 'leghe' && styles.labelActive
-            ]}
-          >
-            Leghe
+          <Text style={[styles.label, activeTab === 'leghe' && styles.labelActive]}>
+            {t('schede.leghe')}
           </Text>
         </TouchableOpacity>
 
@@ -136,13 +118,8 @@ export default function BottomNav({
               color={activeTab === 'profilo' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text
-            style={[
-              styles.label,
-              activeTab === 'profilo' && styles.labelActive
-            ]}
-          >
-            Profilo
+          <Text style={[styles.label, activeTab === 'profilo' && styles.labelActive]}>
+            {t('schede.profilo')}
           </Text>
         </TouchableOpacity>
       </View>

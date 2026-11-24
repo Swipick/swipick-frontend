@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-nati
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../store/stores/useAuthStore';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
+import { useTranslation } from 'react-i18next';
 
 interface LandingScreenProps {
   onNavigate: (
@@ -26,6 +27,7 @@ const schermoPiccolo = altezzaSchermo < 750;
  * l'onboarding e' nuovo, e il bottone piu' in vista deve essere il suo.
  */
 export default function LandingScreen({ onNavigate }: LandingScreenProps) {
+  const { t } = useTranslation();
   const spazioInBasso = useSpazioInBasso(40);
   const setGuest = useAuthStore((s) => s.setGuest);
 
@@ -52,7 +54,7 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
     <View style={[styles.container, { paddingBottom: spazioInBasso }]}>
       <View style={styles.marchio}>
         <Text style={styles.title}>swipick</Text>
-        <Text style={styles.tagline}>Ogni giornata fai la tua giocata</Text>
+        <Text style={styles.tagline}>{t('benvenuto.tagline')}</Text>
       </View>
 
       <View style={styles.authButtonsContainer}>
@@ -61,7 +63,7 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
           onPress={() => conTocco(() => onNavigate('Register'))}
           activeOpacity={0.8}
         >
-          <Text style={styles.registerButtonText}>Registrati</Text>
+          <Text style={styles.registerButtonText}>{t('benvenuto.registrati')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -69,7 +71,7 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
           onPress={() => conTocco(() => onNavigate('Login'))}
           activeOpacity={0.8}
         >
-          <Text style={styles.loginButtonText}>Accedi</Text>
+          <Text style={styles.loginButtonText}>{t('accesso.accedi')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -77,7 +79,7 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
           onPress={esploraSenzaAccount}
           activeOpacity={0.7}
         >
-          <Text style={styles.guestButtonText}>Esplora senza account</Text>
+          <Text style={styles.guestButtonText}>{t('benvenuto.esplora')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -85,7 +87,7 @@ export default function LandingScreen({ onNavigate }: LandingScreenProps) {
           onPress={() => onNavigate('Onboarding')}
           activeOpacity={0.7}
         >
-          <Text style={styles.comeFunzionaTesto}>Come funziona</Text>
+          <Text style={styles.comeFunzionaTesto}>{t('benvenuto.comeFunziona')}</Text>
         </TouchableOpacity>
       </View>
     </View>

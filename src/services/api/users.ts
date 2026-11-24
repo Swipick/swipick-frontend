@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import i18n from '../../i18n';
 
 /**
  * User API Service
@@ -76,7 +77,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Accesso con Apple non riuscito. Riprova più tardi.');
+      throw new Error(i18n.t('servizi.appleNonRiuscito'));
     }
   },
 
@@ -108,7 +109,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Registrazione non riuscita. Riprova più tardi.');
+      throw new Error(i18n.t('servizi.registrazioneNonRiuscita'));
     }
   },
 
@@ -131,7 +132,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Non siamo riusciti a salvare il nickname. Riprova.');
+      throw new Error(i18n.t('servizi.nicknameNonSalvato'));
     }
   },
 
@@ -171,7 +172,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Non siamo riusciti a salvare il nickname. Riprova.');
+      throw new Error(i18n.t('servizi.nicknameNonSalvato'));
     }
   },
 
@@ -193,7 +194,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error("Impossibile inviare l'email. Riprova più tardi.");
+      throw new Error(i18n.t('servizi.emailNonInviata'));
     }
   },
 
@@ -216,7 +217,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error("Impossibile inviare l'email. Riprova più tardi.");
+      throw new Error(i18n.t('servizi.emailNonInviata'));
     }
   },
 
@@ -242,7 +243,7 @@ export const usersApi = {
         throw new Error(error.response.data.message);
       }
 
-      throw new Error('Accesso con Google non riuscito. Riprova più tardi.');
+      throw new Error(i18n.t('servizi.googleNonRiuscito'));
     }
   },
 };

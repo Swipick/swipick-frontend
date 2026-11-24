@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
@@ -102,12 +103,13 @@ export function SubHeader({
   onBack?: () => void;
   right?: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.subHeader}>
       <TouchableOpacity
         onPress={onBack}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityLabel="Indietro"
+        accessibilityLabel={t('legaDettaglio.indietro')}
       >
         <Ionicons name="chevron-back" size={26} color="#111827" />
       </TouchableOpacity>

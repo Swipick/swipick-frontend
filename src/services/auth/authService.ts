@@ -57,7 +57,7 @@ export const describeAuthError = (error: unknown): string => {
     return message.length > MAX_HINT_LENGTH ? `${message.slice(0, MAX_HINT_LENGTH)}…` : message;
   }
 
-  return 'errore sconosciuto';
+  return i18n.t('servizi.erroreSconosciuto');
 };
 
 // RNGoogleSignin è un modulo NATIVO assente in Expo Go: l'import statico
