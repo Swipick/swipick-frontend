@@ -1,24 +1,18 @@
-import React from "react";
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  Platform,
-  Dimensions,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Haptics from "expo-haptics";
-import { PredictionChoice } from "../../types/game.types";
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Platform, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { PredictionChoice } from '../../types/game.types';
+import { useTranslation } from 'react-i18next';
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
 
 interface PredictionButtonsProps {
-  currentPrediction?: "1" | "X" | "2";
+  currentPrediction?: '1' | 'X' | '2';
   disabled?: boolean;
   isSkipAnimating?: boolean;
-  onAnimateAndCommit: (direction: "up" | "down" | "left" | "right") => void;
+  onAnimateAndCommit: (direction: 'up' | 'down' | 'left' | 'right') => void;
 }
 
 /**
@@ -35,6 +29,7 @@ export default function PredictionButtons({
   isSkipAnimating = false,
   onAnimateAndCommit,
 }: PredictionButtonsProps) {
+  const { t } = useTranslation();
   const isPredictionDisabled = disabled || isSkipAnimating;
   const isSkipDisabled = disabled;
 
@@ -48,18 +43,18 @@ export default function PredictionButtons({
             // tasto ancora premibile mentre il commit non era partito, e due
             // tocchi rapidi mandavano due POST per la stessa partita.
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            onAnimateAndCommit("up");
+            onAnimateAndCommit('up');
           }}
           disabled={isPredictionDisabled}
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={["#7956f3", "#5742a4"]}
+            colors={['#7956f3', '#5742a4']}
             start={{ x: 1, y: 0.5 }}
             end={{ x: 1, y: 1 }}
             style={[
               styles.predictionButton,
-              currentPrediction === "X" && styles.selectedButton,
+              currentPrediction === 'X' && styles.selectedButton,
               isPredictionDisabled && styles.disabledButton,
             ]}
           >
@@ -76,18 +71,18 @@ export default function PredictionButtons({
             // tasto ancora premibile mentre il commit non era partito, e due
             // tocchi rapidi mandavano due POST per la stessa partita.
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            onAnimateAndCommit("left");
+            onAnimateAndCommit('left');
           }}
           disabled={isPredictionDisabled}
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={["#7956f3", "#5742a4"]}
+            colors={['#7956f3', '#5742a4']}
             start={{ x: 1, y: 0.5 }}
             end={{ x: 1, y: 1 }}
             style={[
               styles.predictionButton,
-              currentPrediction === "1" && styles.selectedButton,
+              currentPrediction === '1' && styles.selectedButton,
               isPredictionDisabled && styles.disabledButton,
             ]}
           >
@@ -101,18 +96,18 @@ export default function PredictionButtons({
             // tasto ancora premibile mentre il commit non era partito, e due
             // tocchi rapidi mandavano due POST per la stessa partita.
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            onAnimateAndCommit("right");
+            onAnimateAndCommit('right');
           }}
           disabled={isPredictionDisabled}
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={["#7956f3", "#5742a4"]}
+            colors={['#7956f3', '#5742a4']}
             start={{ x: 1, y: 0.5 }}
             end={{ x: 1, y: 1 }}
             style={[
               styles.predictionButton,
-              currentPrediction === "2" && styles.selectedButton,
+              currentPrediction === '2' && styles.selectedButton,
               isPredictionDisabled && styles.disabledButton,
             ]}
           >
@@ -129,15 +124,13 @@ export default function PredictionButtons({
             // tasto ancora premibile mentre il commit non era partito, e due
             // tocchi rapidi mandavano due POST per la stessa partita.
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onAnimateAndCommit("down");
+            onAnimateAndCommit('down');
           }}
           disabled={isSkipDisabled}
           activeOpacity={0.8}
         >
-          <View
-            style={[styles.skipButton, isSkipDisabled && styles.disabledButton]}
-          >
-            <Text style={styles.skipButtonText}>skip</Text>
+          <View style={[styles.skipButton, isSkipDisabled && styles.disabledButton]}>
+            <Text style={styles.skipButtonText}>{t('gioca.salta')}</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -150,30 +143,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: isSmallScreen ? 4 : 8,
     marginBottom: isSmallScreen ? 8 : 16,
-    alignItems: "center",
+    alignItems: 'center',
   },
   topRow: {
-    alignItems: "center",
+    alignItems: 'center',
   },
   middleRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: isSmallScreen ? 75 : 155,
   },
   bottomRow: {
-    alignItems: "center",
+    alignItems: 'center',
     marginTop: isSmallScreen ? -6 : -12,
   },
   predictionButton: {
     width: isSmallScreen ? 50 : 80,
     height: isSmallScreen ? 26 : 45,
     borderRadius: isSmallScreen ? 11 : 15,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: "#000000",
+        shadowColor: '#000000',
         shadowOffset: { width: 0, height: isSmallScreen ? 2 : 4 },
         shadowOpacity: 0.25,
         shadowRadius: isSmallScreen ? 4 : 8,
@@ -190,23 +183,23 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   predictionButtonText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: isSmallScreen ? 10 : 14,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
   },
   skipButton: {
     width: isSmallScreen ? 60 : 80,
     height: isSmallScreen ? 30 : 45,
     borderRadius: isSmallScreen ? 11 : 15,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+    borderColor: 'rgba(99, 102, 241, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: "#000000",
+        shadowColor: '#000000',
         shadowOffset: { width: 0, height: isSmallScreen ? 2 : 4 },
         shadowOpacity: 0.15,
         shadowRadius: isSmallScreen ? 4 : 8,
@@ -217,9 +210,9 @@ const styles = StyleSheet.create({
     }),
   },
   skipButtonText: {
-    color: "#3d2d73",
+    color: '#3d2d73',
     fontSize: isSmallScreen ? 10 : 14,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

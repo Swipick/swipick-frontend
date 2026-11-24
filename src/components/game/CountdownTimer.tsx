@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
 
 interface CountdownTimerProps {
@@ -16,6 +17,7 @@ interface TimeLeft {
 }
 
 export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
+  const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft());
 
   function calculateTimeLeft(): TimeLeft {
@@ -51,19 +53,19 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
     <View style={styles.container}>
       <View style={styles.timeUnit}>
         <Text style={styles.timeValue}>{formatUnit(timeLeft.days)}</Text>
-        <Text style={styles.timeLabel}>giorni</Text>
+        <Text style={styles.timeLabel}>{t('gioca.giorni')}</Text>
       </View>
       <View style={styles.timeUnit}>
         <Text style={styles.timeValue}>{formatUnit(timeLeft.hours)}</Text>
-        <Text style={styles.timeLabel}>ore</Text>
+        <Text style={styles.timeLabel}>{t('gioca.ore')}</Text>
       </View>
       <View style={styles.timeUnit}>
         <Text style={styles.timeValue}>{formatUnit(timeLeft.minutes)}</Text>
-        <Text style={styles.timeLabel}>minuti</Text>
+        <Text style={styles.timeLabel}>{t('gioca.minuti')}</Text>
       </View>
       <View style={styles.timeUnit}>
         <Text style={styles.timeValue}>{formatUnit(timeLeft.seconds)}</Text>
-        <Text style={styles.timeLabel}>secondi</Text>
+        <Text style={styles.timeLabel}>{t('gioca.secondi')}</Text>
       </View>
     </View>
   );

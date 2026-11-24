@@ -7,6 +7,7 @@ import {
 } from '../../types/game.types';
 import { fixturesApi } from '../../services/api/fixtures';
 import { predictionsApi } from '../../services/api/predictions';
+import i18n from '../../i18n';
 
 /**
  * Zustand Game Store
@@ -71,7 +72,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!fixtures || fixtures.length === 0) {
         set({
           loading: false,
-          error: 'No fixtures available for this week.',
+          error: i18n.t('gioca.nessunaPartitaSettimana'),
           fixtures: [],
         });
         return;
@@ -84,8 +85,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (userId) {
         const weeklyStats = await predictionsApi.getWeeklyPredictions(userId, week, mode);
 
-        console.log(`[GameStore] Loaded ${weeklyStats.predictions.length} predictions from API for week ${week}`);
-        console.log(`[GameStore] Raw first prediction:`, JSON.stringify(weeklyStats.predictions[0]));
+        console.log(
+          `[GameStore] Loaded ${weeklyStats.predictions.length} predictions from API for week ${week}`,
+        );
+        console.log(
+          `[GameStore] Raw first prediction:`,
+          JSON.stringify(weeklyStats.predictions[0]),
+        );
 
         weeklyStats.predictions.forEach((pred: any) => {
           // Backend returns fixture_id (snake_case), but we need fixtureId (camelCase)
@@ -100,11 +106,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Check if game is already complete
       const now = new Date();
       const actualPredictions = Array.from(predictionsMap.values()).filter(
-        (p) => p !== 'SKIP'
+        (p) => p !== 'SKIP',
       ).length;
 
       const missedGames = fixtures.filter(
-        (fixture) => new Date(fixture.kickoff.iso) <= now && !predictionsMap.has(fixture.fixtureId)
+        (fixture) => new Date(fixture.kickoff.iso) <= now && !predictionsMap.has(fixture.fixtureId),
       ).length;
 
       const isGameComplete = actualPredictions + missedGames >= fixtures.length;
@@ -119,9 +125,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Find the first fixture that doesn't have a prediction yet
       let startingIndex = 0;
       if (!isGameComplete) {
-        startingIndex = fixtures.findIndex(
-          (fixture) => !predictionsMap.has(fixture.fixtureId)
-        );
+        startingIndex = fixtures.findIndex((fixture) => !predictionsMap.has(fixture.fixtureId));
         // If all fixtures have predictions but game isn't complete (e.g., all skipped), start at 0
         if (startingIndex === -1) {
           startingIndex = 0;
@@ -158,11 +162,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // Make a prediction
-  makePrediction: async (
-    choice: PredictionChoice,
-    userId: string,
-    fixtureId?: string,
-  ) => {
+  makePrediction: async (choice: PredictionChoice, userId: string, fixtureId?: string) => {
     const { fixtures, currentIndex, predictions, currentWeek, mode } = get();
     // Chi conosce la card su cui sta agendo la indica: GiocaScreen naviga sul
     // mazzo delle partite giocabili, non sull'indice dell'elenco completo.
@@ -203,7 +203,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
           mode,
         };
 
-        console.log('[GameStore] Sending prediction data:', JSON.stringify(predictionData, null, 2));
+        console.log(
+          '[GameStore] Sending prediction data:',
+          JSON.stringify(predictionData, null, 2),
+        );
         await predictionsApi.createPrediction(predictionData);
       }
 
@@ -260,14 +263,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const now = new Date();
 
       // Count actual predictions (1, X, 2) - not SKIP
-      const actualPredictions = Array.from(predictions.values()).filter(
-        (p) => p !== 'SKIP'
-      ).length;
+      const actualPredictions = Array.from(predictions.values()).filter((p) => p !== 'SKIP').length;
 
       // Count missed games (already started)
-      const missedGames = fixtures.filter(
-        (fixture) => new Date(fixture.kickoff.iso) <= now
-      ).length;
+      const missedGames = fixtures.filter((fixture) => new Date(fixture.kickoff.iso) <= now).length;
 
       // Complete when actual predictions + missed games = total fixtures
       // Example: 3 predictions + 7 missed games = 10/10
@@ -286,9 +285,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Only loop back to skipped fixtures if game is NOT complete
       if (skippedFixtures.length > 0) {
         // Find first skipped fixture
-        const nextSkippedIndex = fixtures.findIndex((f) =>
-          skippedFixtures.includes(f.fixtureId)
-        );
+        const nextSkippedIndex = fixtures.findIndex((f) => skippedFixtures.includes(f.fixtureId));
 
         if (nextSkippedIndex !== -1) {
           set({ currentIndex: nextSkippedIndex });

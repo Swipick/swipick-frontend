@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -7,28 +7,30 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
-} from "react-native";
-import { useAuthStore } from "../../store/stores/useAuthStore";
-import { useGameStore } from "../../store/stores/useGameStore";
-import { PredictionChoice } from "../../types/game.types";
-import { colors, spacing } from "../../theme";
-import GameHeader from "../../components/game/GameHeader";
-import MatchCard from "../../components/game/MatchCard";
-import PredictionButtons from "../../components/game/PredictionButtons";
-import GameSummaryScreen from "../../components/game/GameSummaryScreen";
-import GuestCTA from "../../components/common/GuestCTA";
+} from 'react-native';
+import { useAuthStore } from '../../store/stores/useAuthStore';
+import { useGameStore } from '../../store/stores/useGameStore';
+import { PredictionChoice } from '../../types/game.types';
+import { colors, spacing } from '../../theme';
+import GameHeader from '../../components/game/GameHeader';
+import MatchCard from '../../components/game/MatchCard';
+import PredictionButtons from '../../components/game/PredictionButtons';
+import GameSummaryScreen from '../../components/game/GameSummaryScreen';
+import GuestCTA from '../../components/common/GuestCTA';
 import {
   getNextDeadline,
   getNextInDeck,
   getPlayableDeck,
   getRoundProgress,
   isRoundOver,
-} from "../../utils/gameDeck";
+} from '../../utils/gameDeck';
+import { useTranslation } from 'react-i18next';
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 750;
 
 export default function GiocaScreen() {
+  const { t } = useTranslation();
   // Selettore: re-render solo quando cambia user (non loading/error auth)
   const user = useAuthStore((s) => s.user);
   // Selettori per campo: lo screen non si ri-renderizza per cambi di parti
@@ -67,28 +69,23 @@ export default function GiocaScreen() {
     // In modalita' ospite non c'e' userId: le fixture pubbliche si caricano
     // lo stesso, solo senza i pronostici personali.
     if (fixtures.length === 0) {
-      console.log("[GiocaScreen] Initial load - loading live week");
-      loadLiveWeek(user?.uid ?? "");
+      console.log('[GiocaScreen] Initial load - loading live week');
+      loadLiveWeek(user?.uid ?? '');
     }
   }, [user]);
-
-
 
   // Il mazzo: solo partite non iniziate e non ancora giocate, in ordine di
   // scadenza. Tutto il resto della schermata deriva da qui.
   const deck = useMemo(
     () => getPlayableDeck(fixtures, predictions, now),
-    [fixtures, predictions, now]
+    [fixtures, predictions, now],
   );
   const roundOver = isRoundOver(fixtures, predictions, now);
   const progress = getRoundProgress(fixtures, predictions, now);
 
   // La card corrente resta valida anche se il mazzo si accorcia sotto di lei.
-  const currentFixture =
-    deck.find((fixture) => fixture.fixtureId === currentId) ?? deck[0];
-  const nextFixture = deck.find(
-    (fixture) => fixture.fixtureId !== currentFixture?.fixtureId
-  );
+  const currentFixture = deck.find((fixture) => fixture.fixtureId === currentId) ?? deck[0];
+  const nextFixture = deck.find((fixture) => fixture.fixtureId !== currentFixture?.fixtureId);
 
   const canSwipe = !loading && !!currentFixture;
 
@@ -102,7 +99,7 @@ export default function GiocaScreen() {
     if (!currentFixture) return;
 
     // Skip: rimanda dentro il mazzo, senza uscire dalle giocabili.
-    if (choice === "SKIP") {
+    if (choice === 'SKIP') {
       setCurrentId(getNextInDeck(deck, currentFixture.fixtureId));
       return;
     }
@@ -116,7 +113,7 @@ export default function GiocaScreen() {
     // riesca e l'attesa si vedrebbe — ma ora ha una via di ritorno.
     setCurrentId(getNextInDeck(deck, target));
 
-    const saved = await makePrediction(choice, user?.uid ?? "", target);
+    const saved = await makePrediction(choice, user?.uid ?? '', target);
     inFlightRef.current = null;
 
     if (!saved) {
@@ -130,7 +127,7 @@ export default function GiocaScreen() {
     if (!predictionError) return;
     const { fixtureId, choice } = predictionError;
     setCurrentId(fixtureId);
-    await makePrediction(choice, user?.uid ?? "", fixtureId);
+    await makePrediction(choice, user?.uid ?? '', fixtureId);
   };
 
   const handleReset = async () => {
@@ -144,7 +141,7 @@ export default function GiocaScreen() {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Caricamento...</Text>
+        <Text style={styles.loadingText}>{t('gioca.caricamento')}</Text>
       </View>
     );
   }
@@ -153,13 +150,10 @@ export default function GiocaScreen() {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>⚠️ Errore</Text>
+        <Text style={styles.errorText}>{t('gioca.errore')}</Text>
         <Text style={styles.errorMessage}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => loadLiveWeek(user?.uid ?? "")}
-        >
-          <Text style={styles.retryText}>Riprova</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => loadLiveWeek(user?.uid ?? '')}>
+          <Text style={styles.retryText}>{t('comune.riprova')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -169,10 +163,8 @@ export default function GiocaScreen() {
   if (!loading && fixtures.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>Nessuna partita disponibile</Text>
-        <Text style={styles.emptySubtext}>
-          Torna più tardi per fare le tue previsioni
-        </Text>
+        <Text style={styles.emptyText}>{t('gioca.nessunaPartita')}</Text>
+        <Text style={styles.emptySubtext}>{t('gioca.tornaPiuTardi')}</Text>
       </View>
     );
   }
@@ -210,11 +202,9 @@ export default function GiocaScreen() {
                 style={styles.predictionErrorBanner}
                 onPress={handleRetryPrediction}
                 accessibilityRole="button"
-                accessibilityLabel="Pronostico non salvato, tocca per riprovare"
+                accessibilityLabel={t('gioca.pronosticoNonSalvato')}
               >
-                <Text style={styles.predictionErrorText}>
-                  Pronostico non salvato. Tocca per riprovare.
-                </Text>
+                <Text style={styles.predictionErrorText}>{t('gioca.pronosticoNonSalvato')}</Text>
               </TouchableOpacity>
             )}
 
@@ -250,9 +240,7 @@ export default function GiocaScreen() {
                 </>
               ) : (
                 <View style={styles.centerContainer}>
-                  <Text style={styles.emptyText}>
-                    Nessuna partita selezionata
-                  </Text>
+                  <Text style={styles.emptyText}>{t('gioca.nessunaPartitaSelezionata')}</Text>
                 </View>
               )}
             </View>
@@ -267,10 +255,10 @@ export default function GiocaScreen() {
                   onAnimateAndCommit={(direction) => {
                     // Map direction to choice
                     const choiceMap = {
-                      up: "X" as const,
-                      left: "1" as const,
-                      right: "2" as const,
-                      down: "SKIP" as const,
+                      up: 'X' as const,
+                      left: '1' as const,
+                      right: '2' as const,
+                      down: 'SKIP' as const,
                     };
                     handlePrediction(choiceMap[direction]);
                   }}
@@ -298,8 +286,8 @@ export default function GiocaScreen() {
               <Text style={styles.guestModalCloseText}>✕</Text>
             </TouchableOpacity>
             <GuestCTA
-              title="Hai completato la giornata!"
-              message="Registrati per salvare i tuoi pronostici, vedere il tuo punteggio e scalare la classifica."
+              title={t('gioca.giornataCompletata')}
+              message={t('gioca.registratiPerSalvare')}
             />
           </View>
         </View>
@@ -315,45 +303,45 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: "#fee2e2",
+    backgroundColor: '#fee2e2',
     borderWidth: 1,
-    borderColor: "#fca5a5",
+    borderColor: '#fca5a5',
   },
   predictionErrorText: {
-    color: "#991b1b",
+    color: '#991b1b',
     fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
+    fontWeight: '600',
+    textAlign: 'center',
   },
   guestModalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(31, 17, 71, 0.55)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(31, 17, 71, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: spacing.lg,
   },
   guestModalCard: {
-    width: "100%",
+    width: '100%',
     maxWidth: 400,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 20,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 24,
     elevation: 12,
   },
   guestModalClose: {
-    alignSelf: "flex-end",
+    alignSelf: 'flex-end',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
   guestModalCloseText: {
     fontSize: 18,
     color: colors.textSecondary,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   container: {
     flex: 1,
@@ -361,46 +349,46 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: spacing.lg,
   },
   cardContainer: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
     paddingHorizontal: 16, // Minimal padding for card
-    position: "relative",
+    position: 'relative',
   },
   cardStack: {
-    position: "relative",
-    width: "100%",
+    position: 'relative',
+    width: '100%',
     minHeight: 450,
-    justifyContent: "flex-start",
-    alignItems: "center",
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     marginTop: isSmallScreen ? 20 : 40,
   },
   previewCard: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    justifyContent: "flex-start",
-    alignItems: "center",
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     zIndex: 10,
   },
   previewCardInner: {
-    width: "100%",
+    width: '100%',
     maxWidth: 384,
     transform: [{ scale: 0.95 }],
     opacity: 0.6,
   },
   currentCard: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    justifyContent: "flex-start",
-    alignItems: "center",
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     zIndex: 30,
   },
   loadingText: {
@@ -410,14 +398,14 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.error,
     marginBottom: spacing.sm,
   },
   errorMessage: {
     fontSize: 14,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.lg,
   },
   retryButton: {
@@ -428,25 +416,25 @@ const styles = StyleSheet.create({
   },
   retryText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#fff",
+    fontWeight: '600',
+    color: '#fff',
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.sm,
   },
   emptySubtext: {
     fontSize: 14,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   navigationRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 16,
     paddingHorizontal: 0,
   },
@@ -464,21 +452,21 @@ const styles = StyleSheet.create({
   },
   navButtonText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.primary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   cardCounter: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   buttonsContainer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: isSmallScreen ? 50 : 120, // Position above bottom nav
     left: 0,
     right: 0,
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: 8,
     zIndex: 50, // Above cards
   },
@@ -486,6 +474,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     fontSize: 12,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });

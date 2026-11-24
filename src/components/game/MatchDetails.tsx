@@ -14,17 +14,14 @@ interface MatchDetailsProps {
 
 export function MatchDetails({ kickoff, stadium, date, venue }: MatchDetailsProps) {
   // Use kickoff.display if available, otherwise format ISO date, fallback to provided date
-  const displayDate = kickoff?.display || (kickoff?.iso ? formatKickoffTime(kickoff.iso) : date || '');
+  const displayDate =
+    kickoff?.display || (kickoff?.iso ? formatKickoffTime(kickoff.iso) : date || '');
   const displayStadium = stadium || venue || '';
 
   return (
     <View style={styles.container}>
-      {displayDate && (
-        <Text style={styles.dateText}>{displayDate}</Text>
-      )}
-      {displayStadium && (
-        <Text style={styles.stadiumText}>{displayStadium}</Text>
-      )}
+      {displayDate && <Text style={styles.dateText}>{displayDate}</Text>}
+      {displayStadium && <Text style={styles.stadiumText}>{displayStadium}</Text>}
     </View>
   );
 }

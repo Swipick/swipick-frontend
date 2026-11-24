@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 interface FormEntry {
   fixtureId: string;
@@ -33,6 +34,7 @@ interface LastFiveResultsProps {
  * - wasHome=false, code="1" → Como AWAY and LOST → Red "2"
  */
 export function LastFiveResults({ last5, form, isHomeTeam }: LastFiveResultsProps) {
+  const { t } = useTranslation();
   const getBadgeFromForm = (entry: FormEntry) => {
     const position = entry.wasHome ? '1' : '2';
     const code = entry.code.toUpperCase();
@@ -84,14 +86,19 @@ export function LastFiveResults({ last5, form, isHomeTeam }: LastFiveResultsProp
   };
 
   // Prefer form array over last5 (backward compatibility)
-  let badges: Array<{ displayText: string; backgroundColor: string; textColor: string; borderColor: string }>;
+  let badges: Array<{
+    displayText: string;
+    backgroundColor: string;
+    textColor: string;
+    borderColor: string;
+  }>;
 
   if (form && form.length > 0) {
     // Use new format
-    badges = form.slice(0, 5).map(entry => getBadgeFromForm(entry));
+    badges = form.slice(0, 5).map((entry) => getBadgeFromForm(entry));
   } else if (last5 && last5.length > 0) {
     // Use legacy format
-    badges = last5.slice(0, 5).map(code => getBadgeFromLegacy(code));
+    badges = last5.slice(0, 5).map((code) => getBadgeFromLegacy(code));
   } else {
     badges = [];
   }
@@ -106,7 +113,7 @@ export function LastFiveResults({ last5, form, isHomeTeam }: LastFiveResultsProp
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Ultimi 5 risultati</Text>
+      <Text style={styles.label}>{t('gioca.ultimi5')}</Text>
       <View style={styles.badgesContainer}>
         {badges.map((badge, index) => (
           <View
@@ -119,9 +126,7 @@ export function LastFiveResults({ last5, form, isHomeTeam }: LastFiveResultsProp
               },
             ]}
           >
-            <Text style={[styles.badgeText, { color: badge.textColor }]}>
-              {badge.displayText}
-            </Text>
+            <Text style={[styles.badgeText, { color: badge.textColor }]}>{badge.displayText}</Text>
           </View>
         ))}
       </View>
@@ -132,17 +137,17 @@ export function LastFiveResults({ last5, form, isHomeTeam }: LastFiveResultsProp
 const badgeStyles = {
   win: {
     backgroundColor: '#DCFCE7', // green-100
-    textColor: '#166534',        // green-800
+    textColor: '#166534', // green-800
     borderColor: '#166534',
   },
   loss: {
     backgroundColor: '#FEE2E2', // red-100
-    textColor: '#991B1B',        // red-800
+    textColor: '#991B1B', // red-800
     borderColor: '#991B1B',
   },
   draw: {
     backgroundColor: '#F3F4F6', // gray-100
-    textColor: '#374151',        // gray-700
+    textColor: '#374151', // gray-700
     borderColor: '#374151',
   },
 };

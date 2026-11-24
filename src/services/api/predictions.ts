@@ -6,6 +6,7 @@ import {
   WeeklyStats,
 } from '../../types/game.types';
 import { ENDPOINTS } from '../../config/api';
+import i18n from '../../i18n';
 
 /**
  * Predictions API Service
@@ -16,20 +17,15 @@ export const predictionsApi = {
   /**
    * Create a new prediction
    */
-  createPrediction: async (
-    data: CreatePredictionDto
-  ): Promise<Prediction> => {
+  createPrediction: async (data: CreatePredictionDto): Promise<Prediction> => {
     try {
-      const response = await apiClient.post<PredictionResponse>(
-        ENDPOINTS.PREDICTIONS.CREATE,
-        data
-      );
+      const response = await apiClient.post<PredictionResponse>(ENDPOINTS.PREDICTIONS.CREATE, data);
       return response.prediction;
     } catch (error: any) {
       console.error('[PredictionsAPI] Error creating prediction:', error);
       console.error('[PredictionsAPI] Error response:', error.response?.data);
       console.error('[PredictionsAPI] Error status:', error.response?.status);
-      throw new Error('Failed to save prediction. Please try again.');
+      throw new Error(i18n.t('gioca.erroreSalvataggio'));
     }
   },
 
@@ -40,11 +36,11 @@ export const predictionsApi = {
     userId: string,
     week: number,
     mode: 'live' | 'test' = 'live',
-    season?: number
+    season?: number,
   ): Promise<WeeklyStats> => {
     try {
       const response = await apiClient.get<any>(
-        ENDPOINTS.PREDICTIONS.BY_WEEK(userId, week, mode, season)
+        ENDPOINTS.PREDICTIONS.BY_WEEK(userId, week, mode, season),
       );
 
       // Transform snake_case to camelCase
@@ -67,41 +63,33 @@ export const predictionsApi = {
       return transformed;
     } catch (error: any) {
       console.error('[PredictionsAPI] Error fetching predictions:', error);
-      throw new Error('Failed to load predictions. Please try again.');
+      throw new Error(i18n.t('gioca.erroreCaricamentoPronostici'));
     }
   },
 
   /**
    * Get user's prediction summary
    */
-  getUserSummary: async (
-    userId: string,
-    mode: 'live' | 'test' = 'live'
-  ): Promise<any> => {
+  getUserSummary: async (userId: string, mode: 'live' | 'test' = 'live'): Promise<any> => {
     try {
-      const response = await apiClient.get(
-        ENDPOINTS.PREDICTIONS.SUMMARY(userId, mode)
-      );
+      const response = await apiClient.get(ENDPOINTS.PREDICTIONS.SUMMARY(userId, mode));
       return response;
     } catch (error: any) {
       console.error('[PredictionsAPI] Error fetching summary:', error);
-      throw new Error('Failed to load summary. Please try again.');
+      throw new Error(i18n.t('gioca.erroreRiepilogo'));
     }
   },
 
   /**
    * Delete all predictions for a user (reset game)
    */
-  deleteUserPredictions: async (
-    userId: string,
-    mode?: 'live' | 'test'
-  ): Promise<void> => {
+  deleteUserPredictions: async (userId: string, mode?: 'live' | 'test'): Promise<void> => {
     try {
       await apiClient.delete(ENDPOINTS.PREDICTIONS.DELETE(userId, mode));
       console.log('[PredictionsAPI] Predictions deleted successfully');
     } catch (error: any) {
       console.error('[PredictionsAPI] Error deleting predictions:', error);
-      throw new Error('Failed to reset game. Please try again.');
+      throw new Error(i18n.t('gioca.erroreReset'));
     }
   },
 };

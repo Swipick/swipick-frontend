@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { MatchCard as MatchCardType, PredictionChoice } from '../../types/game.types';
 import { MatchDetails } from './MatchDetails';
 import { TeamInfo } from './TeamInfo';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH, height: screenHeight } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 150;
@@ -39,6 +40,7 @@ export default function MatchCard({
   shouldShake = false,
   onShakeComplete,
 }: MatchCardProps) {
+  const { t } = useTranslation();
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const startX = useSharedValue(0);
@@ -52,19 +54,16 @@ export default function MatchCard({
       shakeX.value = withSequence(
         withTiming(10, { duration: 50 }),
         withRepeat(
-          withSequence(
-            withTiming(-10, { duration: 50 }),
-            withTiming(10, { duration: 50 })
-          ),
+          withSequence(withTiming(-10, { duration: 50 }), withTiming(10, { duration: 50 })),
           3, // Repeat 3 times
-          false
+          false,
         ),
         withTiming(0, { duration: 50 }, () => {
           // Call onShakeComplete when animation finishes
           if (onShakeComplete) {
             runOnJS(onShakeComplete)();
           }
-        })
+        }),
       );
     }
   }, [shouldShake]);
@@ -136,10 +135,7 @@ export default function MatchCard({
           const choice: PredictionChoice = dx < 0 ? '1' : '2';
 
           // Animate off screen - no position reset needed as component will unmount
-          translateX.value = withTiming(
-            dx < 0 ? -SCREEN_WIDTH : SCREEN_WIDTH,
-            { duration: 220 }
-          );
+          translateX.value = withTiming(dx < 0 ? -SCREEN_WIDTH : SCREEN_WIDTH, { duration: 220 });
 
           runOnJS(handleSwipeComplete)(choice);
         } else {
@@ -183,7 +179,7 @@ export default function MatchCard({
     const rotation = interpolate(
       translateX.value,
       [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-      [-10, 0, 10]
+      [-10, 0, 10],
     );
 
     return {
@@ -201,7 +197,11 @@ export default function MatchCard({
       const dx = Math.abs(translateX.value);
       const dragThreshold = SWIPE_THRESHOLD * 0.3;
       const maxThreshold = SWIPE_THRESHOLD * 0.95;
-      const opacity = interpolate(dx, [0, dragThreshold, maxThreshold, SCREEN_WIDTH], [0, 1, 1, 0.3]);
+      const opacity = interpolate(
+        dx,
+        [0, dragThreshold, maxThreshold, SCREEN_WIDTH],
+        [0, 1, 1, 0.3],
+      );
       return { opacity: Math.max(0, Math.min(1, opacity)) };
     }
     return { opacity: 0 };
@@ -212,7 +212,11 @@ export default function MatchCard({
       const dy = Math.abs(translateY.value);
       const dragThreshold = SWIPE_THRESHOLD * 0.3;
       const maxThreshold = SWIPE_THRESHOLD * 0.95;
-      const opacity = interpolate(dy, [0, dragThreshold, maxThreshold, SCREEN_WIDTH], [0, 1, 1, 0.3]);
+      const opacity = interpolate(
+        dy,
+        [0, dragThreshold, maxThreshold, SCREEN_WIDTH],
+        [0, 1, 1, 0.3],
+      );
       return { opacity: Math.max(0, Math.min(1, opacity)) };
     }
     return { opacity: 0 };
@@ -223,20 +227,18 @@ export default function MatchCard({
       const dx = Math.abs(translateX.value);
       const dragThreshold = SWIPE_THRESHOLD * 0.3;
       const maxThreshold = SWIPE_THRESHOLD * 0.95;
-      const opacity = interpolate(dx, [0, dragThreshold, maxThreshold, SCREEN_WIDTH], [0, 1, 1, 0.3]);
+      const opacity = interpolate(
+        dx,
+        [0, dragThreshold, maxThreshold, SCREEN_WIDTH],
+        [0, 1, 1, 0.3],
+      );
       return { opacity: Math.max(0, Math.min(1, opacity)) };
     }
     return { opacity: 0 };
   });
 
   const CardContent = (
-    <Animated.View
-      style={[
-        styles.card,
-        animatedCardStyle,
-        isPreview && styles.previewCard,
-      ]}
-    >
+    <Animated.View style={[styles.card, animatedCardStyle, isPreview && styles.previewCard]}>
       {/* Prediction Choice Overlays */}
       {!isPreview && enabled && (
         <>
@@ -261,7 +263,7 @@ export default function MatchCard({
           team={homeTeam}
           standingsPosition={home.standingsPosition}
           winRate={home.winRateHome}
-          winRateLabel="Vittorie in casa"
+          winRateLabel={t('gioca.vittorieCasa')}
           last5={home.last5 || []}
           form={home.form}
           isHomeTeam={true}
@@ -271,7 +273,7 @@ export default function MatchCard({
           team={awayTeam}
           standingsPosition={away.standingsPosition}
           winRate={away.winRateAway}
-          winRateLabel="Vittorie in trasferta"
+          winRateLabel={t('gioca.vittorieTrasferta')}
           last5={away.last5 || []}
           form={away.form}
           isHomeTeam={false}
@@ -285,11 +287,7 @@ export default function MatchCard({
     return CardContent;
   }
 
-  return (
-    <GestureDetector gesture={panGesture}>
-      {CardContent}
-    </GestureDetector>
-  );
+  return <GestureDetector gesture={panGesture}>{CardContent}</GestureDetector>;
 }
 
 const styles = StyleSheet.create({

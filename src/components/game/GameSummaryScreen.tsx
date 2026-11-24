@@ -6,6 +6,7 @@ import { resolveTeamKey } from '../../utils/pixelPlayers';
 import { isAnswered } from '../../utils/prediction';
 import { formatKickoffTime } from '../../utils/formatters';
 import { colors } from '../../theme';
+import { useTranslation } from 'react-i18next';
 
 interface GameSummaryScreenProps {
   fixtures: MatchCard[];
@@ -51,6 +52,7 @@ export default function GameSummaryScreen({
   predictions,
   headerHeight = 160,
 }: GameSummaryScreenProps) {
+  const { t } = useTranslation();
   // Era una copia di formatKickoffTime che leggeva il fuso del dispositivo:
   // ora passa dall'unica implementazione, sempre in ora italiana.
   const formatKickoff = (isoDate: string) => formatKickoffTime(isoDate);
@@ -96,7 +98,7 @@ export default function GameSummaryScreen({
                   <Text style={styles.kickoffText}>{kickoff}</Text>
                 </View>
                 {!isAnswered(prediction) && (
-                  <Text style={styles.noPredictionText}>nessun pronostico</Text>
+                  <Text style={styles.noPredictionText}>{t('gioca.nessunPronostico')}</Text>
                 )}
               </View>
 
