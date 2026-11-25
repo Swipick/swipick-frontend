@@ -410,6 +410,10 @@ export const en: Testi = {
     termini: 'Terms and conditions',
     versione: 'Version',
     eliminaAccount: 'Delete account',
+    condividi: 'Share Swipick',
+    condividiMessaggio:
+      "I'm playing Swipick: Serie A predictions with a swipe, free and with no real money. Let's compete in a league! {{url}}",
+    aiuto: 'Help and FAQ',
   },
   metodi: {
     giaInUsoTitolo: 'Already in use',

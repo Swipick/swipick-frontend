@@ -8,3 +8,5 @@
 export const SWIPICK_URL = 'https://www.swipick.com';
 export const TERMS_URL = 'https://www.swipick.com/termini-e-condizioni.html';
 export const PRIVACY_URL = 'https://www.swipick.com/privacy-e-cookie.html';
+/** Domande frequenti e contatti: pagina statica su swipick.com (cartella aiuto/). */
+export const HELP_URL = 'https://www.swipick.com/aiuto/';

@@ -167,7 +167,7 @@ export const it = {
     posizioneClassifica: 'Posizione in classifica',
     vittorieCasa: 'Vittorie in casa',
     vittorieTrasferta: 'Vittorie in trasferta',
-    salta: 'skip',
+    salta: 'salta',
     nessunaPartitaSettimana: 'Nessuna partita disponibile per questa giornata.',
     erroreSalvataggio: 'Pronostico non salvato. Riprova.',
     erroreCaricamentoPronostici: 'Impossibile caricare i pronostici. Riprova.',
@@ -422,6 +422,10 @@ export const it = {
     termini: 'Termini e condizioni',
     versione: 'Versione',
     eliminaAccount: 'Elimina account',
+    condividi: 'Condividi Swipick',
+    condividiMessaggio:
+      'Gioco a Swipick: pronostici sulla Serie A con uno swipe, gratis e senza soldi veri. Sfidiamoci in una lega! {{url}}',
+    aiuto: 'Aiuto e domande frequenti',
   },
   metodi: {
     giaInUsoTitolo: 'Già in uso',

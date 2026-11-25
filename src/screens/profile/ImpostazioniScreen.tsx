@@ -18,11 +18,12 @@ import { useAuthStore } from '../../store/stores/useAuthStore';
 import { authService } from '../../services/auth/authService';
 import { profileApi } from '../../services/api/profile';
 import { describeProviders } from '../../utils/authProviders';
-import { PRIVACY_URL, TERMS_URL } from '../../config/links';
+import { HELP_URL, PRIVACY_URL, SWIPICK_URL, TERMS_URL } from '../../config/links';
+import { condividiEMisura } from '../../services/analytics/condivisione';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
 import { useTranslation } from 'react-i18next';
 import { useLinguaStore } from '../../store/stores/useLinguaStore';
-import type { SceltaLingua } from '../../i18n';
+import i18n, { type SceltaLingua } from '../../i18n';
 
 type ImpostazioniScreenProps = {
   navigation?: { navigate: (screen: any) => void; goBack: () => void };
@@ -121,7 +122,7 @@ function SceltaLinguaCard() {
               accessibilityState={{ checked: o.valore === scelta }}
             >
               <View style={[styles.row, i === opzioni.length - 1 && styles.rowLast]}>
-                <View style={[styles.rowLeft, styles.opzioneTesto]}>
+                <View style={styles.rowLeft}>
                   <Text style={styles.rowLabel}>{o.label}</Text>
                   {o.note ? <Text style={styles.rowNote}>{o.note}</Text> : null}
                 </View>
@@ -340,6 +341,22 @@ export default function ImpostazioniScreen({
 
         <Text style={styles.sectionTitle}>{t('impostazioni.informazioni')}</Text>
         <View style={styles.card}>
+          {/* Chiesti dai tester (25/11): un modo di far conoscere l'app e
+              un posto dove trovare le risposte senza scrivere. */}
+          <Riga
+            label={t('impostazioni.condividi')}
+            onPress={() =>
+              condividiEMisura({
+                punto: 'app',
+                titolo: 'Swipick',
+                messaggio: t('impostazioni.condividiMessaggio', { url: SWIPICK_URL }),
+              })
+            }
+          />
+          <Riga
+            label={t('impostazioni.aiuto')}
+            onPress={() => Linking.openURL(i18n.language === 'en' ? `${HELP_URL}en/` : HELP_URL)}
+          />
           <Riga label={t('impostazioni.privacy')} onPress={() => Linking.openURL(PRIVACY_URL)} />
           <Riga label={t('impostazioni.termini')} onPress={() => Linking.openURL(TERMS_URL)} />
           <Riga label={t('impostazioni.versione')} value={versione} last />
@@ -462,13 +479,12 @@ const styles = StyleSheet.create({
   rowLast: {
     borderBottomWidth: 0,
   },
-  // Le opzioni della lingua non hanno un valore a destra: il testo prende
-  // tutto lo spazio, così la spunta finisce sul bordo.
-  opzioneTesto: {
-    flex: 1,
-  },
+  // L'etichetta prende lo spazio libero e va a capo se serve: prima non si
+  // restringeva mai, e con il testo ingrandito usciva tagliata; nelle righe
+  // senza valore la freccia finiva subito dopo il testo invece che sul
+  // bordo destro (feedback dei tester, 25/11).
   rowLeft: {
-    flexShrink: 0,
+    flex: 1,
   },
   rowLabel: {
     fontSize: 16,
@@ -480,7 +496,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rowValue: {
-    flex: 1,
+    flexShrink: 1,
+    maxWidth: '60%',
     textAlign: 'right',
     fontSize: 15,
     color: '#6B7280',

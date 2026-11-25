@@ -33,7 +33,9 @@ export default function App() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <AppNavigator />
-        <StatusBar style="auto" />
+        {/* L'app è sempre chiara: con "auto", in modalità scura le icone della
+            barra di stato diventavano bianche su fondo bianco. */}
+        <StatusBar style="dark" />
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );

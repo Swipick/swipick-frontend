@@ -50,7 +50,13 @@ export default function BottomNav({
               color={activeTab === 'risultati' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text style={[styles.label, activeTab === 'risultati' && styles.labelActive]}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
+            style={[styles.label, activeTab === 'risultati' && styles.labelActive]}
+          >
             {t('schede.risultati')}
           </Text>
         </TouchableOpacity>
@@ -73,7 +79,13 @@ export default function BottomNav({
               color={activeTab === 'gioca' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text style={[styles.label, activeTab === 'gioca' && styles.labelActive]}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
+            style={[styles.label, activeTab === 'gioca' && styles.labelActive]}
+          >
             {t('schede.gioca')}
           </Text>
         </TouchableOpacity>
@@ -96,7 +108,13 @@ export default function BottomNav({
               color={activeTab === 'leghe' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text style={[styles.label, activeTab === 'leghe' && styles.labelActive]}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
+            style={[styles.label, activeTab === 'leghe' && styles.labelActive]}
+          >
             {t('schede.leghe')}
           </Text>
         </TouchableOpacity>
@@ -118,7 +136,13 @@ export default function BottomNav({
               color={activeTab === 'profilo' ? '#6f49ff' : '#6B7280'}
             />
           </View>
-          <Text style={[styles.label, activeTab === 'profilo' && styles.labelActive]}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
+            style={[styles.label, activeTab === 'profilo' && styles.labelActive]}
+          >
             {t('schede.profilo')}
           </Text>
         </TouchableOpacity>
@@ -164,9 +188,13 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: isSmallScreen ? 2 : 4,
   },
+  // Con il testo di sistema ingrandito "Risultati" e "Profilo" si tagliavano
+  // (feedback dei tester, 25/11): una riga sola che si rimpicciolisce se non
+  // ci sta, e un tetto all'ingrandimento.
   label: {
     fontSize: isSmallScreen ? 11 : 12,
     color: '#000000',
+    paddingHorizontal: 2,
   },
   labelActive: {
     color: '#6f49ff',

@@ -13,4 +13,4 @@ export const EVENTI = {
 } as const;
 
 /** Da dove parte la condivisione: serve a sapere in quale momento la gente si mostra. */
-export type PuntoCondivisione = 'profilo' | 'risultati' | 'fine_mazzo' | 'lega';
+export type PuntoCondivisione = 'profilo' | 'risultati' | 'fine_mazzo' | 'lega' | 'app';
