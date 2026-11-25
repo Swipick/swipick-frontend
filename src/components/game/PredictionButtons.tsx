@@ -137,7 +137,7 @@ export default function PredictionButtons({
           <View
             style={[styles.skipButton, isSkipDisabled && styles.disabledButton]}
           >
-            <Text style={styles.skipButtonText}>skip</Text>
+            <Text style={styles.skipButtonText}>salta</Text>
           </View>
         </TouchableOpacity>
       </View>

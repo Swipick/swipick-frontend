@@ -18,7 +18,8 @@ import { useAuthStore } from '../../store/stores/useAuthStore';
 import { authService } from '../../services/auth/authService';
 import { profileApi } from '../../services/api/profile';
 import { describeProviders } from '../../utils/authProviders';
-import { PRIVACY_URL, TERMS_URL } from '../../config/links';
+import { HELP_URL, PRIVACY_URL, SWIPICK_URL, TERMS_URL } from '../../config/links';
+import { condividiEMisura } from '../../services/analytics/condivisione';
 import { useSpazioInBasso } from '../../utils/spazioInBasso';
 
 type ImpostazioniScreenProps = {
@@ -292,6 +293,22 @@ export default function ImpostazioniScreen({
 
         <Text style={styles.sectionTitle}>Informazioni</Text>
         <View style={styles.card}>
+          {/* Chiesti dai tester (25/11): un modo di far conoscere l'app e
+              un posto dove trovare le risposte senza scrivere. */}
+          <Riga
+            label="Condividi Swipick"
+            onPress={() =>
+              condividiEMisura({
+                punto: 'app',
+                titolo: 'Swipick',
+                messaggio: `Gioco a Swipick: pronostici sulla Serie A con uno swipe, gratis e senza soldi veri. Sfidiamoci in una lega! ${SWIPICK_URL}`,
+              })
+            }
+          />
+          <Riga
+            label="Aiuto e domande frequenti"
+            onPress={() => Linking.openURL(HELP_URL)}
+          />
           <Riga
             label="Privacy e cookie"
             onPress={() => Linking.openURL(PRIVACY_URL)}
@@ -423,8 +440,12 @@ const styles = StyleSheet.create({
   rowLast: {
     borderBottomWidth: 0,
   },
+  // L'etichetta prende lo spazio libero e va a capo se serve: prima non si
+  // restringeva mai, e con il testo ingrandito usciva tagliata; nelle righe
+  // senza valore la freccia finiva subito dopo il testo invece che sul
+  // bordo destro (feedback dei tester, 25/11).
   rowLeft: {
-    flexShrink: 0,
+    flex: 1,
   },
   rowLabel: {
     fontSize: 16,
@@ -436,7 +457,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rowValue: {
-    flex: 1,
+    flexShrink: 1,
+    maxWidth: '60%',
     textAlign: 'right',
     fontSize: 15,
     color: '#6B7280',

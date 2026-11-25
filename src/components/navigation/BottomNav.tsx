@@ -54,6 +54,10 @@ export default function BottomNav({
             />
           </View>
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
             style={[
               styles.label,
               activeTab === 'risultati' && styles.labelActive
@@ -82,6 +86,10 @@ export default function BottomNav({
             />
           </View>
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
             style={[
               styles.label,
               activeTab === 'gioca' && styles.labelActive
@@ -110,6 +118,10 @@ export default function BottomNav({
             />
           </View>
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
             style={[
               styles.label,
               activeTab === 'leghe' && styles.labelActive
@@ -137,6 +149,10 @@ export default function BottomNav({
             />
           </View>
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={1.3}
             style={[
               styles.label,
               activeTab === 'profilo' && styles.labelActive
@@ -187,9 +203,13 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: isSmallScreen ? 2 : 4,
   },
+  // Con il testo di sistema ingrandito "Risultati" e "Profilo" si tagliavano
+  // (feedback dei tester, 25/11): una riga sola che si rimpicciolisce se non
+  // ci sta, e un tetto all'ingrandimento.
   label: {
     fontSize: isSmallScreen ? 11 : 12,
     color: '#000000',
+    paddingHorizontal: 2,
   },
   labelActive: {
     color: '#6f49ff',
