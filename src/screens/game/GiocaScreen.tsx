@@ -15,6 +15,7 @@ import { colors, spacing } from "../../theme";
 import GameHeader from "../../components/game/GameHeader";
 import MatchCard from "../../components/game/MatchCard";
 import PredictionButtons from "../../components/game/PredictionButtons";
+import { scalaCard, spostamentoPerScala } from "../../utils/scalaCard";
 import GameSummaryScreen from "../../components/game/GameSummaryScreen";
 import GuestCTA from "../../components/common/GuestCTA";
 import {
@@ -27,6 +28,8 @@ import {
 
 const { height: screenHeight } = Dimensions.get("window");
 const isSmallScreen = screenHeight < 750;
+/** Il margine sopra il mazzo di card (styles.cardStack.marginTop). */
+const MARGINE_MAZZO = isSmallScreen ? 20 : 40;
 
 export default function GiocaScreen() {
   // Selettore: re-render solo quando cambia user (non loading/error auth)
@@ -48,6 +51,12 @@ export default function GiocaScreen() {
   // Card mostrata, identificata dal fixtureId e non da un indice: il mazzo si
   // accorcia da solo quando una partita scade, e un indice resterebbe appeso.
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
+  // Misure per non far finire la card sotto i tasti (vedi utils/scalaCard).
+  const [cimaCard, setCimaCard] = useState(0);
+  const [altezzaCard, setAltezzaCard] = useState(0);
+  const [cimaTasti, setCimaTasti] = useState(0);
+  // Spazio fra la cima della card (sotto il margine del mazzo) e i tasti.
+  const scala = scalaCard(cimaTasti - (cimaCard + MARGINE_MAZZO) - 8, altezzaCard);
   const [currentId, setCurrentId] = useState<string | null>(null);
   // Guardia sul doppio tocco. Un ref e non uno stato: lo stato React si applica
   // al render successivo, il ref subito — ed e' proprio quell'istante la
@@ -219,11 +228,24 @@ export default function GiocaScreen() {
             )}
 
             {/* Main Card Area */}
-            <View style={styles.cardContainer}>
+            <View
+              style={styles.cardContainer}
+              onLayout={(e) => setCimaCard(e.nativeEvent.layout.y)}
+            >
               {currentFixture ? (
                 <>
                   {/* Card Stack Container */}
-                  <View style={styles.cardStack}>
+                  <View
+                    style={[
+                      styles.cardStack,
+                      scala < 1 && {
+                        transform: [
+                          { translateY: spostamentoPerScala(altezzaCard, scala) },
+                          { scale: scala },
+                        ],
+                      },
+                    ]}
+                  >
                     {/* Preview Card (Next Card) - Behind */}
                     {nextFixture && (
                       <View style={styles.previewCard}>
@@ -238,7 +260,10 @@ export default function GiocaScreen() {
                     )}
 
                     {/* Current Card - On Top */}
-                    <View style={styles.currentCard}>
+                    <View
+                      style={styles.currentCard}
+                      onLayout={(e) => setAltezzaCard(e.nativeEvent.layout.height)}
+                    >
                       <MatchCard
                         key={currentFixture.fixtureId}
                         matchCard={currentFixture}
@@ -260,7 +285,10 @@ export default function GiocaScreen() {
             {/* Prediction Buttons — nel mazzo ci sono solo partite mai
                 giocate, quindi i tasti sono sempre quelli di scelta. */}
             {currentFixture && (
-              <View style={styles.buttonsContainer}>
+              <View
+                style={styles.buttonsContainer}
+                onLayout={(e) => setCimaTasti(e.nativeEvent.layout.y)}
+              >
                 <PredictionButtons
                   disabled={loading}
                   isSkipAnimating={false}
@@ -377,7 +405,7 @@ const styles = StyleSheet.create({
     minHeight: 450,
     justifyContent: "flex-start",
     alignItems: "center",
-    marginTop: isSmallScreen ? 20 : 40,
+    marginTop: MARGINE_MAZZO,
   },
   previewCard: {
     position: "absolute",
